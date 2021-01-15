@@ -1,0 +1,2 @@
+# DicordBot
+Discord bot(Amia)
