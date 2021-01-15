@@ -1,3 +1,4 @@
+import datetime
 from Bot import bot
 import discord.guild
 import discord
@@ -32,8 +33,10 @@ def main():
 
             elif message.content.startswith('!ger') or message.content.startswith('!пук'):  # Пук епт
                 await message.delete()  # In the future I'll implement this through a decorator
-                await message.channel.send(amia.ger_function(message, client.guilds))
-                # await ger_function(message)
+                # t =datetime.datetime.now() -datetime.datetime(2021, 1, 15, 16, 55, 0)
+                # if t.days > 0:
+                await message.channel.send(amia.ger_function(message, client.guilds, datetime.datetime.now()),
+                                           delete_after=10)
 
             elif message.content.startswith('!info'):  # Show bot info and description
                 await message.delete()
