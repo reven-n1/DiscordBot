@@ -35,8 +35,7 @@ def main():
                 await message.delete()  # In the future I'll implement this through a decorator
                 # t =datetime.datetime.now() -datetime.datetime(2021, 1, 15, 16, 55, 0)
                 # if t.days > 0:
-                await message.channel.send(amia.ger_function(message, client.guilds, datetime.datetime.now()),
-                                           delete_after=10)
+                await message.channel.send(amia.ger_function(message, client.guilds, datetime.datetime.now()))
 
             elif message.content.startswith('!info'):  # Show bot info and description
                 await message.delete()

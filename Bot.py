@@ -1,6 +1,8 @@
 import datetime
 import math
 import random
+import fileinput
+import sys
 from Bot_Token import token
 
 
@@ -34,21 +36,37 @@ class bot:
         return out_str
 
     def get_init_members_list(self, client_guilds):  # Use once when init to server
-        with open('GerList', 'w') as f:
+        with open('GerList.txt', 'w') as f:
             for member in client_guilds:
                 f.writelines(f'{str(member)}\n')
 
-    def ger_function(self, messege, guilds, tme):
-        last_time = datetime.datetime(2021, 1, 14, 19, 17, 0)  # Время последнего прокрута(берется из файла)
+    def ger_function(self, messege, guilds, tme, file='GerList.txt'):
+
+        with open(file, 'r') as f:
+            for line in f:
+                if f'{messege.author}' in line:
+                    tmp = line.replace(f'{messege.author}', '')
+                    if tmp.lstrip() == '':
+                        last_time = datetime.datetime(2020, 11, 11, 11, 11, 11)
+                    else:
+                        last_time = tmp.strip()
+                        last_time = datetime.datetime.strptime(last_time, '%Y-%m-%d %H:%M:%S.%f')
+
         time_difference = tme - last_time  # Разница во времени между сейчас и прошлым прокрутом
         time_difference = math.floor(time_difference.total_seconds())  # Перевел в секунды
         sec = divmod(math.floor(time_difference), 60)  # sec[1] - секунды / sec[0] - оставшиеся минуты
         minutes = divmod(sec[0], 60)  # minutes[1] - минуты /
         hours = minutes[0]  # minutes[0] - часы
 
-        if hours >= self.ger_recoil/3600:
+        if hours >= self.ger_recoil / 3600:
 
             if random.randint(0, 101) >= self.ger_self_chance:
+
+                for line in fileinput.input(file, inplace=1):
+                    if f'{messege.author}' in line:
+                        line = line.replace(line, f'{messege.author} {tme}\n')
+                    sys.stdout.write(line)
+
                 for guild in guilds:
                     tmp = random.choice(guild.members)
                     while tmp == messege.author:
@@ -57,9 +75,9 @@ class bot:
                             f'{random.choice(self.ger_variants)} {tmp.mention}')
             else:
                 return f'{messege.author.mention} {random.choice(self.ger_self_variants)}'
+
         else:
             time_difference2 = self.ger_recoil - time_difference
-
             sec = divmod(math.floor(time_difference2), 60)  # sec[1] - секунды / sec[0] - оставшиеся минуты
             minutes = divmod(sec[0], 60)  # minutes[1] - минуты /
             hours = minutes[0]  # minutes[0] - часы
@@ -72,7 +90,6 @@ class bot:
 
     def get_ark(self):
         pass
-
 
 # a = bot()
 # a.ger_function('asd', 'sad', datetime.datetime(2021, 1, 15, 5, 30, 2))
