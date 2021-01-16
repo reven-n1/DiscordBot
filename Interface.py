@@ -20,6 +20,7 @@ def main():
 
     @client.event
     async def on_member_join(member):
+        await add_to_ger_list(member)
         await member.send(f'Hi {member.name}')
         channel = get_channel()
         await channel.send(f'Hi {member}')
@@ -33,9 +34,11 @@ def main():
 
             elif message.content.startswith('!ger') or message.content.startswith('!пук'):  # Пук епт
                 await message.delete()  # In the future I'll implement this through a decorator
-                # t =datetime.datetime.now() -datetime.datetime(2021, 1, 15, 16, 55, 0)
-                # if t.days > 0:
-                await message.channel.send(amia.ger_function(message, client.guilds, datetime.datetime.now()))
+                t = amia.ger_function(message, client.guilds, datetime.datetime.now())
+                if 'Идет' in t:
+                    await message.channel.send(t, delete_after=5)
+                else:
+                    await message.channel.send(t)
 
             elif message.content.startswith('!info'):  # Show bot info and description
                 await message.delete()
@@ -74,7 +77,7 @@ def main():
                 await message.channel.send(f'{message.content} - unknown command', delete_after=10)
                 await message.channel.send('Use "!commands" to see a list of commands', delete_after=10)
 
-    client.run(amia.token)
+    client.run(amia.token)  # Run bot
 
 
 def get_channel():
@@ -82,6 +85,11 @@ def get_channel():
         for i in guild.channels:
             if i.name == 'основной':
                 return i
+
+
+async def add_to_ger_list(member_name):  # Call when new user join server
+    with open('GerList.txt', 'a') as f:
+        f.writelines(f'{member_name}\n')
 
 
 if __name__ == '__main__':

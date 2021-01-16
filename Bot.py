@@ -41,7 +41,9 @@ class bot:
                 f.writelines(f'{str(member)}\n')
 
     def ger_function(self, messege, guilds, tme, file='GerList.txt'):
-
+        # ->>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
+        # Open file(GerList.txt) with ger recoils and check last ger time
+        # if it's the first time(no date)  -> set date to 2020 year to allow user use !ger
         with open(file, 'r') as f:
             for line in f:
                 if f'{messege.author}' in line:
@@ -52,36 +54,38 @@ class bot:
                         last_time = tmp.strip()
                         last_time = datetime.datetime.strptime(last_time, '%Y-%m-%d %H:%M:%S.%f')
 
+        # ->>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
+
         time_difference = tme - last_time  # Разница во времени между сейчас и прошлым прокрутом
         time_difference = math.floor(time_difference.total_seconds())  # Перевел в секунды
         sec = divmod(math.floor(time_difference), 60)  # sec[1] - секунды / sec[0] - оставшиеся минуты
-        minutes = divmod(sec[0], 60)  # minutes[1] - минуты /
-        hours = minutes[0]  # minutes[0] - часы
+        minutes = divmod(sec[0], 60)  # minutes[1] - минуты / minutes[0] - часы
+        hours = minutes[0]  # часы
 
-        if hours >= self.ger_recoil / 3600:
+        if hours >= self.ger_recoil / 3600:  # If more time passed allow !ger
 
-            if random.randint(0, 101) >= self.ger_self_chance:
+            if random.randint(0, 101) >= self.ger_self_chance:  # Chance to обосраться
 
-                for line in fileinput.input(file, inplace=1):
+                for line in fileinput.input(file, inplace=1):  # Set new time of !ger
                     if f'{messege.author}' in line:
                         line = line.replace(line, f'{messege.author} {tme}\n')
                     sys.stdout.write(line)
 
                 for guild in guilds:
                     tmp = random.choice(guild.members)
-                    while tmp == messege.author:
+                    while tmp == messege.author:  # Не дать автору серануть в себя
                         tmp = random.choice(guild.members)
                     return (f'{messege.author.mention} '
                             f'{random.choice(self.ger_variants)} {tmp.mention}')
             else:
-                return f'{messege.author.mention} {random.choice(self.ger_self_variants)}'
+                return f'{messege.author.mention} {random.choice(self.ger_self_variants)}'  # Самообсер
 
-        else:
+        else:  # if passed time less then 24 h
             time_difference2 = self.ger_recoil - time_difference
             sec = divmod(math.floor(time_difference2), 60)  # sec[1] - секунды / sec[0] - оставшиеся минуты
             minutes = divmod(sec[0], 60)  # minutes[1] - минуты /
             hours = minutes[0]  # minutes[0] - часы
-            if hours == 0:
+            if hours == 0:  # choice return output variants
                 return f'Идет зарядка жопы, осталось {minutes[1]} мин {sec[1]} сек'
             elif hours == 0 and minutes[1] == 0:
                 return f'Идет зарядка жопы, осталось {sec[1]} сек'
@@ -90,6 +94,3 @@ class bot:
 
     def get_ark(self):
         pass
-
-# a = bot()
-# a.ger_function('asd', 'sad', datetime.datetime(2021, 1, 15, 5, 30, 2))
