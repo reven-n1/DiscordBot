@@ -3,7 +3,11 @@ import math
 import random
 import fileinput
 import sys
+import sqlite3
 from Bot_Token import token
+
+db = sqlite3.connect('Bot_DB.db')
+cursor = db.cursor()
 
 
 class bot:
@@ -36,23 +40,36 @@ class bot:
         return out_str
 
     def get_init_members_list(self, client_guilds):  # Use once when init to server
-        with open('GerList.txt', 'w') as f:
-            for member in client_guilds:
-                f.writelines(f'{str(member)}\n')
+        for member in client_guilds:
+            cursor.execute(f"INSERT INTO users_ger VALUES ( ?,?)",
+                           (str(member), datetime.datetime(2020, 11, 11, 11, 11, 11, 111111)))
+            db.commit()
+
+            print(member)
 
     def ger_function(self, messege, guilds, tme, file='GerList.txt'):
+
         # ->>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
         # Open file(GerList.txt) with ger recoils and check last ger time
         # if it's the first time(no date)  -> set date to 2020 year to allow user use !ger
-        with open(file, 'r') as f:
-            for line in f:
-                if f'{messege.author}' in line:
-                    tmp = line.replace(f'{messege.author}', '')
-                    if tmp.lstrip() == '':
-                        last_time = datetime.datetime(2020, 11, 11, 11, 11, 11)
-                    else:
-                        last_time = tmp.strip()
-                        last_time = datetime.datetime.strptime(last_time, '%Y-%m-%d %H:%M:%S.%f')
+        cursor.execute(f"SELECT * FROM users_ger WHERE user_name == '{messege.author}'")
+        res = cursor.fetchone()
+        if res is None:
+            cursor.execute(f"INSERT INTO users_ger VALUES (?,?)", (f"{messege.author}", datetime.datetime.now()))
+            last_time = datetime.datetime(2020, 11, 11, 11, 11, 11)
+            db.commit()
+        else:
+            last_time = datetime.datetime.strptime(res[1], '%Y-%m-%d %H:%M:%S.%f')
+
+        # with open(file, 'r') as f:
+        #     for line in f:
+        #         if f'{messege.author}' in line:
+        #             tmp = line.replace(f'{messege.author}', '')
+        #             if tmp.lstrip() == '':
+        #                 last_time = datetime.datetime(2020, 11, 11, 11, 11, 11)
+        #             else:
+        #                 last_time = tmp.strip()
+        #                 last_time = datetime.datetime.strptime(last_time, '%Y-%m-%d %H:%M:%S.%f')
 
         # ->>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
 
@@ -64,12 +81,16 @@ class bot:
 
         if hours >= self.ger_recoil / 3600:  # If more time passed allow !ger
 
+            cursor.execute(
+                f"UPDATE users_ger SET last_ger_time = '{datetime.datetime.now()}' WHERE user_name ='{messege.author}'")
+            db.commit()
+
             if random.randint(0, 101) >= self.ger_self_chance:  # Chance to обосраться
 
-                for line in fileinput.input(file, inplace=1):  # Set new time of !ger
-                    if f'{messege.author}' in line:
-                        line = line.replace(line, f'{messege.author} {tme}\n')
-                    sys.stdout.write(line)
+                # for line in fileinput.input(file, inplace=1):  # Set new time of !ger
+                #     if f'{messege.author}' in line:
+                #         line = line.replace(line, f'{messege.author} {tme}\n')
+                #     sys.stdout.write(line)
 
                 for guild in guilds:
                     tmp = random.choice(guild.members)

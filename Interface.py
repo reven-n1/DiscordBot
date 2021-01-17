@@ -1,7 +1,9 @@
 import datetime
 from Bot import bot
+from Bot import db, cursor
 import discord.guild
 import discord
+import sqlite3
 import json
 import requests
 
@@ -88,9 +90,12 @@ def get_channel():
 
 
 async def add_to_ger_list(member_name):  # Call when new user join server
-    with open('GerList.txt', 'a') as f:
-        f.writelines(f'{member_name}\n')
 
+    cursor.execute(f"SELECT user_name FROM users_ger WHERE user_name == '{member_name}'")
+    if cursor.fetchone() is None:
+        cursor.execute("INSERT INTO users_ger VALUES ( ?,?)",
+                       (f"{member_name}", datetime.datetime(2020, 11, 11, 11, 11, 11, 111111)))
+    db.commit()
 
 if __name__ == '__main__':
     main()
