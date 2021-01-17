@@ -1,8 +1,6 @@
 import datetime
 import math
 import random
-import fileinput
-import sys
 import sqlite3
 from Bot_Token import token
 
@@ -20,6 +18,10 @@ class bot:
         self.ger_self_chance = 10
         self.ger_recoil = 86400
         self.ark_recoil = 12
+        self.six_star_chance = 2
+        self.five_star_chance = 10
+        self.four_star_chance = 60
+        self.three_star_chance = 100
         self.bot_info = {'info': ' - хуйня никому не нужная(бот тупой, но перспективный(нет))',
                          'commands': {'!ger или !пук': 'Смачный пердеж кому-нибудь куда-нибудь..',
                                       '!myark или !майарк': 'Все полученые персонажи',
@@ -113,5 +115,14 @@ class bot:
             else:
                 return f'Идет зарядка жопы, осталось {hours} ч {minutes[1]} мин {sec[1]} сек'
 
-    def get_ark(self):
-        pass
+    def get_ark_rarity(self):
+
+        rarity = random.randrange(0, 100)
+        if rarity <= self.six_star_chance:
+            return 0
+        elif rarity <= self.five_star_chance:
+            return 0
+        elif rarity <= self.four_star_chance:
+            return 0
+        elif rarity <= self.three_star_chance:
+            return 0

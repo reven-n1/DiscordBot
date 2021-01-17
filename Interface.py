@@ -46,8 +46,7 @@ def main():
                 await message.delete()
                 await message.channel.send(amia.get_info(), delete_after=10)
                 embed = discord.Embed(color=0xff9900, title=amia.name)
-                # response = requests.get('https://drive.google.com/file/d/
-                # 12nIZ4J19Yp4AoR0N-Zcefw6M-42tl-vD/view?usp=sharing')
+                # response = requests.get('https://drive.google.com/file/d/')
                 # json_data = json.loads(response.text)  # Извлекаем JSON
                 # embed.set_image(url='link')  # Устанавливаем картинку Embed'a
                 embed.set_footer(text=f'Requested by {message.author.name}')
