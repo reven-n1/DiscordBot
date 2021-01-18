@@ -1,5 +1,5 @@
 import datetime
-from Bot import bot
+from Bot import Bot
 from Bot import db, cursor
 import discord.guild
 import discord
@@ -14,7 +14,7 @@ client = discord.Client(intents=intents)
 
 
 def main():
-    amia = bot()
+    amia = Bot()
 
     @client.event
     async def on_ready():

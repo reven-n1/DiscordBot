@@ -8,7 +8,7 @@ db = sqlite3.connect('Bot_DB.db')
 cursor = db.cursor()
 
 
-class bot:
+class Bot:
     def __init__(self):
         self.token = token
         self.name = 'Amia(bot)'
