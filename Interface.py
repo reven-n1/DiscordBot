@@ -3,9 +3,8 @@ from Bot import Bot
 from Bot import db, cursor
 import discord.guild
 import discord
+import re
 import sqlite3
-import json
-import requests
 
 intents = discord.Intents.default()
 intents.members = True
@@ -35,22 +34,34 @@ def main():
                 return
 
             elif message.content.startswith('!ger') or message.content.startswith('!пук'):  # Пук епт
-                await message.delete()  # In the future I'll implement this through a decorator
+                await message.delete()
                 t = amia.ger_function(message, client.guilds, datetime.datetime.now())
                 if 'Идет' in t:
                     await message.channel.send(t, delete_after=5)
                 else:
                     await message.channel.send(t)
 
+            elif message.content.startswith('!ark') or message.content.startswith('!арк'):  # Ark епт
+                await message.delete()
+                tmp = amia.get_ark(amia.get_ark_rarity())
+                # 0 - character_id      1- name     2 - description_first_part      3 - description_sec_part
+                # 4 - position      5 - tags        6 - traits      7 - profession      8 - emoji       9 - rarity
+                embed = discord.Embed(color=0xff9900, title=tmp[1],
+                                      description=str(tmp[8]) * tmp[9],
+                                      url=f"https://aceship.github.io/AN-EN-Tags/akhrchars.html?opname={tmp[1]}")
+                embed.add_field(name='Description', value=f'{tmp[2]}\n{tmp[3]}', inline=False)
+                embed.add_field(name='Position', value=tmp[4])
+                embed.add_field(name='Tags', value=str(tmp[5]), inline=True)
+                line = re.sub('[<@.>/]', '', tmp[6])  # Delete all tags in line
+                embed.add_field(name='Traits', value=line, inline=False)
+                embed.set_thumbnail(url=tmp[7])
+                embed.set_image(url=f"https://aceship.github.io/AN-EN-Tags/img/characters/{tmp[0]}_1.png")
+                embed.set_footer(text=f'Requested by {message.author.name}')
+                await message.channel.send(embed=embed, delete_after=20)
+
             elif message.content.startswith('!info'):  # Show bot info and description
                 await message.delete()
                 await message.channel.send(amia.get_info(), delete_after=10)
-                embed = discord.Embed(color=0xff9900, title=amia.name)
-                # response = requests.get('https://drive.google.com/file/d/')
-                # json_data = json.loads(response.text)  # Извлекаем JSON
-                # embed.set_image(url='link')  # Устанавливаем картинку Embed'a
-                embed.set_footer(text=f'Requested by {message.author.name}')
-                await message.channel.send(embed=embed, delete_after=20)
 
             elif message.content.startswith('!commands'):  # Show all commands -> takes them from the "bot_info"
                 await message.delete()
@@ -95,6 +106,7 @@ async def add_to_ger_list(member_name):  # Call when new user join server
         cursor.execute("INSERT INTO users_ger VALUES ( ?,?)",
                        (f"{member_name}", datetime.datetime(2020, 11, 11, 11, 11, 11, 111111)))
     db.commit()
+
 
 if __name__ == '__main__':
     main()

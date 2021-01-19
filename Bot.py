@@ -1,4 +1,5 @@
 import datetime
+import json
 import math
 import random
 import sqlite3
@@ -17,11 +18,13 @@ class Bot:
         self.delete_quantity = 100
         self.ger_self_chance = 10
         self.ger_recoil = 86400
-        self.ark_recoil = 12
+        self.ark_recoil = 28800
         self.six_star_chance = 2
         self.five_star_chance = 10
         self.four_star_chance = 60
         self.three_star_chance = 100
+        self.stars_0_5 = '<:star:801095671720968203>'
+        self.stars_6 = '<:star2:801105195958140928>'
         self.bot_info = {'info': ' - хуйня никому не нужная(бот тупой, но перспективный(нет))',
                          'commands': {'!ger или !пук': 'Смачный пердеж кому-нибудь куда-нибудь..',
                                       '!myark или !майарк': 'Все полученые персонажи',
@@ -47,8 +50,6 @@ class Bot:
                            (str(member), datetime.datetime(2020, 11, 11, 11, 11, 11, 111111)))
             db.commit()
 
-            print(member)
-
     def ger_function(self, messege, guilds, tme, file='GerList.txt'):
 
         # ->>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
@@ -63,18 +64,6 @@ class Bot:
         else:
             last_time = datetime.datetime.strptime(res[1], '%Y-%m-%d %H:%M:%S.%f')
 
-        # with open(file, 'r') as f:
-        #     for line in f:
-        #         if f'{messege.author}' in line:
-        #             tmp = line.replace(f'{messege.author}', '')
-        #             if tmp.lstrip() == '':
-        #                 last_time = datetime.datetime(2020, 11, 11, 11, 11, 11)
-        #             else:
-        #                 last_time = tmp.strip()
-        #                 last_time = datetime.datetime.strptime(last_time, '%Y-%m-%d %H:%M:%S.%f')
-
-        # ->>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
-
         time_difference = tme - last_time  # Разница во времени между сейчас и прошлым прокрутом
         time_difference = math.floor(time_difference.total_seconds())  # Перевел в секунды
         sec = divmod(math.floor(time_difference), 60)  # sec[1] - секунды / sec[0] - оставшиеся минуты
@@ -88,11 +77,6 @@ class Bot:
             db.commit()
 
             if random.randint(0, 101) >= self.ger_self_chance:  # Chance to обосраться
-
-                # for line in fileinput.input(file, inplace=1):  # Set new time of !ger
-                #     if f'{messege.author}' in line:
-                #         line = line.replace(line, f'{messege.author} {tme}\n')
-                #     sys.stdout.write(line)
 
                 for guild in guilds:
                     tmp = random.choice(guild.members)
@@ -119,10 +103,53 @@ class Bot:
 
         rarity = random.randrange(0, 100)
         if rarity <= self.six_star_chance:
-            return 0
+            return 6
         elif rarity <= self.five_star_chance:
-            return 0
+            return 5
         elif rarity <= self.four_star_chance:
-            return 0
+            return 4
         elif rarity <= self.three_star_chance:
-            return 0
+            return 3
+
+    def get_ark(self, rar):
+        choice_list = {}
+
+        f = open('character_table.json', "rb")
+        json_data = json.loads(f.read())  # Извлекаем JSON
+        for line in json_data:
+            tmp = json_data[str(line)]
+            rarity = int(tmp['rarity']) + 1
+            if rar == rarity and tmp['itemDesc'] is not None:  # to ignore magalan skills and other rarities
+                profession = ''
+                if tmp['profession'] == 'CASTER':
+                    profession = 'https://aceship.github.io/AN-EN-Tags/img/classes/class_caster.png'
+                elif tmp['profession'] == 'SNIPER':
+                    profession = 'https://aceship.github.io/AN-EN-Tags/img/classes/class_sniper.png'
+                elif tmp['profession'] == 'WARRIOR':
+                    profession = 'https://aceship.github.io/AN-EN-Tags/img/classes/class_guard.png'
+                elif tmp['profession'] == 'PIONEER':
+                    profession = 'https://aceship.github.io/AN-EN-Tags/img/classes/class_vanguard.png'
+                elif tmp['profession'] == 'SUPPORT':
+                    profession = 'https://aceship.github.io/AN-EN-Tags/img/classes/class_supporter.png'
+                elif tmp['profession'] == 'MEDIC':
+                    profession = 'https://aceship.github.io/AN-EN-Tags/img/classes/class_medic.png'
+                elif tmp['profession'] == 'SPECIAL':
+                    profession = 'https://aceship.github.io/AN-EN-Tags/img/classes/class_specialist.png'
+                elif tmp['profession'] == 'TANK':
+                    profession = 'https://aceship.github.io/AN-EN-Tags/img/classes/class_defender.png'
+                character_id = line
+                name = tmp['name']
+                description_first_part = tmp['itemUsage']
+                description_sec_part = tmp['itemDesc']
+                position = tmp['position']
+                tags = ', '.join(tmp['tagList'])
+                traits = tmp['description']
+                stars = ''
+                if rarity == 6:
+                    stars = self.stars_6
+                else:
+                    stars = self.stars_0_5
+                choice_list[name] = character_id, name, description_first_part, description_sec_part, \
+                                    position, tags, traits, profession, stars, rarity
+
+        return random.choice(list(choice_list.values()))
