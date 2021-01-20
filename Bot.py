@@ -13,8 +13,8 @@ class Bot:
     def __init__(self):
         self.token = token
         self.name = 'Amia(bot)'
-        self.bot_img = 'BotImg.png'  # !!!!!!!!!!!!!!!!!!
-        self.bot_channels = ['arkbot', '']
+        self.bot_img = 'BotImg.png'
+        self.bot_channels = ['arkbot', 'bots']
         self.delete_quantity = 100
         self.ger_self_chance = 10
         self.ger_recoil = 86400
@@ -25,18 +25,25 @@ class Bot:
         self.three_star_chance = 100
         self.stars_0_5 = '<:star:801095671720968203>'
         self.stars_6 = '<:star2:801105195958140928>'
-        self.bot_info = {'info': ' - хуйня никому не нужная(бот тупой, но перспективный(нет))',
+        self.bot_info = {'info': ' хуйня никому не нужная(бот тупой, но перспективный(нет))',
                          'commands': {'!ger или !пук': 'Смачный пердеж кому-нибудь куда-нибудь..',
                                       '!myark или !майарк': 'Все полученые персонажи',
                                       '!ark или !арк': 'Рол персонажа',
-                                      '!clear': 'Удаляет последние 10 сообщений(кол-во можно настроить)'}}
+                                      '!clear': 'Удаляет последние 100 сообщений(или число указанное после команды)'}}
         self.ger_variants = ['пернул в ротешник', 'насрал в рот', 'высрал какулю на лицо']
         self.bot_commands = ['!ger', '!пук', '!арк', '!ark', '!clear', '!members', '!commands']
         self.ger_self_variants = ['обосрался с подливой', 'напрудил в штанишки']
 
     def get_info(self):
-        out_str = self.name + self.bot_info['info']
-        return out_str
+        tmp = []
+        count = 0
+        for line in self.bot_info['commands'].keys():
+            tmp.append(f'{line} - ')
+        for line in self.bot_info['commands'].values():
+            tmp[count] += line
+            count += 1
+
+        return tmp
 
     def get_commands(self):
         out_str = ''
@@ -52,9 +59,9 @@ class Bot:
 
     def ger_function(self, messege, guilds, tme, file='GerList.txt'):
 
-        # ->>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
-        # Open file(GerList.txt) with ger recoils and check last ger time
-        # if it's the first time(no date)  -> set date to 2020 year to allow user use !ger
+        # ->>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
+        # Request to db with ger recoils and check last ger time
+        # if it's the first time(no user in db)  -> add him -> to allow user use !ger
         cursor.execute(f"SELECT * FROM users_ger WHERE user_name == '{messege.author}'")
         res = cursor.fetchone()
         if res is None:
@@ -101,14 +108,14 @@ class Bot:
 
     def get_ark_rarity(self):
 
-        rarity = random.randrange(0, 100)
-        if rarity <= self.six_star_chance:
+        rarity = random.randrange(0, 100000)
+        if rarity <= self.six_star_chance * 1000:
             return 6
-        elif rarity <= self.five_star_chance:
+        elif rarity <= self.five_star_chance * 1000:
             return 5
-        elif rarity <= self.four_star_chance:
+        elif rarity <= self.four_star_chance * 1000:
             return 4
-        elif rarity <= self.three_star_chance:
+        elif rarity <= self.three_star_chance * 1000:
             return 3
 
     def get_ark(self, rar):
@@ -151,5 +158,9 @@ class Bot:
                     stars = self.stars_0_5
                 choice_list[name] = character_id, name, description_first_part, description_sec_part, \
                                     position, tags, traits, profession, stars, rarity
+
+                del character_id, name, description_first_part, description_sec_part, position, tags, traits, \
+                    profession, rarity
+                f.close()
 
         return random.choice(list(choice_list.values()))

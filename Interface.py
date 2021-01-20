@@ -4,7 +4,6 @@ from Bot import db, cursor
 import discord.guild
 import discord
 import re
-import sqlite3
 
 intents = discord.Intents.default()
 intents.members = True
@@ -57,15 +56,21 @@ def main():
                 embed.set_thumbnail(url=tmp[7])
                 embed.set_image(url=f"https://aceship.github.io/AN-EN-Tags/img/characters/{tmp[0]}_1.png")
                 embed.set_footer(text=f'Requested by {message.author.name}')
-                await message.channel.send(embed=embed, delete_after=20)
+                await message.channel.send(embed=embed)
 
             elif message.content.startswith('!info'):  # Show bot info and description
+                embed = discord.Embed(color=0xff9900, title=amia.name,
+                                      url=f"https://www.youtube.com/watch?v=X5ULmETDiXI")
+                embed.add_field(name='Description', value=amia.bot_info['info'], inline=False)
+                embed.add_field(name='Commands',
+                                value=str('\n'.join(amia.get_info())),
+                                inline=True)
+                embed.set_thumbnail(
+                    url="https://aceship.github.io/AN-EN-Tags/img/characters/char_222_bpipe_race%231.png")
+                embed.set_image(url="https://aceship.github.io/AN-EN-Tags/img/characters/char_002_amiya_epoque%234.png")
+                embed.set_footer(text=f'Requested by {message.author.name}')
+                await message.channel.send(embed=embed, delete_after=15)
                 await message.delete()
-                await message.channel.send(amia.get_info(), delete_after=10)
-
-            elif message.content.startswith('!commands'):  # Show all commands -> takes them from the "bot_info"
-                await message.delete()
-                await message.channel.send(amia.get_commands(), delete_after=10)
 
             elif message.content.startswith('!members'):  # Write all members to file
                 await message.delete()
@@ -87,7 +92,7 @@ def main():
                 # If unknown command -> show message then delete it
                 await message.delete()
                 await message.channel.send(f'{message.content} - unknown command', delete_after=10)
-                await message.channel.send('Use "!commands" to see a list of commands', delete_after=10)
+                await message.channel.send('Use "!info" to see a list of commands', delete_after=10)
 
     client.run(amia.token)  # Run bot
 
