@@ -1,6 +1,6 @@
 import datetime
+import random
 from Bot import Bot
-from Bot import db, cursor
 import discord.guild
 import discord
 import re
@@ -20,7 +20,6 @@ def main():
 
     @client.event
     async def on_member_join(member):
-        await add_to_ger_list(member)
         await member.send(f'Hi {member.name}')
         channel = get_channel()
         await channel.send(f'Hi {member}')
@@ -34,29 +33,35 @@ def main():
 
             elif message.content.startswith('!ger') or message.content.startswith('!пук'):  # Пук епт
                 await message.delete()
-                t = amia.ger_function(message, client.guilds, datetime.datetime.now())
-                if 'Идет' in t:
-                    await message.channel.send(t, delete_after=5)
+                random_user = random.choice(client.get_guild(message.guild.id).members)
+                while random_user == message.author:
+                    random_user = random.choice(client.get_guild(message.guild.id).members)
+                ger = amia.ger_function(message, datetime.datetime.now(), random_user)
+                if 'Идет' in ger:
+                    await message.channel.send(ger, delete_after=5)
                 else:
-                    await message.channel.send(t)
+                    await message.channel.send(ger)
 
             elif message.content.startswith('!ark') or message.content.startswith('!арк'):  # Ark епт
                 await message.delete()
-                tmp = amia.get_ark(amia.get_ark_rarity())
-                # 0 - character_id      1- name     2 - description_first_part      3 - description_sec_part
-                # 4 - position      5 - tags        6 - traits      7 - profession      8 - emoji       9 - rarity
-                embed = discord.Embed(color=0xff9900, title=tmp[1],
-                                      description=str(tmp[8]) * tmp[9],
-                                      url=f"https://aceship.github.io/AN-EN-Tags/akhrchars.html?opname={tmp[1]}")
-                embed.add_field(name='Description', value=f'{tmp[2]}\n{tmp[3]}', inline=False)
-                embed.add_field(name='Position', value=tmp[4])
-                embed.add_field(name='Tags', value=str(tmp[5]), inline=True)
-                line = re.sub('[<@.>/]', '', tmp[6])  # Delete all tags in line
-                embed.add_field(name='Traits', value=line, inline=False)
-                embed.set_thumbnail(url=tmp[7])
-                embed.set_image(url=f"https://aceship.github.io/AN-EN-Tags/img/characters/{tmp[0]}_1.png")
-                embed.set_footer(text=f'Requested by {message.author.name}')
-                await message.channel.send(embed=embed)
+                tmp = amia.get_ark(datetime.datetime.now(), message.author.id)
+                if 'Копим' in tmp:
+                    await message.channel.send(tmp)
+                else:
+                    # 0 - character_id      1- name     2 - description_first_part      3 - description_sec_part
+                    # 4 - position      5 - tags        6 - traits      7 - profession      8 - emoji       9 - rarity
+                    embed = discord.Embed(color=0xff9900, title=tmp[1],
+                                          description=str(tmp[8]) * tmp[9],
+                                          url=f"https://aceship.github.io/AN-EN-Tags/akhrchars.html?opname={tmp[1]}")
+                    embed.add_field(name='Description', value=f'{tmp[2]}\n{tmp[3]}', inline=False)
+                    embed.add_field(name='Position', value=tmp[4])
+                    embed.add_field(name='Tags', value=str(tmp[5]), inline=True)
+                    line = re.sub('[<@.>/]', '', tmp[6])  # Delete all tags in line
+                    embed.add_field(name='Traits', value=line, inline=False)
+                    embed.set_thumbnail(url=tmp[7])
+                    embed.set_image(url=f"https://aceship.github.io/AN-EN-Tags/img/characters/{tmp[0]}_1.png")
+                    embed.set_footer(text=f'Requested by {message.author.name}')
+                    await message.channel.send(embed=embed)
 
             elif message.content.startswith('!info'):  # Show bot info and description
                 embed = discord.Embed(color=0xff9900, title=amia.name,
@@ -71,13 +76,6 @@ def main():
                 embed.set_footer(text=f'Requested by {message.author.name}')
                 await message.channel.send(embed=embed, delete_after=15)
                 await message.delete()
-
-            elif message.content.startswith('!members'):  # Write all members to file
-                await message.delete()
-
-                for guild in client.guilds:
-                    amia.get_init_members_list(guild.members)
-                    # print(guild.member_count)
 
             elif message.content.startswith('!clear'):  # Clear command -> clear previous messages
                 await message.delete()
@@ -102,15 +100,6 @@ def get_channel():
         for i in guild.channels:
             if i.name == 'основной':
                 return i
-
-
-async def add_to_ger_list(member_name):  # Call when new user join server
-
-    cursor.execute(f"SELECT user_name FROM users_ger WHERE user_name == '{member_name}'")
-    if cursor.fetchone() is None:
-        cursor.execute("INSERT INTO users_ger VALUES ( ?,?)",
-                       (f"{member_name}", datetime.datetime(2020, 11, 11, 11, 11, 11, 111111)))
-    db.commit()
 
 
 if __name__ == '__main__':
