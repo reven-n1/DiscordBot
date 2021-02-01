@@ -191,7 +191,7 @@ class Bot:
             else:
                 cursor.execute(
                     f"SELECT operator_count FROM users_ark_collection WHERE user_id == '{author_id}' "
-                    f"AND operator_name == {rand_item_from_list[1]}")
+                    f"AND operator_name == '{rand_item_from_list[1]}'")
                 val = cursor.fetchone()
                 cursor.execute(f"UPDATE users_ark_collection SET operator_count = '{val[0] + 1}'"
                                f"WHERE user_id ='{author_id}'AND operator_name == '{rand_item_from_list[1]}'")
