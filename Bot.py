@@ -51,6 +51,24 @@ class Bot:
             out_str += f'{key} - {values}\n'
         return out_str
 
+    def get_ark_collection(self, collection_owner_id):
+        cursor.execute(f"SELECT rarirty, operator_name, operator_count FROM users_ark_collection "
+                       f"WHERE user_id == '{collection_owner_id}'")
+        res = sorted(cursor.fetchall())
+        out_list = []
+        prev_rar = 2
+        for item in res:
+            if prev_rar < item[0]:
+                out_list.append('')
+                out_list.append(f'{self.stars_0_5 * int(item[0])}')
+            elif prev_rar < item[0] == 6:
+                out_list.append('')
+                out_list.append(f'{self.stars_6 * int(item[0])}')
+
+            out_list.append(f'{item[1]} x{item[2]}')
+            prev_rar = item[0]
+        return out_list
+
     def ger_function(self, messege, tme, rndmemb):
 
         # ->>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
@@ -186,8 +204,8 @@ class Bot:
                 f"AND operator_name == '{rand_item_from_list[1]}'")
             res = cursor.fetchone()
             if res is None:
-                cursor.execute(f"INSERT INTO users_ark_collection  VALUES (?,?,?)",
-                               (f"{author_id}", rand_item_from_list[1], 1))
+                cursor.execute(f"INSERT INTO users_ark_collection  VALUES (?,?,?,?)",
+                               (f"{author_id}", rand_item_from_list[1], rand_item_from_list[9], 1))
             else:
                 cursor.execute(
                     f"SELECT operator_count FROM users_ark_collection WHERE user_id == '{author_id}' "

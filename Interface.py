@@ -77,6 +77,19 @@ def main():
                 await message.channel.send(embed=embed, delete_after=15)
                 await message.delete()
 
+            elif message.content.startswith('!m') or message.content.startswith('!майарк'):
+                # Show ark collection
+                embed = discord.Embed(color=0xff9900)
+                collection = amia.get_ark_collection(message.author.id)
+                if not collection:
+                    embed.add_field(name=f'{message.author.name} collection', value='Empty collection(((')
+                else:
+                    embed.add_field(name=f'{message.author.name} collection', value='\n'.join(collection))
+                embed.set_thumbnail(url=message.author.avatar_url)
+                embed.set_footer(text=f'Requested by {message.author.name}')
+                await message.channel.send(embed=embed)
+                await message.delete()
+
             elif message.content.startswith('!clear'):  # Clear command -> clear previous messages
                 await message.delete()
                 await message.channel.send(str(message.content))
