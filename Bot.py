@@ -52,7 +52,7 @@ class Bot:
         return out_str
 
     def get_ark_collection(self, collection_owner_id):
-        cursor.execute(f"SELECT rarirty, operator_name, operator_count FROM users_ark_collection "
+        cursor.execute(f"SELECT rarity, operator_name, operator_count FROM users_ark_collection "
                        f"WHERE user_id == '{collection_owner_id}'")
         res = sorted(cursor.fetchall())
         out_list = []
@@ -60,10 +60,10 @@ class Bot:
         for item in res:
             if prev_rar < item[0]:
                 out_list.append('')
-                out_list.append(f'{self.stars_0_5 * int(item[0])}')
+                out_list.append(f'{self.stars_0_5 * item[0]}')
             elif prev_rar < item[0] == 6:
                 out_list.append('')
-                out_list.append(f'{self.stars_6 * int(item[0])}')
+                out_list.append(f'{self.stars_6 * item[0]}')
 
             out_list.append(f'{item[1]} x{item[2]}')
             prev_rar = item[0]
@@ -116,6 +116,92 @@ class Bot:
                 return f'Идет зарядка жопы, осталось {sec[1]} сек'
             else:
                 return f'Идет зарядка жопы, осталось {hours} ч {minutes[1]} мин {sec[1]} сек'
+
+    @staticmethod
+    def get_barter_list(author_id):
+        cursor.execute(
+            f"SELECT rarity, operator_count, operator_name FROM users_ark_collection WHERE user_id == '{author_id}'"
+            f" AND operator_count > 5 ")
+        res = sorted(cursor.fetchall())
+        barter_list = []
+        for rarity, count, name in res:
+            if rarity < 6:
+                barter_list.append([rarity + 1, count // 5])
+            new_count = count % 2
+            if new_count == 0:
+                cursor.execute(
+                    f"DELETE FROM users_ark_collection WHERE user_id == '{author_id}' AND operator_count >= 5 ")
+                db.commit()
+            else:
+                cursor.execute(f"UPDATE users_ark_collection SET operator_count = '{new_count}'"
+                               f"WHERE user_id ='{author_id}'AND operator_name == '{name}'")
+                db.commit()
+        return barter_list
+
+    def ark_barter(self, barter_list, author_id):
+        for operators in barter_list:
+            for count in range(0, operators[1]):
+                rar = operators[0]
+                choice_list = {}
+                f = open('character_table.json', "rb")
+                json_data = json.loads(f.read())  # Извлекаем JSON
+                for line in json_data:
+                    tmp = json_data[str(line)]
+                    rarity = int(tmp['rarity']) + 1
+                    if rar == rarity and tmp['itemDesc'] is not None:  # to ignore magalan skills and other rarities
+                        profession = ''
+                        if tmp['profession'] == 'CASTER':
+                            profession = 'https://aceship.github.io/AN-EN-Tags/img/classes/class_caster.png'
+                        elif tmp['profession'] == 'SNIPER':
+                            profession = 'https://aceship.github.io/AN-EN-Tags/img/classes/class_sniper.png'
+                        elif tmp['profession'] == 'WARRIOR':
+                            profession = 'https://aceship.github.io/AN-EN-Tags/img/classes/class_guard.png'
+                        elif tmp['profession'] == 'PIONEER':
+                            profession = 'https://aceship.github.io/AN-EN-Tags/img/classes/class_vanguard.png'
+                        elif tmp['profession'] == 'SUPPORT':
+                            profession = 'https://aceship.github.io/AN-EN-Tags/img/classes/class_supporter.png'
+                        elif tmp['profession'] == 'MEDIC':
+                            profession = 'https://aceship.github.io/AN-EN-Tags/img/classes/class_medic.png'
+                        elif tmp['profession'] == 'SPECIAL':
+                            profession = 'https://aceship.github.io/AN-EN-Tags/img/classes/class_specialist.png'
+                        elif tmp['profession'] == 'TANK':
+                            profession = 'https://aceship.github.io/AN-EN-Tags/img/classes/class_defender.png'
+                        character_id = line
+                        name = tmp['name'].replace(' ', '_').replace("'", "")
+                        description_first_part = tmp['itemUsage']
+                        description_sec_part = tmp['itemDesc']
+                        position = tmp['position']
+                        tags = ', '.join(tmp['tagList'])
+                        traits = tmp['description']
+                        stars = ''
+                        if rarity == 6:
+                            stars = self.stars_6
+                        else:
+                            stars = self.stars_0_5
+                        choice_list[name] = character_id, name, description_first_part, description_sec_part, \
+                                            position, tags, traits, profession, stars, rarity
+
+                        f.close()
+                random_choice = random.choice(list(choice_list.values()))
+
+                print(random_choice[1])
+                cursor.execute(
+                    f"SELECT operator_count FROM users_ark_collection WHERE user_id == '{author_id}' "
+                    f"AND operator_name == '{random_choice[1]}'")
+                res = cursor.fetchone()
+                if res is None:
+                    cursor.execute(f"INSERT INTO users_ark_collection  VALUES (?,?,?,?)",
+                                   (f"{author_id}", random_choice[1], random_choice[9], 1))
+                else:
+                    cursor.execute(
+                        f"SELECT operator_count FROM users_ark_collection WHERE user_id == '{author_id}' "
+                        f"AND operator_name == '{random_choice[1]}'")
+                    val = cursor.fetchone()
+                    cursor.execute(f"UPDATE users_ark_collection SET operator_count = '{val[0] + 1}'"
+                                   f"WHERE user_id ='{author_id}'AND operator_name == '{random_choice[1]}'")
+                    db.commit()
+                db.commit()
+                yield random_choice
 
     def get_ark_rarity(self):
 
@@ -178,7 +264,7 @@ class Bot:
                     elif tmp['profession'] == 'TANK':
                         profession = 'https://aceship.github.io/AN-EN-Tags/img/classes/class_defender.png'
                     character_id = line
-                    name = tmp['name']
+                    name = tmp['name'].replace(' ', '_').replace("'", "")
                     description_first_part = tmp['itemUsage']
                     description_sec_part = tmp['itemDesc']
                     position = tmp['position']

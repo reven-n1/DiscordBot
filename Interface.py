@@ -77,18 +77,48 @@ def main():
                 await message.channel.send(embed=embed, delete_after=15)
                 await message.delete()
 
-            elif message.content.startswith('!m') or message.content.startswith('!майарк'):
+            elif message.content.startswith('!myark') or message.content.startswith('!майарк'):
                 # Show ark collection
                 embed = discord.Embed(color=0xff9900)
                 collection = amia.get_ark_collection(message.author.id)
                 if not collection:
                     embed.add_field(name=f'{message.author.name} collection', value='Empty collection(((')
                 else:
+                    print(len(collection))
                     embed.add_field(name=f'{message.author.name} collection', value='\n'.join(collection))
                 embed.set_thumbnail(url=message.author.avatar_url)
                 embed.set_footer(text=f'Requested by {message.author.name}')
                 await message.channel.send(embed=embed)
                 await message.delete()
+
+            elif message.content.startswith('!barter') or message.content.startswith('!обмен'):
+                await message.delete()
+                barter_list = amia.get_barter_list(message.author.id)
+                if barter_list:
+                    barter = amia.ark_barter(barter_list, message.author.id)
+                    tmp = next(barter)
+                    try:
+                        while tmp:
+                            # 0 - character_id      1- name     2 - description_first_part      3 - description_sec_part
+                            # 4 - position      5 - tags        6 - traits      7 - profession      8 - emoji       9 - rarity
+                            embed = discord.Embed(color=0xff9900, title=tmp[1],
+                                                  description=str(tmp[8]) * tmp[9],
+                                                  url=f"https://aceship.github.io/AN-EN-Tags/akhrchars.html?opname={tmp[1]}")
+                            embed.add_field(name='Description', value=f'{tmp[2]}\n{tmp[3]}', inline=False)
+                            embed.add_field(name='Position', value=tmp[4])
+                            embed.add_field(name='Tags', value=str(tmp[5]), inline=True)
+                            line = re.sub('[<@.>/]', '', tmp[6])  # Delete all tags in line
+                            embed.add_field(name='Traits', value=line, inline=False)
+                            embed.set_thumbnail(url=tmp[7])
+                            embed.set_image(url=f"https://aceship.github.io/AN-EN-Tags/img/characters/{tmp[0]}_1.png")
+                            embed.set_footer(text=f'Requested by {message.author.name}')
+                            await message.channel.send(embed=embed)
+                            tmp = next(barter)
+                    except StopIteration:
+                        pass
+
+                else:
+                    await message.channel.send('Нет операторов на обмен', delete_after=10)
 
             elif message.content.startswith('!clear'):  # Clear command -> clear previous messages
                 await message.delete()
