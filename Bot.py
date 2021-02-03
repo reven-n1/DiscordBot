@@ -315,3 +315,4 @@ class Bot:
                 return f'Копим орундум, осталось {sec[1]} сек'
             else:
                 return f'Копим орундум, осталось {hours} ч {minutes[1]} мин {sec[1]} сек'
+

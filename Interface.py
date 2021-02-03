@@ -1,28 +1,91 @@
+import asyncio
 import datetime
 import random
+from asyncio import tasks
+from discord.ext import tasks, commands
 from Bot import Bot
+import youtube_dl
 import discord.guild
 import discord
 import re
 
+youtube_dl.utils.bug_reports_message = lambda: ''
+
+ytdl_format_options = {
+    'format': 'bestaudio/best',
+    'outtmpl': '%(extractor)s-%(id)s-%(title)s.%(ext)s',
+    'restrictfilenames': True,
+    'noplaylist': True,
+    'nocheckcertificate': True,
+    'ignoreerrors': False,
+    'logtostderr': False,
+    'quiet': True,
+    'no_warnings': True,
+    'default_search': 'auto',
+    'source_address': '0.0.0.0'  # bind to ipv4 since ipv6 addresses cause issues sometimes
+}
+
+ffmpeg_options = {
+    'options': '-vn'
+}
+
+ytdl = youtube_dl.YoutubeDL(ytdl_format_options)
+
+
+class YTDLSource(discord.PCMVolumeTransformer):
+    def __init__(self, source, *, data, volume=0.5):
+        super().__init__(source, volume)
+
+        self.data = data
+
+        self.title = data.get('title')
+        self.url = data.get('url')
+
+    @classmethod
+    async def from_url(cls, url, *, loop=None, stream=False):
+        loop = loop or asyncio.get_event_loop()
+        data = await loop.run_in_executor(None, lambda: ytdl.extract_info(url, download=not stream))
+
+        if 'entries' in data:
+            # take first item from a playlist
+            data = data['entries'][0]
+
+        filename = data['url'] if stream else ytdl.prepare_filename(data)
+        return cls(discord.FFmpegPCMAudio(filename, **ffmpeg_options), data=data)
+
+
+client = commands.Bot(command_prefix='?')
+
+status = ['Jamming out to music!', 'Eating!', 'Sleeping!']
+queue = []
+
+
 intents = discord.Intents.default()
 intents.members = True
 
+
 client = discord.Client(intents=intents)
+
 
 
 def main():
     amia = Bot()
 
+
     @client.event
     async def on_ready():
         print(f'{client.user.name} - Logged')
+        set_status.start()
 
     @client.event
     async def on_member_join(member):
         await member.send(f'Hi {member.name}')
         channel = get_channel()
         await channel.send(f'Hi {member}')
+
+
+
+    ########################################################################################
 
     @client.event
     async def on_message(message):
@@ -84,7 +147,6 @@ def main():
                 if not collection:
                     embed.add_field(name=f'{message.author.name} collection', value='Empty collection(((')
                 else:
-                    print(len(collection))
                     embed.add_field(name=f'{message.author.name} collection', value='\n'.join(collection))
                 embed.set_thumbnail(url=message.author.avatar_url)
                 embed.set_footer(text=f'Requested by {message.author.name}')
@@ -116,12 +178,56 @@ def main():
                             tmp = next(barter)
                     except StopIteration:
                         pass
-
                 else:
-                    await message.channel.send('Нет операторов на обмен', delete_after=10)
+                    await message.channel.send('Нет операторов на обмен')
+
+            elif message.content.startswith('!join') or message.content.startswith('!залетай'):
+                await message.delete()
+                voice_channel = message.author.voice.channel
+                await voice_channel.connect()
+
+            elif message.content.startswith('!queue'):
+                queue.append(message.content.split()[1])
+                print(queue)
+
+            elif message.content.startswith('!play') or message.content.startswith('!врубай'):
+                server = message.guild
+                voice_channel = server.voice_client
+                player = await YTDLSource.from_url(queue[0], loop=client.loop)
+                voice_channel.play(player, after=lambda e: print('Player error: %s' % e) if e else None)
+                await message.channel.send(f'**Now playing:** {player.title}')
+                del (queue[0])
+                print(queue)
+
+            elif message.content.startswith('!pause') or message.content.startswith('!пауза'):
+                server = message.guild
+                voice_channel = server.voice_client
+                voice_channel.pause()
+                await message.delete()
+
+            elif message.content.startswith('!stop') or message.content.startswith('!стоп'):
+                server = message.guild
+                voice_channel = server.voice_client
+                voice_channel.stop()
+                await message.delete()
+
+            elif message.content.startswith('!view') or message.content.startswith('!список'):
+                await message.channel.send(f'Your queue is now `{queue}!`')
+                await message.delete()
+
+            elif message.content.startswith('!resume') or message.content.startswith('!продолжить'):
+                server = message.guild
+                voice_channel = server.voice_client
+                voice_channel.resume()
+                await message.delete()
+
+            elif message.content.startswith('!stop') or message.content.startswith('!вырубай'):
+                await message.delete()
+
+                voice_client = client.get_guild(message.guild.id).voice_client
+                await voice_client.disconnect()
 
             elif message.content.startswith('!clear'):  # Clear command -> clear previous messages
-                await message.delete()
                 await message.channel.send(str(message.content))
                 tmp = message.content.split()
                 if len(tmp) == 2 and tmp[1].isdigit():
@@ -135,7 +241,12 @@ def main():
                 await message.channel.send(f'{message.content} - unknown command', delete_after=10)
                 await message.channel.send('Use "!info" to see a list of commands', delete_after=10)
 
+    @tasks.loop(seconds=5)
+    async def set_status():
+        await client.change_presence(activity=discord.Game(random.choice(status)))
+
     client.run(amia.token)  # Run bot
+
 
 
 def get_channel():
