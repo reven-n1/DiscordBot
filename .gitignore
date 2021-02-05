@@ -133,3 +133,4 @@ dmypy.json
 
 ffmpeg.exe
 *.webm
+*.m4a
