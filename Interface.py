@@ -32,8 +32,10 @@ ffmpeg_options = {
 
 ytdl = youtube_dl.YoutubeDL(ytdl_format_options)
 
-is_pause = False
+serevers_queue_list = {655431351209689149: ['https://www.youtube.com/watch?v=421y0BbnVdQ&ab_channel=erfsfsdf!'],
+                       659869299816529920: ['https://www.youtube.com/watch?v=421y0BbnVdQ&ab_channel=erfsfsdf!']}
 
+is_pause = False
 
 
 class YTDLSource(discord.PCMVolumeTransformer):
@@ -45,20 +47,31 @@ class YTDLSource(discord.PCMVolumeTransformer):
         self.url = data.get('url')
 
     @classmethod
-    async def from_url(cls, url, *, loop=None, stream=False):
+    async def from_url(cls, guild_id, url, *, loop=None, stream=False):
         loop = loop or asyncio.get_event_loop()
         data = await loop.run_in_executor(None, lambda: ytdl.extract_info(url, download=not stream))
 
         if 'entries' in data:
             # take first item from a playlist
             data = data['entries'][0]
+        #
+        # for item in data:
+        #     print(item, data[item])
 
         filename = data['url'] if stream else ytdl.prepare_filename(data)
+
+        for file in os.listdir(r"F:\Studying\DiscordBotAmia"):
+            if data['id'] in file:
+                old_name = os.path.basename(file)
+                os.rename(old_name, old_name.replace(str(data['id']), str(guild_id)))
+
+        filename = filename.replace(data['id'], str(guild_id))
         return cls(discord.FFmpegPCMAudio(filename, **ffmpeg_options), data=data)
 
 
 status = ['Warface', 'Жизнь', 'твоего батю', 'человека', 'Detroit: Become Human', 'RAID: Shadow Legends']
-queue = ['https://www.youtube.com/watch?v=421y0BbnVdQ&ab_channel=erfsfsdf!!', 'https://www.youtube.com/watch?v=r2Ig85ycGKQ&ab_channel=NoCopyrightSounds']
+queue = ['https://www.youtube.com/watch?v=421y0BbnVdQ&ab_channel=erfsfsdf!!',
+         'https://www.youtube.com/watch?v=r2Ig85ycGKQ&ab_channel=NoCopyrightSounds']
 
 intents = discord.Intents.default()
 intents.members = True
@@ -176,14 +189,22 @@ def main():
                     await message.channel.send('Нет операторов на обмен')
 
             elif message.content.startswith('!add'):
-                queue.append(message.content.split()[1])
+                try:
+                    serevers_queue_list[message.guild.id].append(message.content.split()[1])
+                except:
+                    serevers_queue_list[message.guild.id] = [message.content.split()[1]]
                 await message.delete()
                 await message.channel.send(f'Added to queue - `{message.content.split()[1]}!`')
 
             elif message.content.startswith('!play') or message.content.startswith('!врубай'):
                 voice_channel = message.author.voice.channel
+                q = None
+                try:
+                    q = serevers_queue_list[message.guild.id]
+                except:
+                    q[message.guild.id] = []
                 await voice_channel.connect()
-                await play(message)
+                await play(message, q, message.guild.id)
 
             elif message.content.startswith('!pause'):
                 server = message.guild
@@ -229,14 +250,16 @@ def get_channel():
                 return i
 
 
-async def play(message):
+async def play(message, q, guild_id):
     try:
-        tmp = queue[0]
-        del queue[0]
+        tmp = q[0]
+        del q[0]
         server = message.guild
         voice_channel = server.voice_client
-        player = await YTDLSource.from_url(tmp, loop=client.loop)
+        player = await YTDLSource.from_url(guild_id, tmp, loop=client.loop)
         voice_channel.play(player)
+        # for k in player.data:
+        #     print(f"{k, player.data[k]}")
 
         await message.channel.send(f'**Now playing:** {player.title}')
 
@@ -247,10 +270,10 @@ async def play(message):
                 pass
             elif not voice_channel.is_playing() and not is_pause:
                 for file in os.listdir(r"F:\Studying\DiscordBotAmia"):
-                    if file.endswith(".m4a") or file.endswith(".webm"):
+                    if str(guild_id) in file:
                         file_name = file
                         os.remove(file_name)
-                await play(message)
+                await play(message, q, guild_id)
                 break
             await asyncio.sleep(3)
     except IndexError:

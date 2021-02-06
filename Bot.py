@@ -14,7 +14,7 @@ class Bot:
         self.token = token
         self.name = 'Amia(bot)'
         self.bot_img = 'BotImg.png'
-        self.bot_channels = ['arkbot', 'bots']
+        self.bot_channels = ['arkbot', 'bots', 'android']
         self.delete_quantity = 100
         self.ger_self_chance = 10
         self.ger_recoil = 86400
