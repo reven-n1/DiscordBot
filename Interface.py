@@ -72,8 +72,6 @@ class YTDLSource(discord.PCMVolumeTransformer):
 #  Bot game statuses------------------------------------------------------------------------------->
 status = ['Warface', 'Жизнь', 'твоего батю', 'человека', 'Detroit: Become Human', 'RAID: Shadow Legends']
 
-# queue = ['https://www.youtube.com/watch?v=421y0BbnVdQ&ab_channel=erfsfsdf!!',
-#          'https://www.youtube.com/watch?v=r2Ig85ycGKQ&ab_channel=NoCopyrightSounds']
 
 intents = discord.Intents.default()
 intents.members = True
@@ -184,14 +182,17 @@ def main():
 
             #  Start's player ---------------------------------------------------------------->
             elif message.content.startswith('!play') or message.content.startswith('!врубай'):
-                voice_channel = message.author.voice.channel
-                q = None
                 try:
-                    q = serevers_queue_list[message.guild.id]
+                    voice_channel = message.author.voice.channel
+                    q = None
+                    try:
+                        q = serevers_queue_list[message.guild.id]
+                    except:
+                        q[message.guild.id] = []
+                    await voice_channel.connect()
+                    await play(message, q, message.guild.id)
                 except:
-                    q[message.guild.id] = []
-                await voice_channel.connect()
-                await play(message, q, message.guild.id)
+                    await message.channel.send("***You aren't in the voice channel***")
             #  ------------------------------------------------------------------------------->
 
             #  Music pause ------------------------------------------------------------------->
