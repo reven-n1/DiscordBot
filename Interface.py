@@ -32,8 +32,11 @@ ffmpeg_options = {
 
 ytdl = youtube_dl.YoutubeDL(ytdl_format_options)
 
-serevers_queue_list = {655431351209689149: ['https://www.youtube.com/watch?v=421y0BbnVdQ&ab_channel=erfsfsdf!'],
-                       659869299816529920: ['https://www.youtube.com/watch?v=421y0BbnVdQ&ab_channel=erfsfsdf!']}
+#  Music default queue ---------------------------------------------------------------------------->
+serevers_queue_list = {655431351209689149: ['https://www.youtube.com/watch?v=421y0BbnVdQ&ab_channel=erfsfsdf!',
+                                            'https://www.youtube.com/watch?v=M4iKxvfWdnM&ab_channel=K4KTUS'],
+                       659869299816529920: ['https://www.youtube.com/watch?v=421y0BbnVdQ&ab_channel=erfsfsdf!',
+                                            'https://www.youtube.com/watch?v=M4iKxvfWdnM&ab_channel=K4KTUS']}
 
 is_pause = False
 
@@ -54,9 +57,6 @@ class YTDLSource(discord.PCMVolumeTransformer):
         if 'entries' in data:
             # take first item from a playlist
             data = data['entries'][0]
-        #
-        # for item in data:
-        #     print(item, data[item])
 
         filename = data['url'] if stream else ytdl.prepare_filename(data)
 
@@ -69,13 +69,14 @@ class YTDLSource(discord.PCMVolumeTransformer):
         return cls(discord.FFmpegPCMAudio(filename, **ffmpeg_options), data=data)
 
 
+#  Bot game statuses------------------------------------------------------------------------------->
 status = ['Warface', 'Жизнь', 'твоего батю', 'человека', 'Detroit: Become Human', 'RAID: Shadow Legends']
-queue = ['https://www.youtube.com/watch?v=421y0BbnVdQ&ab_channel=erfsfsdf!!',
-         'https://www.youtube.com/watch?v=r2Ig85ycGKQ&ab_channel=NoCopyrightSounds']
+
+# queue = ['https://www.youtube.com/watch?v=421y0BbnVdQ&ab_channel=erfsfsdf!!',
+#          'https://www.youtube.com/watch?v=r2Ig85ycGKQ&ab_channel=NoCopyrightSounds']
 
 intents = discord.Intents.default()
 intents.members = True
-
 client = discord.Client(intents=intents)
 
 
@@ -101,6 +102,7 @@ def main():
             if message.author == client.user:
                 return
 
+            # Пердит в рандомного члена канала(можно и обосраться) --------------------------->
             elif message.content.startswith('!ger') or message.content.startswith('!пук'):  # Пук епт
                 await message.delete()
                 random_user = random.choice(client.get_guild(message.guild.id).members)
@@ -111,29 +113,21 @@ def main():
                     await message.channel.send(ger, delete_after=5)
                 else:
                     await message.channel.send(ger)
+            #  ------------------------------------------------------------------------------->
 
-            elif message.content.startswith('!ark') or message.content.startswith('!арк'):  # Ark епт
+            # Gives 1 random character ------------------------------------------------------->
+            elif message.content.startswith('!ark') or message.content.startswith('!арк'):
                 await message.delete()
                 tmp = amia.get_ark(datetime.datetime.now(), message.author.id)
                 if 'Копим' in tmp:
                     await message.channel.send(tmp)
                 else:
-                    # 0 - character_id      1- name     2 - description_first_part      3 - description_sec_part
-                    # 4 - position      5 - tags        6 - traits      7 - profession      8 - emoji       9 - rarity
-                    embed = discord.Embed(color=0xff9900, title=tmp[1],
-                                          description=str(tmp[8]) * tmp[9],
-                                          url=f"https://aceship.github.io/AN-EN-Tags/akhrchars.html?opname={tmp[1]}")
-                    embed.add_field(name='Description', value=f'{tmp[2]}\n{tmp[3]}', inline=False)
-                    embed.add_field(name='Position', value=tmp[4])
-                    embed.add_field(name='Tags', value=str(tmp[5]), inline=True)
-                    line = re.sub('[<@.>/]', '', tmp[6])  # Delete all tags in line
-                    embed.add_field(name='Traits', value=line, inline=False)
-                    embed.set_thumbnail(url=tmp[7])
-                    embed.set_image(url=f"https://aceship.github.io/AN-EN-Tags/img/characters/{tmp[0]}_1.png")
-                    embed.set_footer(text=f'Requested by {message.author.name}')
-                    await message.channel.send(embed=embed)
+                    await ark_embed(tmp, message)
+            #  ------------------------------------------------------------------------------->
 
-            elif message.content.startswith('!info'):  # Show bot info and description
+            # Show bot info and commands with description ------------------------------------>
+            elif message.content.startswith('!info'):
+                await message.delete()
                 embed = discord.Embed(color=0xff9900, title=amia.name,
                                       url=f"https://www.youtube.com/watch?v=X5ULmETDiXI")
                 embed.add_field(name='Description', value=amia.bot_info['info'], inline=False)
@@ -145,10 +139,10 @@ def main():
                 embed.set_image(url="https://aceship.github.io/AN-EN-Tags/img/characters/char_002_amiya_epoque%234.png")
                 embed.set_footer(text=f'Requested by {message.author.name}')
                 await message.channel.send(embed=embed, delete_after=30)
-                await message.delete()
+            #  ------------------------------------------------------------------------------->
 
+            # Show ark collection ------------------------------------------------------------>
             elif message.content.startswith('!myark') or message.content.startswith('!майарк'):
-                # Show ark collection
                 embed = discord.Embed(color=0xff9900)
                 collection = amia.get_ark_collection(message.author.id)
                 if not collection:
@@ -159,7 +153,9 @@ def main():
                 embed.set_footer(text=f'Requested by {message.author.name}')
                 await message.channel.send(embed=embed)
                 await message.delete()
+            #  ------------------------------------------------------------------------------->
 
+            #  Changes 5 identical characters to 1 higher grade ------------------------------>
             elif message.content.startswith('!barter') or message.content.startswith('!обмен'):
                 await message.delete()
                 barter_list = amia.get_barter_list(message.author.id)
@@ -168,26 +164,15 @@ def main():
                     tmp = next(barter)
                     try:
                         while tmp:
-                            # 0 - character_id      1- name     2 - description_first_part      3 - description_sec_part
-                            # 4 - position      5 - tags        6 - traits      7 - profession      8 - emoji       9 - rarity
-                            embed = discord.Embed(color=0xff9900, title=tmp[1],
-                                                  description=str(tmp[8]) * tmp[9],
-                                                  url=f"https://aceship.github.io/AN-EN-Tags/akhrchars.html?opname={tmp[1]}")
-                            embed.add_field(name='Description', value=f'{tmp[2]}\n{tmp[3]}', inline=False)
-                            embed.add_field(name='Position', value=tmp[4])
-                            embed.add_field(name='Tags', value=str(tmp[5]), inline=True)
-                            line = re.sub('[<@.>/]', '', tmp[6])  # Delete all tags in line
-                            embed.add_field(name='Traits', value=line, inline=False)
-                            embed.set_thumbnail(url=tmp[7])
-                            embed.set_image(url=f"https://aceship.github.io/AN-EN-Tags/img/characters/{tmp[0]}_1.png")
-                            embed.set_footer(text=f'Requested by {message.author.name}')
-                            await message.channel.send(embed=embed)
+                            await ark_embed(tmp, message)
                             tmp = next(barter)
                     except StopIteration:
                         pass
                 else:
                     await message.channel.send('Нет операторов на обмен')
+            #  ------------------------------------------------------------------------------->
 
+            #  Add track to server queue ----------------------------------------------------->
             elif message.content.startswith('!add'):
                 try:
                     serevers_queue_list[message.guild.id].append(message.content.split()[1])
@@ -195,7 +180,9 @@ def main():
                     serevers_queue_list[message.guild.id] = [message.content.split()[1]]
                 await message.delete()
                 await message.channel.send(f'Added to queue - `{message.content.split()[1]}!`')
+            #  ------------------------------------------------------------------------------->
 
+            #  Start's player ---------------------------------------------------------------->
             elif message.content.startswith('!play') or message.content.startswith('!врубай'):
                 voice_channel = message.author.voice.channel
                 q = None
@@ -205,79 +192,144 @@ def main():
                     q[message.guild.id] = []
                 await voice_channel.connect()
                 await play(message, q, message.guild.id)
+            #  ------------------------------------------------------------------------------->
 
-            elif message.content.startswith('!pause'):
+            #  Music pause ------------------------------------------------------------------->
+            elif message.content.startswith('!pause') or message.content.startswith('!пауза'):
                 server = message.guild
                 voice_channel = server.voice_client
                 voice_channel.pause()
                 is_pause = True
+            #  ------------------------------------------------------------------------------->
 
-            elif message.content.startswith('!resume'):
+            #  Stop's player ----------------------------------------------------------------->
+            elif message.content.startswith('!stop') or message.content.startswith('!тормози'):
+                server = message.guild
+                voice_channel = server.voice_client
+                voice_channel.stop()
+            #  ------------------------------------------------------------------------------->
+
+            #  Music resume ------------------------------------------------------------------>
+            elif message.content.startswith('!resume') or message.content.startswith('!продолжай'):
                 server = message.guild
                 voice_channel = server.voice_client
                 voice_channel.resume()
                 is_pause = False
+            #  ------------------------------------------------------------------------------->
 
+            #  Start's next track ------------------------------------------------------------>
+            elif message.content.startswith('!next') or message.content.startswith('!следующий'):
+                server = message.guild
+                voice_channel = server.voice_client
+                q = None
+                try:
+                    q = serevers_queue_list[message.guild.id]
+                except:
+                    q[message.guild.id] = []
+                voice_channel.stop()
+                await play(message, q, message.guild.id)
+            #  ------------------------------------------------------------------------------->
+
+            # bot stop playing music and leaves form channel --------------------------------->
             elif message.content.startswith('!leave') or message.content.startswith('!вырубай'):
                 await message.delete()
                 voice_client = client.get_guild(message.guild.id).voice_client
+                voice_client.stop()
                 await voice_client.disconnect()
+                await asyncio.sleep(3)
+                await clear_from_music(message.guild.id)
+            #  ------------------------------------------------------------------------------->
 
+            # Clear chat messages ------------------------------------------------------------>
             elif message.content.startswith('!clear'):  # Clear command -> clear previous messages
                 tmp = message.content.split()
                 if len(tmp) == 2 and tmp[1].isdigit():
                     await message.channel.purge(limit=int(message.content.split()[1]))
                 else:
                     await message.channel.purge(limit=amia.delete_quantity)
+            #  ------------------------------------------------------------------------------->
 
+            # If unknown command -> show message then delete it ------------------------------>
             elif message.content.startswith('!') and message.content not in amia.bot_commands:
-                # If unknown command -> show message then delete it
                 await message.delete()
                 await message.channel.send(f'{message.content} - unknown command', delete_after=10)
                 await message.channel.send('Use "!info" to see a list of commands', delete_after=10)
+            #  ------------------------------------------------------------------------------->
 
-    @tasks.loop(seconds=5)
+    @tasks.loop(seconds=5)  # Set bot activity
     async def set_status():
         await client.change_presence(activity=discord.Game(random.choice(status)))
 
     client.run(amia.token)  # Run bot
 
 
-def get_channel():
+async def get_channel():  # Return channel(переделать!!!!!!!!!!!!!!!)
     for guild in client.guilds:
         for i in guild.channels:
             if i.name == 'основной':
-                return i
+                await i
 
 
+#  Music player ----------------------->
 async def play(message, q, guild_id):
     try:
-        tmp = q[0]
+        tmp = q[0]  # Link to YouTube video
         del q[0]
         server = message.guild
         voice_channel = server.voice_client
         player = await YTDLSource.from_url(guild_id, tmp, loop=client.loop)
         voice_channel.play(player)
-        # for k in player.data:
-        #     print(f"{k, player.data[k]}")
+        await music_embed(message, tmp, player.title)
 
-        await message.channel.send(f'**Now playing:** {player.title}')
-
-        while True:
+        while True:  # Check if track is on pause or it's over
             global is_pause
-
             if not voice_channel.is_playing() and is_pause:
                 pass
-            elif not voice_channel.is_playing() and not is_pause:
-                for file in os.listdir(r"F:\Studying\DiscordBotAmia"):
-                    if str(guild_id) in file:
-                        file_name = file
-                        os.remove(file_name)
+            elif not voice_channel.is_playing() and not is_pause:  # If  track is over -> delete it and start new
+                await clear_from_music(guild_id)
                 await play(message, q, guild_id)
                 break
             await asyncio.sleep(3)
     except IndexError:
-        await message.channel.send('End')
+        await message.channel.send('Queue is empty')
+
+
+#  Set ark info to embed ----------->
+async def ark_embed(tmp, message):
+    # 0 - character_id      1- name     2 - description_first_part      3 - description_sec_part
+    # 4 - position      5 - tags        6 - traits      7 - profession      8 - emoji       9 - rarity
+    embed = discord.Embed(color=0xff9900, title=tmp[1],
+                          description=str(tmp[8]) * tmp[9],
+                          url=f"https://aceship.github.io/AN-EN-Tags/akhrchars.html?opname={tmp[1]}")
+    embed.add_field(name='Description', value=f'{tmp[2]}\n{tmp[3]}', inline=False)
+    embed.add_field(name='Position', value=tmp[4])
+    embed.add_field(name='Tags', value=str(tmp[5]), inline=True)
+    line = re.sub('[<@.>/]', '', tmp[6])  # Delete all tags in line
+    embed.add_field(name='Traits', value=line, inline=False)
+    embed.set_thumbnail(url=tmp[7])
+    embed.set_image(url=f"https://aceship.github.io/AN-EN-Tags/img/characters/{tmp[0]}_1.png")
+    embed.set_footer(text=f'Requested by {message.author.name}')
+    await message.channel.send(embed=embed)
+
+
+#  Music player control embed ---------------------->
+async def music_embed(message, tmp, player_title):
+    embed = discord.Embed(color=0xff9900, title=f'**Now playing:**   {player_title}')
+    embed.add_field(name="YouTube", value=tmp)
+    embed.set_footer(text=f'Requested by {message.author.name}')
+    emb = await message.channel.send(embed=embed)
+    await emb.add_reaction('▶')
+    await emb.add_reaction('⏸')
+    await emb.add_reaction('⏹')
+    await emb.add_reaction('⏩')
+
+
+#  Delete useless tracks -------------->
+async def clear_from_music(guild_id):
+    for file in os.listdir(r"F:\Studying\DiscordBotAmia"):
+        if str(guild_id) in file:
+            file_name = file
+            os.remove(file_name)
 
 
 if __name__ == '__main__':
