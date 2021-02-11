@@ -39,6 +39,7 @@ serevers_queue_list = {655431351209689149: ['https://www.youtube.com/watch?v=421
                                             'https://www.youtube.com/watch?v=M4iKxvfWdnM&ab_channel=K4KTUS']}
 
 is_pause = False
+embed_id = None
 
 
 class YTDLSource(discord.PCMVolumeTransformer):
@@ -72,7 +73,6 @@ class YTDLSource(discord.PCMVolumeTransformer):
 #  Bot game statuses------------------------------------------------------------------------------->
 status = ['Warface', 'Жизнь', 'твоего батю', 'человека', 'Detroit: Become Human', 'RAID: Shadow Legends']
 
-
 intents = discord.Intents.default()
 intents.members = True
 client = discord.Client(intents=intents)
@@ -90,7 +90,7 @@ def main():
     async def on_member_join(member):
         await member.send(f'Hi {member.name}')
         channel = get_channel()
-        await channel.send(f'Hi {member}')
+        await channel.send(f'Hi {member.name}')
 
     @client.event
     async def on_message(message):
@@ -99,6 +99,22 @@ def main():
 
             if message.author == client.user:
                 return
+
+            elif message.content.startswith('!ass'):
+                mes = await message.channel.fetch_message(809438277571838012)
+                react = iter(mes.reactions)
+                play_statement = next(react).count
+                pause_count = next(react).count
+                if play_statement %2 == 0:
+                    pass
+
+                # stop_count = next(react).count
+                # next_count = next(react).count
+                # prev_count = next(react).count
+
+
+
+
 
             # Пердит в рандомного члена канала(можно и обосраться) --------------------------->
             elif message.content.startswith('!ger') or message.content.startswith('!пук'):  # Пук епт
@@ -174,7 +190,7 @@ def main():
             elif message.content.startswith('!add'):
                 try:
                     serevers_queue_list[message.guild.id].append(message.content.split()[1])
-                except:
+                except AttributeError:
                     serevers_queue_list[message.guild.id] = [message.content.split()[1]]
                 await message.delete()
                 await message.channel.send(f'Added to queue - `{message.content.split()[1]}!`')
@@ -187,11 +203,11 @@ def main():
                     q = None
                     try:
                         q = serevers_queue_list[message.guild.id]
-                    except:
+                    except KeyError:
                         q[message.guild.id] = []
                     await voice_channel.connect()
                     await play(message, q, message.guild.id)
-                except:
+                except AttributeError:
                     await message.channel.send("***You aren't in the voice channel***")
             #  ------------------------------------------------------------------------------->
 
@@ -225,7 +241,7 @@ def main():
                 q = None
                 try:
                     q = serevers_queue_list[message.guild.id]
-                except:
+                except KeyError:
                     q[message.guild.id] = []
                 voice_channel.stop()
                 await play(message, q, message.guild.id)
@@ -281,6 +297,7 @@ async def play(message, q, guild_id):
         player = await YTDLSource.from_url(guild_id, tmp, loop=client.loop)
         voice_channel.play(player)
         await music_embed(message, tmp, player.title)
+        await music_status(voice_channel, message)
 
         while True:  # Check if track is on pause or it's over
             global is_pause
@@ -293,6 +310,24 @@ async def play(message, q, guild_id):
             await asyncio.sleep(3)
     except IndexError:
         await message.channel.send('Queue is empty')
+
+
+#  Check embed reactions --------------------->
+async def music_status(voice_channel, message):
+    global is_pause
+    global embed_id
+    while True:
+        if not voice_channel.is_playing() and not is_pause:
+            break
+        mes = await message.channel.fetch_message(embed_id)
+        pause_count = mes.reactions[0].count
+        if pause_count % 2 == 0:
+            voice_channel.pause()
+            is_pause = True
+        else:
+            voice_channel.resume()
+            is_pause = False
+        await asyncio.sleep(2)
 
 
 #  Set ark info to embed ----------->
@@ -319,10 +354,12 @@ async def music_embed(message, tmp, player_title):
     embed.add_field(name="YouTube", value=tmp)
     embed.set_footer(text=f'Requested by {message.author.name}')
     emb = await message.channel.send(embed=embed)
-    await emb.add_reaction('▶')
+    # await emb.add_reaction('▶')
     await emb.add_reaction('⏸')
     await emb.add_reaction('⏹')
     await emb.add_reaction('⏩')
+    global embed_id
+    embed_id = emb.id
 
 
 #  Delete useless tracks -------------->
