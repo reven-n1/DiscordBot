@@ -184,7 +184,6 @@ class Bot:
                         f.close()
                 random_choice = random.choice(list(choice_list.values()))
 
-                print(random_choice[1])
                 cursor.execute(
                     f"SELECT operator_count FROM users_ark_collection WHERE user_id == '{author_id}' "
                     f"AND operator_name == '{random_choice[1]}'")

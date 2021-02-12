@@ -100,22 +100,6 @@ def main():
             if message.author == client.user:
                 return
 
-            elif message.content.startswith('!ass'):
-                mes = await message.channel.fetch_message(809438277571838012)
-                react = iter(mes.reactions)
-                play_statement = next(react).count
-                pause_count = next(react).count
-                if play_statement %2 == 0:
-                    pass
-
-                # stop_count = next(react).count
-                # next_count = next(react).count
-                # prev_count = next(react).count
-
-
-
-
-
             # Пердит в рандомного члена канала(можно и обосраться) --------------------------->
             elif message.content.startswith('!ger') or message.content.startswith('!пук'):  # Пук епт
                 await message.delete()
@@ -124,7 +108,7 @@ def main():
                     random_user = random.choice(client.get_guild(message.guild.id).members)
                 ger = amia.ger_function(message, datetime.datetime.now(), random_user)
                 if 'Идет' in ger:
-                    await message.channel.send(ger, delete_after=5)
+                    await message.channel.send(ger, delete_after=7)
                 else:
                     await message.channel.send(ger)
             #  ------------------------------------------------------------------------------->
@@ -134,7 +118,7 @@ def main():
                 await message.delete()
                 tmp = amia.get_ark(datetime.datetime.now(), message.author.id)
                 if 'Копим' in tmp:
-                    await message.channel.send(tmp)
+                    await message.channel.send(tmp, delete_after=7)
                 else:
                     await ark_embed(tmp, message)
             #  ------------------------------------------------------------------------------->
@@ -318,15 +302,32 @@ async def music_status(voice_channel, message):
     global embed_id
     while True:
         if not voice_channel.is_playing() and not is_pause:
-            break
+            mes = await message.channel.fetch_message(embed_id)
+            play_count = mes.reactions[0].count
+            if play_count % 2 == 0:
+                await play(message, serevers_queue_list[message.guild.id], message.guild.id)
+                break
         mes = await message.channel.fetch_message(embed_id)
-        pause_count = mes.reactions[0].count
+        pause_count = mes.reactions[1].count
+        stop_count = mes.reactions[2].count
+        next_count = mes.reactions[3].count
+        previous_count = mes.reactions[4].count
         if pause_count % 2 == 0:
             voice_channel.pause()
             is_pause = True
         else:
             voice_channel.resume()
             is_pause = False
+        if stop_count % 2 == 0:
+            voice_channel.pause()
+        if next_count % 2 == 0:
+            voice_channel.stop()
+            await play(message, serevers_queue_list[message.guild.id], message.guild.id)
+            is_pause = False
+            break
+        if previous_count % 2 == 0:
+            pass
+
         await asyncio.sleep(2)
 
 
@@ -354,10 +355,11 @@ async def music_embed(message, tmp, player_title):
     embed.add_field(name="YouTube", value=tmp)
     embed.set_footer(text=f'Requested by {message.author.name}')
     emb = await message.channel.send(embed=embed)
-    # await emb.add_reaction('▶')
+    await emb.add_reaction('▶')
     await emb.add_reaction('⏸')
     await emb.add_reaction('⏹')
     await emb.add_reaction('⏩')
+    await emb.add_reaction('⏪')
     global embed_id
     embed_id = emb.id
 
