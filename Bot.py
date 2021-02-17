@@ -69,15 +69,15 @@ class Bot:
             prev_rar = item[0]
         return out_list
 
-    def ger_function(self, messege, tme, rndmemb):
+    def ger_function(self, message, tme, random_member):
         # ->>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
         # Request to db with ger recoils and check last ger time
         # if it's the first time(no user in db)  -> add him -> to allow user use !ger
-        cursor.execute(f"SELECT user_id, last_ger FROM guild_users_info WHERE user_id == '{messege.author.id}'")
+        cursor.execute(f"SELECT user_id, last_ger FROM guild_users_info WHERE user_id == '{message.author.id}'")
         res = cursor.fetchone()
         if res is None:
             cursor.execute(f"INSERT INTO guild_users_info VALUES (?,?,?)",
-                           (f"{messege.author.id}", None, datetime.datetime.now()))
+                           (f"{message.author.id}", None, datetime.datetime.now()))
             last_time = datetime.datetime(2020, 11, 11, 11, 11, 11)
             db.commit()
         elif res[1] is None:
@@ -85,27 +85,22 @@ class Bot:
         else:
             last_time = datetime.datetime.strptime(res[1], '%Y-%m-%d %H:%M:%S.%f')
 
-        time_difference = self.return_time_difference(tme, last_time)
+        time_difference = self.return_time_difference(tme, last_time, 'ger')
 
-        if time_difference[0]:  # If more time passed allow !ger
+        if time_difference is True:  # If more time passed allow !ger
             cursor.execute(
-                f"UPDATE guild_users_info SET last_ger = '{datetime.datetime.now()}' WHERE user_id ='{messege.author.id}'")
+                f"UPDATE guild_users_info SET last_ger = '{datetime.datetime.now()}' WHERE user_id ='{message.author.id}'")
             db.commit()
 
             if random.randint(0, 101) >= self.ger_self_chance:  # Chance to обосраться
 
-                return (f'{messege.author.mention} '
-                        f'{random.choice(self.ger_variants)} {rndmemb.mention}')
+                return (f'{message.author.mention} '
+                        f'{random.choice(self.ger_variants)} {random_member.mention}')
             else:
-                return f'{messege.author.mention} {random.choice(self.ger_self_variants)}'  # Самообсер
+                return f'{message.author.mention} {random.choice(self.ger_self_variants)}'  # Самообсер
 
-        else:  # if passed time less then 24 h
-            if time_difference[3] == 0:  # choice return output variants
-                return f'Идет зарядка жопы, осталось {time_difference[2]} мин {time_difference[1]} сек'
-            elif time_difference[3] == 0 and time_difference[2] == 0:
-                return f'Идет зарядка жопы, осталось {time_difference[1]} сек'
-            else:
-                return f'Идет зарядка жопы, осталось {time_difference[3]} ч {time_difference[2]} мин {time_difference[1]} сек'
+        else:
+            return time_difference
 
     @staticmethod
     def get_barter_list(author_id):
@@ -206,9 +201,9 @@ class Bot:
         else:
             last_time = datetime.datetime.strptime(res[1], '%Y-%m-%d %H:%M:%S.%f')
 
-        time_difference = self.return_time_difference(tme, last_time)  # 0 - Bool flag, 1 - сек, 2 - мин, 3 - часы
+        time_difference = self.return_time_difference(tme, last_time, 'ark')
 
-        if time_difference[0]:  # If more time passed allow !ger
+        if time_difference is True:  # If more time passed allow !ger
 
             choice_list = self.return_choice_list(self.get_ark_rarity())
             rand_item_from_list = random.choice(list(choice_list.values()))
@@ -219,13 +214,7 @@ class Bot:
             return rand_item_from_list
 
         else:  # if passed time less then 24 h
-
-            if time_difference[3] == 0:  # choice return output variants
-                return f'Копим орундум, осталось {time_difference[2]} мин {time_difference[1]} сек'
-            elif time_difference[3] == 0 and time_difference[2] == 0:
-                return f'Копим орундум, осталось {time_difference[1]} сек'
-            else:
-                return f'Копим орундум, осталось {time_difference[3]} ч {time_difference[2]} мин {time_difference[1]} сек'
+            return time_difference
 
     @staticmethod
     def add_ark_to_db(author_id, rand_item_from_list):
@@ -242,19 +231,29 @@ class Bot:
                            f"WHERE user_id ='{author_id}'AND operator_name == '{rand_item_from_list[1]}'")
         db.commit()
 
-    def return_time_difference(self, current_time, last_time):
+    def return_time_difference(self, current_time, last_time, status):
+        """documentation..."""
         time_difference = current_time - last_time  # Разница во времени между сейчас и прошлым прокрутом
         time_difference = math.floor(time_difference.total_seconds())  # Перевел в секунды
         sec = divmod(math.floor(time_difference), 60)  # sec[1] - секунды / sec[0] - оставшиеся минуты
         minutes = divmod(sec[0], 60)  # minutes[1] - минуты / minutes[0] - часы
         hours = minutes[0]  # часы
-
         if hours >= self.ger_recoil / 3600:  # If more time passed allow !ger
             return True
 
         else:  # if passed time less then 24 h
+            if 'ark' in status:
+                sentence = 'Копим орундум'
+            else:
+                sentence = 'Идет зарядка жепы'
             time_difference2 = self.ger_recoil - time_difference
             sec = divmod(math.floor(time_difference2), 60)  # sec[1] - секунды / sec[0] - оставшиеся минуты
             minutes = divmod(sec[0], 60)  # minutes[1] - минуты /
             hours = minutes[0]  # minutes[0] - часы
-            return False, sec[1], minutes[1], hours
+            if hours == 0:  # choice return output variants
+                return f'{sentence}, осталось {minutes[1]} мин {sec[1]} сек'
+            elif hours == 0 and minutes[1] == 0:
+                return f'{sentence}, осталось {sec[1]} сек'
+            else:
+                return f'{sentence}, осталось {hours} ч {minutes[1]} мин {sec[1]} сек'
+

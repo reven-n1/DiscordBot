@@ -89,8 +89,10 @@ def main():
     @client.event
     async def on_member_join(member):
         await member.send(f'Hi {member.name}')
-        channel = get_channel()
-        await channel.send(f'Hi {member.name}')
+        for guild in client.guilds:
+            for channel in guild.channels:
+                if channel.name == 'основной':
+                    await channel.send(f'Привет {member.mention}')
 
     @client.event
     async def on_message(message):
@@ -264,13 +266,6 @@ def main():
         await client.change_presence(activity=discord.Game(random.choice(status)))
 
     client.run(amia.token)  # Run bot
-
-
-async def get_channel():  # Return channel(переделать!!!!!!!!!!!!!!!)
-    for guild in client.guilds:
-        for i in guild.channels:
-            if i.name == 'основной':
-                await i
 
 
 #  Music player ----------------------->
