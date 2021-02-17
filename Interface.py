@@ -167,7 +167,7 @@ def main():
                     except StopIteration:
                         pass
                 else:
-                    await message.channel.send('Нет операторов на обмен')
+                    await message.channel.send('***Нет операторов на обмен***')
             #  ------------------------------------------------------------------------------->
 
             #  Add track to server queue ----------------------------------------------------->
@@ -193,6 +193,8 @@ def main():
                     await play(message, q, message.guild.id)
                 except AttributeError:
                     await message.channel.send("***You aren't in the voice channel***")
+                except discord.errors.ClientException:
+                    await message.channel.send("***Already playing***")
             #  ------------------------------------------------------------------------------->
 
             #  Music pause ------------------------------------------------------------------->
@@ -273,6 +275,7 @@ async def get_channel():  # Return channel(переделать!!!!!!!!!!!!!!!)
 
 #  Music player ----------------------->
 async def play(message, q, guild_id):
+    print(datetime.datetime.now())
     try:
         tmp = q[0]  # Link to YouTube video
         del q[0]
@@ -281,9 +284,10 @@ async def play(message, q, guild_id):
         player = await YTDLSource.from_url(guild_id, tmp, loop=client.loop)
         voice_channel.play(player)
         await music_embed(message, tmp, player.title)
-        await music_status(voice_channel, message)
 
-        while True:  # Check if track is on pause or it's over
+        while True:
+            # Check if track is on pause or it's over
+            await music_status(voice_channel, message)
             global is_pause
             if not voice_channel.is_playing() and is_pause:
                 pass
@@ -293,42 +297,38 @@ async def play(message, q, guild_id):
                 break
             await asyncio.sleep(3)
     except IndexError:
-        await message.channel.send('Queue is empty')
+        await message.channel.send('***Queue is empty***')
 
 
 #  Check embed reactions --------------------->
 async def music_status(voice_channel, message):
     global is_pause
     global embed_id
-    while True:
-        if not voice_channel.is_playing() and not is_pause:
-            mes = await message.channel.fetch_message(embed_id)
-            play_count = mes.reactions[0].count
-            if play_count % 2 == 0:
-                await play(message, serevers_queue_list[message.guild.id], message.guild.id)
-                break
-        mes = await message.channel.fetch_message(embed_id)
-        pause_count = mes.reactions[1].count
-        stop_count = mes.reactions[2].count
-        next_count = mes.reactions[3].count
-        previous_count = mes.reactions[4].count
-        if pause_count % 2 == 0:
-            voice_channel.pause()
-            is_pause = True
-        else:
-            voice_channel.resume()
-            is_pause = False
-        if stop_count % 2 == 0:
-            voice_channel.pause()
-        if next_count % 2 == 0:
-            voice_channel.stop()
-            await play(message, serevers_queue_list[message.guild.id], message.guild.id)
-            is_pause = False
-            break
-        if previous_count % 2 == 0:
-            pass
+    mes = await message.channel.fetch_message(embed_id)
+    play_count = mes.reactions[0].count
+    pause_count = mes.reactions[1].count
+    stop_count = mes.reactions[2].count
+    next_count = mes.reactions[3].count
 
-        await asyncio.sleep(2)
+    if not voice_channel.is_playing() and is_pause:
+        if play_count % 2 == 0:
+            await play(message, serevers_queue_list[message.guild.id], message.guild.id)
+    previous_count = mes.reactions[4].count
+    if pause_count % 2 == 0:
+        voice_channel.pause()
+        is_pause = True
+    else:
+        voice_channel.resume()
+        is_pause = False
+    if stop_count % 2 == 0:
+        voice_channel.stop()
+        is_pause = True
+    if next_count % 2 == 0:
+        voice_channel.stop()
+        is_pause = False
+        await play(message, serevers_queue_list[message.guild.id], message.guild.id)
+    if previous_count % 2 == 0:
+        pass
 
 
 #  Set ark info to embed ----------->
@@ -351,6 +351,13 @@ async def ark_embed(tmp, message):
 
 #  Music player control embed ---------------------->
 async def music_embed(message, tmp, player_title):
+    global embed_id
+    try:
+        mes = await message.channel.fetch_message(embed_id)
+        await mes.delete()
+    except discord.errors.HTTPException:
+        pass
+
     embed = discord.Embed(color=0xff9900, title=f'**Now playing:**   {player_title}')
     embed.add_field(name="YouTube", value=tmp)
     embed.set_footer(text=f'Requested by {message.author.name}')
@@ -360,12 +367,12 @@ async def music_embed(message, tmp, player_title):
     await emb.add_reaction('⏹')
     await emb.add_reaction('⏩')
     await emb.add_reaction('⏪')
-    global embed_id
     embed_id = emb.id
 
 
 #  Delete useless tracks -------------->
 async def clear_from_music(guild_id):
+    await asyncio.sleep(1)
     for file in os.listdir(r"F:\Studying\DiscordBotAmia"):
         if str(guild_id) in file:
             file_name = file
