@@ -71,7 +71,7 @@ class YTDLSource(discord.PCMVolumeTransformer):
 
 
 #  Bot game statuses------------------------------------------------------------------------------->
-status = ['Warface', 'Жизнь', 'твоего батю', 'человека', 'Detroit: Become Human', 'RAID: Shadow Legends']
+status = ['Warface', 'Жизнь', 'твоего батю', 'человека', 'Detroit: Become Human', 'RAID: Shadow Legends', 'программиста']
 
 intents = discord.Intents.default()
 intents.members = True
