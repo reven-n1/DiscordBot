@@ -33,6 +33,10 @@ class Bot:
         self.ger_variants = ['пернул в ротешник', 'насрал в рот', 'высрал какулю на лицо']
         self.bot_commands = ['!ger', '!пук', '!арк', '!ark', '!clear', '!members', '!commands']
         self.ger_self_variants = ['обосрался с подливой', 'напрудил в штанишки']
+        self.server_music_is_pause = {}
+        self.server_embed_id = {}
+        self.server_previous_music = {}
+        self.server_queue_list = {}
 
     def get_info(self):
         tmp = []
@@ -116,11 +120,10 @@ class Bot:
             if new_count == 0:
                 cursor.execute(
                     f"DELETE FROM users_ark_collection WHERE user_id == '{author_id}' AND operator_count >= 5 ")
-                db.commit()
             else:
                 cursor.execute(f"UPDATE users_ark_collection SET operator_count = '{new_count}'"
                                f"WHERE user_id ='{author_id}'AND operator_name == '{name}'")
-                db.commit()
+            db.commit()
         return barter_list
 
     def ark_barter(self, barter_list, author_id):

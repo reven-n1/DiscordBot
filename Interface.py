@@ -169,7 +169,7 @@ def main():
                     except StopIteration:
                         pass
                 else:
-                    await message.channel.send('***Нет операторов на обмен***')
+                    await message.channel.send('***Нет операторов на обмен***', delete_after=15)
             #  ------------------------------------------------------------------------------->
 
             #  Add track to server queue ----------------------------------------------------->
