@@ -32,15 +32,6 @@ ffmpeg_options = {
 
 ytdl = youtube_dl.YoutubeDL(ytdl_format_options)
 
-#  Music default queue ---------------------------------------------------------------------------->
-serevers_queue_list = {655431351209689149: ['https://www.youtube.com/watch?v=421y0BbnVdQ&ab_channel=erfsfsdf!',
-                                            'https://www.youtube.com/watch?v=M4iKxvfWdnM&ab_channel=K4KTUS'],
-                       659869299816529920: ['https://www.youtube.com/watch?v=421y0BbnVdQ&ab_channel=erfsfsdf!',
-                                            'https://www.youtube.com/watch?v=M4iKxvfWdnM&ab_channel=K4KTUS']}
-
-is_pause = False
-embed_id = None
-
 
 class YTDLSource(discord.PCMVolumeTransformer):
     def __init__(self, source, *, data, volume=0.5):
@@ -71,16 +62,16 @@ class YTDLSource(discord.PCMVolumeTransformer):
 
 
 #  Bot game statuses------------------------------------------------------------------------------->
-status = ['Warface', 'Жизнь', 'твоего батю', 'человека', 'Detroit: Become Human', 'RAID: Shadow Legends', 'программиста']
+status = ['Warface', 'Жизнь', 'твоего батю', 'человека', 'Detroit: Become Human', 'RAID: Shadow Legends',
+          'программиста']
 
 intents = discord.Intents.default()
 intents.members = True
 client = discord.Client(intents=intents)
+amia = Bot()
 
 
 def main():
-    amia = Bot()
-
     @client.event
     async def on_ready():
         print(f'{client.user.name} - Logged')
@@ -96,7 +87,6 @@ def main():
 
     @client.event
     async def on_message(message):
-        global is_pause
         if str(message.channel) in amia.bot_channels:  # Bot works only in correct channels
 
             if message.author == client.user:
@@ -175,36 +165,32 @@ def main():
             #  Add track to server queue ----------------------------------------------------->
             elif message.content.startswith('!add'):
                 try:
-                    serevers_queue_list[message.guild.id].append(message.content.split()[1])
-                except AttributeError:
-                    serevers_queue_list[message.guild.id] = [message.content.split()[1]]
-                await message.delete()
-                await message.channel.send(f'Added to queue - `{message.content.split()[1]}!`')
+                    youtube_src = message.content.split()[1]
+                    amia.server_queue_list[message.guild.id].append(youtube_src)
+                    await message.channel.send(f'Added to queue - `{youtube_src}!`')
+                except KeyError:
+                    youtube_src = [message.content.split()[1]]
+                    amia.server_queue_list[message.guild.id] = youtube_src
+                    await message.channel.send(f'Added to queue - `{youtube_src}!`')
+                except IndexError:
+                    await message.channel.send('***Maybe you lose space&***')
+                # await message.delete()
             #  ------------------------------------------------------------------------------->
 
             #  Start's player ---------------------------------------------------------------->
             elif message.content.startswith('!play') or message.content.startswith('!врубай'):
+                amia.server_music_is_pause[message.guild.id] = False
                 try:
                     voice_channel = message.author.voice.channel
-                    q = None
-                    try:
-                        q = serevers_queue_list[message.guild.id]
-                    except KeyError:
-                        q[message.guild.id] = []
+                    queue = amia.server_queue_list[message.guild.id]
                     await voice_channel.connect()
-                    await play(message, q, message.guild.id)
+                    await play(message, queue, message.guild.id)
+                except KeyError:
+                    await message.channel.send("***Queue is empty***")
                 except AttributeError:
                     await message.channel.send("***You aren't in the voice channel***")
                 except discord.errors.ClientException:
                     await message.channel.send("***Already playing***")
-            #  ------------------------------------------------------------------------------->
-
-            #  Music pause ------------------------------------------------------------------->
-            elif message.content.startswith('!pause') or message.content.startswith('!пауза'):
-                server = message.guild
-                voice_channel = server.voice_client
-                voice_channel.pause()
-                is_pause = True
             #  ------------------------------------------------------------------------------->
 
             #  Stop's player ----------------------------------------------------------------->
@@ -214,35 +200,30 @@ def main():
                 voice_channel.stop()
             #  ------------------------------------------------------------------------------->
 
-            #  Music resume ------------------------------------------------------------------>
-            elif message.content.startswith('!resume') or message.content.startswith('!продолжай'):
-                server = message.guild
-                voice_channel = server.voice_client
-                voice_channel.resume()
-                is_pause = False
-            #  ------------------------------------------------------------------------------->
-
             #  Start's next track ------------------------------------------------------------>
             elif message.content.startswith('!next') or message.content.startswith('!следующий'):
                 server = message.guild
                 voice_channel = server.voice_client
-                q = None
+                queue = None
                 try:
-                    q = serevers_queue_list[message.guild.id]
+                    queue = amia.server_queue_list[message.guild.id]
+                    voice_channel.stop()
+                    await play(message, queue, message.guild.id)
                 except KeyError:
-                    q[message.guild.id] = []
-                voice_channel.stop()
-                await play(message, q, message.guild.id)
+                    await message.channel.send('***Bot isn\'t in the voice channel or queue is empty***')
             #  ------------------------------------------------------------------------------->
 
             # bot stop playing music and leaves form channel --------------------------------->
             elif message.content.startswith('!leave') or message.content.startswith('!вырубай'):
-                await message.delete()
-                voice_client = client.get_guild(message.guild.id).voice_client
-                voice_client.stop()
-                await voice_client.disconnect()
-                await asyncio.sleep(3)
-                await clear_from_music(message.guild.id)
+                try:
+                    await message.delete()
+                    voice_client = client.get_guild(message.guild.id).voice_client
+                    voice_client.stop()
+                    await voice_client.disconnect()
+                    await asyncio.sleep(3)
+                    await clear_from_music(message.guild.id)
+                except AttributeError:
+                    await message.channel.send('***Bot isn\'t in the voice channel***')
             #  ------------------------------------------------------------------------------->
 
             # Clear chat messages ------------------------------------------------------------>
@@ -270,12 +251,11 @@ def main():
 
 #  Music player ----------------------->
 async def play(message, q, guild_id):
-    print(datetime.datetime.now())
+    server = message.guild
+    voice_channel = server.voice_client
     try:
         tmp = q[0]  # Link to YouTube video
         del q[0]
-        server = message.guild
-        voice_channel = server.voice_client
         player = await YTDLSource.from_url(guild_id, tmp, loop=client.loop)
         voice_channel.play(player)
         await music_embed(message, tmp, player.title)
@@ -283,46 +263,52 @@ async def play(message, q, guild_id):
         while True:
             # Check if track is on pause or it's over
             await music_status(voice_channel, message)
-            global is_pause
-            if not voice_channel.is_playing() and is_pause:
+            if not voice_channel.is_playing() and amia.server_music_is_pause[message.guild.id]:
                 pass
-            elif not voice_channel.is_playing() and not is_pause:  # If  track is over -> delete it and start new
+            elif not voice_channel.is_playing() and not amia.server_music_is_pause[message.guild.id] \
+                    and q != []:  # If  track is over -> delete it and start new
                 await clear_from_music(guild_id)
                 await play(message, q, guild_id)
                 break
             await asyncio.sleep(3)
     except IndexError:
         await message.channel.send('***Queue is empty***')
+        await clear_from_music(message.guild.id)
+        await voice_channel.disconnect()
+        return 0
+    except AttributeError:
+        pass
 
 
 #  Check embed reactions --------------------->
 async def music_status(voice_channel, message):
-    global is_pause
-    global embed_id
-    mes = await message.channel.fetch_message(embed_id)
-    play_count = mes.reactions[0].count
-    pause_count = mes.reactions[1].count
-    stop_count = mes.reactions[2].count
-    next_count = mes.reactions[3].count
+    try:
+        mes = await message.channel.fetch_message(amia.server_embed_id[message.guild.id])
+        play_count = mes.reactions[0].count
+        pause_count = mes.reactions[1].count
+        stop_count = mes.reactions[2].count
+        next_count = mes.reactions[3].count
 
-    if not voice_channel.is_playing() and is_pause:
-        if play_count % 2 == 0:
-            await play(message, serevers_queue_list[message.guild.id], message.guild.id)
-    previous_count = mes.reactions[4].count
-    if pause_count % 2 == 0:
-        voice_channel.pause()
-        is_pause = True
-    else:
-        voice_channel.resume()
-        is_pause = False
-    if stop_count % 2 == 0:
-        voice_channel.stop()
-        is_pause = True
-    if next_count % 2 == 0:
-        voice_channel.stop()
-        is_pause = False
-        await play(message, serevers_queue_list[message.guild.id], message.guild.id)
-    if previous_count % 2 == 0:
+        if not voice_channel.is_playing() and amia.server_music_is_pause[message.guild.id]:
+            if play_count % 2 == 0:
+                await play(message, amia.server_queue_list[message.guild.id], message.guild.id)
+        previous_count = mes.reactions[4].count
+        if pause_count % 2 == 0:
+            voice_channel.pause()
+            amia.server_music_is_pause[message.guild.id] = True
+        if pause_count % 2 == 1:
+            voice_channel.resume()
+            amia.server_music_is_pause[message.guild.id] = False
+        if stop_count % 2 == 0:
+            voice_channel.stop()
+            amia.server_music_is_pause[message.guild.id] = True  #
+        if next_count % 2 == 0:
+            voice_channel.stop()
+            amia.server_music_is_pause[message.guild.id] = False
+            await play(message, amia.server_queue_list[message.guild.id], message.guild.id)
+        if previous_count % 2 == 0:
+            pass
+    except discord.errors.NotFound:
         pass
 
 
@@ -346,11 +332,12 @@ async def ark_embed(tmp, message):
 
 #  Music player control embed ---------------------->
 async def music_embed(message, tmp, player_title):
-    global embed_id
     try:
-        mes = await message.channel.fetch_message(embed_id)
+        mes = await message.channel.fetch_message(amia.server_embed_id[message.guild.id])
         await mes.delete()
     except discord.errors.HTTPException:
+        pass
+    except KeyError:
         pass
 
     embed = discord.Embed(color=0xff9900, title=f'**Now playing:**   {player_title}')
@@ -362,7 +349,7 @@ async def music_embed(message, tmp, player_title):
     await emb.add_reaction('⏹')
     await emb.add_reaction('⏩')
     await emb.add_reaction('⏪')
-    embed_id = emb.id
+    amia.server_embed_id[message.guild.id] = emb.id
 
 
 #  Delete useless tracks -------------->

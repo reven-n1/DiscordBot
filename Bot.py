@@ -259,4 +259,3 @@ class Bot:
                 return f'{sentence}, осталось {sec[1]} сек'
             else:
                 return f'{sentence}, осталось {hours} ч {minutes[1]} мин {sec[1]} сек'
-
