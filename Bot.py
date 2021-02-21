@@ -137,7 +137,7 @@ class Bot:
     def return_choice_list(self, rarity):
         rar = rarity
         choice_list = {}
-        f = open('character_table.json', "rb")
+        f = open('char_table.json', "rb")
         json_data = json.loads(f.read())  # Извлекаем JSON
         for line in json_data:
             tmp = json_data[str(line)]
@@ -210,10 +210,10 @@ class Bot:
 
             choice_list = self.return_choice_list(self.get_ark_rarity())
             rand_item_from_list = random.choice(list(choice_list.values()))
-            cursor.execute(
-                f"UPDATE guild_users_info SET last_ark = '{datetime.datetime.now()}' WHERE user_id ='{author_id}'")
-
-            self.add_ark_to_db(author_id, rand_item_from_list)
+            # cursor.execute(
+            #     f"UPDATE guild_users_info SET last_ark = '{datetime.datetime.now()}' WHERE user_id ='{author_id}'")
+            #
+            # self.add_ark_to_db(author_id, rand_item_from_list)
             return rand_item_from_list
 
         else:  # if passed time less then 24 h
