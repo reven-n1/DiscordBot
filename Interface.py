@@ -204,7 +204,6 @@ def main():
             elif message.content.startswith('!next') or message.content.startswith('!следующий'):
                 server = message.guild
                 voice_channel = server.voice_client
-                queue = None
                 try:
                     queue = amia.server_queue_list[message.guild.id]
                     voice_channel.stop()
@@ -244,21 +243,34 @@ def main():
 
     @tasks.loop(seconds=5)  # Set bot activity
     async def set_status():
+        """
+        :return: set activity  status
+        """
+
         await client.change_presence(activity=discord.Game(random.choice(status)))
 
     client.run(amia.token)  # Run bot
 
 
 #  Music player ----------------------->
-async def play(message, q, guild_id):
+async def play(message, queue, guild_id):
+    """
+    Music player function
+
+    :param message: to catch some data
+    :param queue: music queue from current server
+    :param guild_id: current guild id
+    :return: starts music player
+    """
+
     server = message.guild
     voice_channel = server.voice_client
     try:
-        tmp = q[0]  # Link to YouTube video
-        del q[0]
-        player = await YTDLSource.from_url(guild_id, tmp, loop=client.loop)
+        link_tmp = queue[0]  # Link to YouTube video
+        del queue[0]
+        player = await YTDLSource.from_url(guild_id, link_tmp, loop=client.loop)
         voice_channel.play(player)
-        await music_embed(message, tmp, player.title)
+        await music_embed(message, link_tmp, player.title)
 
         while True:
             # Check if track is on pause or it's over
@@ -266,9 +278,9 @@ async def play(message, q, guild_id):
             if not voice_channel.is_playing() and amia.server_music_is_pause[message.guild.id]:
                 pass
             elif not voice_channel.is_playing() and not amia.server_music_is_pause[message.guild.id] \
-                    and q != []:  # If  track is over -> delete it and start new
+                    and queue != []:  # If  track is over -> delete it and start new
                 await clear_from_music(guild_id)
-                await play(message, q, guild_id)
+                await play(message, queue, guild_id)
                 break
             await asyncio.sleep(3)
     except IndexError:
@@ -282,6 +294,14 @@ async def play(message, q, guild_id):
 
 #  Check embed reactions --------------------->
 async def music_status(voice_channel, message):
+    """
+    This function manages music player by checking embed reactions
+
+    :param voice_channel: to manage music player of the current guild
+    :param message: to catch current guild id
+    :return: Nothing. Check embed reactions -> manage the music player
+    """
+
     try:
         mes = await message.channel.fetch_message(amia.server_embed_id[message.guild.id])
         play_count = mes.reactions[0].count
@@ -313,25 +333,40 @@ async def music_status(voice_channel, message):
 
 
 #  Set ark info to embed ----------->
-async def ark_embed(tmp, message):
-    # 0 - character_id      1- name     2 - description_first_part      3 - description_sec_part
-    # 4 - position      5 - tags        6 - traits      7 - profession      8 - emoji       9 - rarity
-    embed = discord.Embed(color=0xff9900, title=tmp[1],
-                          description=str(tmp[8]) * tmp[9],
-                          url=f"https://aceship.github.io/AN-EN-Tags/akhrchars.html?opname={tmp[1]}")
-    embed.add_field(name='Description', value=f'{tmp[2]}\n{tmp[3]}', inline=False)
-    embed.add_field(name='Position', value=tmp[4])
-    embed.add_field(name='Tags', value=str(tmp[5]), inline=True)
-    line = re.sub('[<@.>/]', '', tmp[6])  # Delete all tags in line
+async def ark_embed(character_data, message):
+    """
+    This function creates embed from received data
+
+    :param character_data: 0 : character_id      1 : name     2 : description_first_part      3 : description_sec_part  4 : position      5 : tags        6 : traits      7 : profession      8 : emoji       9 : rarity
+    :param message: to send to current channel
+    :return: send embed to message channel
+    """
+
+    embed = discord.Embed(color=0xff9900, title=character_data[1],
+                          description=str(character_data[8]) * character_data[9],
+                          url=f"https://aceship.github.io/AN-EN-Tags/akhrchars.html?opname={character_data[1]}")
+    embed.add_field(name='Description', value=f'{character_data[2]}\n{character_data[3]}', inline=False)
+    embed.add_field(name='Position', value=character_data[4])
+    embed.add_field(name='Tags', value=str(character_data[5]), inline=True)
+    line = re.sub('[<@.>/]', '', character_data[6])  # Delete all tags in line
     embed.add_field(name='Traits', value=line, inline=False)
-    embed.set_thumbnail(url=tmp[7])
-    embed.set_image(url=f"https://aceship.github.io/AN-EN-Tags/img/characters/{tmp[0]}_1.png")
+    embed.set_thumbnail(url=character_data[7])
+    embed.set_image(url=f"https://aceship.github.io/AN-EN-Tags/img/characters/{character_data[0]}_1.png")
     embed.set_footer(text=f'Requested by {message.author.name}')
     await message.channel.send(embed=embed)
 
 
 #  Music player control embed ---------------------->
-async def music_embed(message, tmp, player_title):
+async def music_embed(message, video_link, player_title):
+    """
+    Send music embed to channel and add reactions to manage music player
+
+    :param message: to catch author and guild id
+    :param video_link:
+    :param player_title: music title
+    :return: Set music player embed id to list
+    """
+
     try:
         mes = await message.channel.fetch_message(amia.server_embed_id[message.guild.id])
         await mes.delete()
@@ -341,7 +376,7 @@ async def music_embed(message, tmp, player_title):
         pass
 
     embed = discord.Embed(color=0xff9900, title=f'**Now playing:**   {player_title}')
-    embed.add_field(name="YouTube", value=tmp)
+    embed.add_field(name="YouTube", value=video_link)
     embed.set_footer(text=f'Requested by {message.author.name}')
     emb = await message.channel.send(embed=embed)
     await emb.add_reaction('▶')
@@ -354,6 +389,13 @@ async def music_embed(message, tmp, player_title):
 
 #  Delete useless tracks -------------->
 async def clear_from_music(guild_id):
+    """
+    This function clears unused music
+
+    :param guild_id: to clear only current guild files
+    :return: clear from unused music
+    """
+
     await asyncio.sleep(1)
     for file in os.listdir(r"F:\Studying\DiscordBotAmia"):
         if str(guild_id) in file:

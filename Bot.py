@@ -39,23 +39,36 @@ class Bot:
         self.server_queue_list = {}
 
     def get_info(self):
-        tmp = []
+        """
+        :return: info list
+        """
+
+        info_list = []
         count = 0
         for line in self.bot_info['commands'].keys():
-            tmp.append(f'{line} - ')
+            info_list.append(f'{line} - ')
         for line in self.bot_info['commands'].values():
-            tmp[count] += line
+            info_list[count] += line
             count += 1
 
-        return tmp
+        return info_list
 
     def get_commands(self):
+        """
+        :return: bot commands
+        """
+
         out_str = ''
         for key, values in self.bot_info['commands'].items():
             out_str += f'{key} - {values}\n'
         return out_str
 
     def get_ark_collection(self, collection_owner_id):
+        """
+        :param collection_owner_id: requested user id
+        :return: character collection
+        """
+
         cursor.execute(f"SELECT rarity, operator_name, operator_count FROM users_ark_collection "
                        f"WHERE user_id == '{collection_owner_id}'")
         res = sorted(cursor.fetchall())
@@ -73,10 +86,14 @@ class Bot:
             prev_rar = item[0]
         return out_list
 
-    def ger_function(self, message, tme, random_member):
-        # ->>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
-        # Request to db with ger recoils and check last ger time
-        # if it's the first time(no user in db)  -> add him -> to allow user use !ger
+    def ger_function(self, message, current_time, random_member):
+        """
+        :param message: message
+        :param current_time: datetime.now()
+        :param random_member: random server member from server list
+        :return: either cooldown time or ger
+        """
+
         cursor.execute(f"SELECT user_id, last_ger FROM guild_users_info WHERE user_id == '{message.author.id}'")
         res = cursor.fetchone()
         if res is None:
@@ -89,9 +106,9 @@ class Bot:
         else:
             last_time = datetime.datetime.strptime(res[1], '%Y-%m-%d %H:%M:%S.%f')
 
-        time_difference = self.return_time_difference(tme, last_time, 'ger')
+        time_difference = self.return_time_difference(current_time, last_time, 'ger')
 
-        if time_difference is True:  # If more time passed allow !ger
+        if time_difference is True:  # If more time passed allows !ger
             cursor.execute(
                 f"UPDATE guild_users_info SET last_ger = '{datetime.datetime.now()}' WHERE user_id ='{message.author.id}'")
             db.commit()
@@ -108,6 +125,11 @@ class Bot:
 
     @staticmethod
     def get_barter_list(author_id):
+        """
+        :param author_id: author id
+        :return: list that contains rarity and character count
+        """
+
         cursor.execute(
             f"SELECT rarity, operator_count, operator_name FROM users_ark_collection WHERE user_id == '{author_id}'"
             f" AND operator_count > 5 ")
@@ -127,6 +149,12 @@ class Bot:
         return barter_list
 
     def ark_barter(self, barter_list, author_id):
+        """
+        :param barter_list: character list for barter
+        :param author_id: author id
+        :return: yield random character from list
+        """
+
         for operators in barter_list:
             for count in range(0, operators[1]):
                 choice_list = self.return_choice_list(operators[0])
@@ -135,14 +163,18 @@ class Bot:
                 yield random_choice
 
     def return_choice_list(self, rarity):
-        rar = rarity
+        """
+        :param rarity: character rarity
+        :return: character list matching the rarity
+        """
+
         choice_list = {}
-        f = open('char_table.json', "rb")
-        json_data = json.loads(f.read())  # Извлекаем JSON
+        file = open('char_table.json', "rb")
+        json_data = json.loads(file.read())  # Извлекаем JSON
         for line in json_data:
             tmp = json_data[str(line)]
-            rarity = int(tmp['rarity']) + 1
-            if rar == rarity and tmp['itemDesc'] is not None:  # to ignore magalan skills and other rarities
+            json_rarity = int(tmp['rarity']) + 1
+            if rarity == json_rarity and tmp['itemDesc'] is not None:  # to ignore magalan skills and other rarities
                 profession = ''
                 if tmp['profession'] == 'CASTER':
                     profession = 'https://aceship.github.io/AN-EN-Tags/img/classes/class_caster.png'
@@ -167,18 +199,20 @@ class Bot:
                 position = tmp['position']
                 tags = ', '.join(tmp['tagList'])
                 traits = tmp['description']
-                stars = ''
-                if rarity == 6:
+                if json_rarity == 6:
                     stars = self.stars_6
                 else:
                     stars = self.stars_0_5
                 choice_list[name] = character_id, name, description_first_part, description_sec_part, \
-                                    position, tags, traits, profession, stars, rarity
+                                    position, tags, traits, profession, stars, json_rarity
 
-        f.close()
+        file.close()
         return choice_list
 
     def get_ark_rarity(self):
+        """
+        :return: random character rarity
+        """
 
         rarity = random.randrange(0, 100000)
         if rarity <= self.six_star_chance * 1000:
@@ -190,7 +224,12 @@ class Bot:
         elif rarity <= self.three_star_chance * 1000:
             return 3
 
-    def get_ark(self, tme, author_id):
+    def get_ark(self, time_now, author_id):
+        """
+        :param time_now:
+        :param author_id:
+        :return: either cool down time or character data
+        """
 
         cursor.execute(f"SELECT user_id, last_ark  FROM guild_users_info WHERE user_id == '{author_id}'")
         res = cursor.fetchone()
@@ -204,16 +243,16 @@ class Bot:
         else:
             last_time = datetime.datetime.strptime(res[1], '%Y-%m-%d %H:%M:%S.%f')
 
-        time_difference = self.return_time_difference(tme, last_time, 'ark')
+        time_difference = self.return_time_difference(time_now, last_time, 'ark')
 
         if time_difference is True:  # If more time passed allow !ger
 
             choice_list = self.return_choice_list(self.get_ark_rarity())
             rand_item_from_list = random.choice(list(choice_list.values()))
-            # cursor.execute(
-            #     f"UPDATE guild_users_info SET last_ark = '{datetime.datetime.now()}' WHERE user_id ='{author_id}'")
-            #
-            # self.add_ark_to_db(author_id, rand_item_from_list)
+            cursor.execute(
+                f"UPDATE guild_users_info SET last_ark = '{datetime.datetime.now()}' WHERE user_id ='{author_id}'")
+
+            self.add_ark_to_db(author_id, rand_item_from_list)
             return rand_item_from_list
 
         else:  # if passed time less then 24 h
@@ -221,6 +260,13 @@ class Bot:
 
     @staticmethod
     def add_ark_to_db(author_id, rand_item_from_list):
+        """
+        This function adds a record to db
+
+        :param author_id: author id
+        :param rand_item_from_list: random character from list
+        :return: None
+        """
 
         cursor.execute(
             f"SELECT operator_count FROM users_ark_collection WHERE user_id == '{author_id}' "
@@ -235,7 +281,14 @@ class Bot:
         db.commit()
 
     def return_time_difference(self, current_time, last_time, status):
-        """documentation..."""
+        """
+        This function return either True or cooldown time
+
+        :param current_time: datetime.now()
+        :param last_time: recent use
+        :param status: ark or ger function
+        :return:
+        """
         time_difference = current_time - last_time  # Разница во времени между сейчас и прошлым прокрутом
         time_difference = math.floor(time_difference.total_seconds())  # Перевел в секунды
         sec = divmod(math.floor(time_difference), 60)  # sec[1] - секунды / sec[0] - оставшиеся минуты
