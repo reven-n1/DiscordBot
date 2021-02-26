@@ -399,8 +399,7 @@ async def clear_from_music(guild_id):
     await asyncio.sleep(1)
     for file in os.listdir(r"F:\Studying\DiscordBotAmia"):
         if str(guild_id) in file:
-            file_name = file
-            os.remove(file_name)
+            os.remove(file)
 
 
 if __name__ == '__main__':
