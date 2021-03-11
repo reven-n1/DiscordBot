@@ -136,3 +136,4 @@ ffmpeg.exe
 *.m4a
 
 character_table.json
+unittests.py

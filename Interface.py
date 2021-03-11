@@ -111,21 +111,12 @@ def main():
 
             #  Add track to server queue ----------------------------------------------------->
             elif message.content.startswith('!add'):
-                try:
-                    youtube_src = message.content.split()[1]
-                    amia.server_queue_list[message.guild.id].append(youtube_src)
-                    await message.channel.send(f'Added to queue - `{youtube_src}!`')
-                except KeyError:
-                    youtube_src = [message.content.split()[1]]
-                    amia.server_queue_list[message.guild.id] = youtube_src
-                    await message.channel.send(f'Added to queue - `{youtube_src}!`')
-                except IndexError:
-                    await message.channel.send('***Maybe you lose space&***')
-                # await message.delete()
+                await amia.add_music_to_queue(message, message.content, message.guild.id)
             #  ------------------------------------------------------------------------------->
 
             #  Start's player ---------------------------------------------------------------->
             elif message.content.startswith('!play') or message.content.startswith('!врубай'):
+                await message.delete()
                 amia.server_music_is_pause[message.guild.id] = False
                 try:
                     voice_channel = message.author.voice.channel
@@ -180,6 +171,9 @@ def main():
                 else:
                     await message.channel.purge(limit=amia.delete_quantity)
             #  ------------------------------------------------------------------------------->
+
+            # elif message.content.startswith('!mes'):
+            #     print(type(message.guild.id))
 
             # If unknown command -> show message then delete it ------------------------------>
             elif message.content.startswith('!') and message.content not in amia.bot_commands:
