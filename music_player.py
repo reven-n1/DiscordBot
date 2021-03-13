@@ -1,6 +1,8 @@
 import asyncio
+import json
 import os
 import discord
+import requests
 import youtube_dl
 
 from Interface import amia, client
@@ -11,7 +13,7 @@ ytdl_format_options = {
     'format': 'bestaudio/best',
     'outtmpl': '%(extractor)s-%(id)s-%(title)s.%(ext)s',
     'restrictfilenames': True,
-    'noplaylist': True,
+    'noplaylist': True,  # True
     'nocheckcertificate': True,
     'ignoreerrors': False,
     'logtostderr': False,
@@ -39,7 +41,7 @@ class YTDLSource(discord.PCMVolumeTransformer):
     @classmethod
     async def from_url(cls, guild_id, url, *, loop=None, stream=False):
         loop = loop or asyncio.get_event_loop()
-        data = await loop.run_in_executor(None, lambda: ytdl.extract_info(url, download=not stream))
+        data = await loop.run_in_executor(None, lambda: ytdl.extract_info(url, download=not stream))  # not stream
 
         if 'entries' in data:
             # take first item from a playlist
@@ -74,7 +76,7 @@ async def play(message, queue, guild_id):
         del queue[0]
         player = await YTDLSource.from_url(guild_id, link_tmp, loop=client.loop)
         voice_channel.play(player)
-        await music_embed(message, link_tmp, player.title)
+        await music_embed(message, player.data['webpage_url'], player.title, player.data['thumbnails'][-1]['url'])
 
         while True:
             # Check if track is on pause or it's over
@@ -110,10 +112,11 @@ async def clear_from_music(guild_id):
             os.remove(file)
 
 
-async def music_embed(message, video_link, player_title):
+async def music_embed(message, video_link, player_title, img):
     """
     Send music embed to channel and add reactions to manage music player
 
+    :param img: video preview
     :param message: to catch author and guild id
     :param video_link:
     :param player_title: music title
@@ -130,13 +133,14 @@ async def music_embed(message, video_link, player_title):
 
     embed = discord.Embed(color=0xff9900, title=f'**Now playing:**   {player_title}')
     embed.add_field(name="YouTube", value=video_link)
+    embed.set_image(url=img)
     embed.set_footer(text=f'Requested by {message.author.name}')
     emb = await message.channel.send(embed=embed)
     await emb.add_reaction('▶')
     await emb.add_reaction('⏸')
     await emb.add_reaction('⏹')
-    await emb.add_reaction('⏩')
     await emb.add_reaction('⏪')
+    await emb.add_reaction('⏩')
     amia.server_embed_id[message.guild.id] = emb.id
 
 
@@ -154,7 +158,7 @@ async def music_status(voice_channel, message):
         play_count = mes.reactions[0].count
         pause_count = mes.reactions[1].count
         stop_count = mes.reactions[2].count
-        next_count = mes.reactions[3].count
+        next_count = mes.reactions[4].count
 
         if not voice_channel.is_playing() and amia.server_music_is_pause[message.guild.id]:
             if play_count % 2 == 0:

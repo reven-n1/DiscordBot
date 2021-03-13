@@ -56,7 +56,7 @@ class Bot:
     async def add_music_to_queue(self, message, content, guild_id):
         try:
             youtube_src = content.split()[1]
-            self.server_queue_list[guild_id].apped(youtube_src)
+            self.server_queue_list[guild_id].append(youtube_src)
             await message.channel.send(f'Added to queue - `{youtube_src}!`', delete_after=15)
 
         except KeyError:
@@ -65,8 +65,7 @@ class Bot:
             await message.channel.send(f'Added to queue - `{youtube_src}!`', delete_after=15)
 
         except IndexError:
-            await message.channel.send('***Maybe you lose space?***', delete_after=15)
-        return self.server_queue_list[guild_id]
+            await message.channel.send('***Maybe you lose space or forgot to add link?***', delete_after=15)
 
     def get_commands(self):
         """
