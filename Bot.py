@@ -33,6 +33,8 @@ class Bot:
         self.ger_variants = ['пернул в ротешник', 'насрал в рот', 'высрал какулю на лицо']
         self.bot_commands = ['!ger', '!пук', '!арк', '!ark', '!clear', '!members', '!commands']
         self.ger_self_variants = ['обосрался с подливой', 'напрудил в штанишки']
+        # self.statuses = ['Warface', 'Жизнь', 'твоего батю', 'человека', 'Detroit: Become Human', 'RAID: Shadow Legends',
+        #                  'программиста']
         self.server_music_is_pause = {}
         self.server_embed_id = {}
         self.server_previous_music = {}
@@ -52,6 +54,13 @@ class Bot:
             count += 1
 
         return info_list
+
+    @property
+    async def statuses(self):
+        return random.choice(self.statuses)
+
+    async def return_delete_quantity(self):
+        return self.delete_quantity
 
     async def add_music_to_queue(self, message, content, guild_id):
         try:
@@ -100,19 +109,19 @@ class Bot:
             prev_rar = item[0]
         return out_list
 
-    def ger_function(self, message, current_time, random_member):
+    def ger_function(self, message_author, current_time, random_member):
         """
-        :param message: message
+        :param message_author: message_author
         :param current_time: datetime.now()
         :param random_member: random server member from server list
         :return: either cooldown time or ger
         """
 
-        cursor.execute(f"SELECT user_id, last_ger FROM guild_users_info WHERE user_id == '{message.author.id}'")
+        cursor.execute(f"SELECT user_id, last_ger FROM guild_users_info WHERE user_id == '{message_author.id}'")
         res = cursor.fetchone()
         if res is None:
             cursor.execute(f"INSERT INTO guild_users_info VALUES (?,?,?)",
-                           (f"{message.author.id}", None, datetime.datetime.now()))
+                           (f"{message_author.id}", None, datetime.datetime.now()))
             last_time = datetime.datetime(2020, 11, 11, 11, 11, 11)
             db.commit()
         elif res[1] is None:
@@ -124,15 +133,15 @@ class Bot:
 
         if time_difference is True:  # If more time passed allows !ger
             cursor.execute(
-                f"UPDATE guild_users_info SET last_ger = '{datetime.datetime.now()}' WHERE user_id ='{message.author.id}'")
+                f"UPDATE guild_users_info SET last_ger = '{datetime.datetime.now()}' WHERE user_id ='{message_author.id}'")
             db.commit()
 
             if random.randint(0, 101) >= self.ger_self_chance:  # Chance to обосраться
 
-                return (f'{message.author.mention} '
+                return (f'{message_author.mention} '
                         f'{random.choice(self.ger_variants)} {random_member.mention}')
             else:
-                return f'{message.author.mention} {random.choice(self.ger_self_variants)}'  # Самообсер
+                return f'{message_author.mention} {random.choice(self.ger_self_variants)}'  # Самообсер
 
         else:
             return time_difference
