@@ -1,11 +1,8 @@
 import asyncio
-import json
 import os
 import discord
-import requests
 import youtube_dl
 
-from Interface import amia, client
 
 youtube_dl.utils.bug_reports_message = lambda: ''
 
@@ -59,7 +56,7 @@ class YTDLSource(discord.PCMVolumeTransformer):
 
 
 #  Music player ----------------------->
-async def play(message, queue, guild_id):
+async def play(message, queue, guild_id, amia):
     """
     Music player function
 
@@ -74,19 +71,19 @@ async def play(message, queue, guild_id):
     try:
         link_tmp = queue[0]  # Link to YouTube video
         del queue[0]
-        player = await YTDLSource.from_url(guild_id, link_tmp, loop=client.loop)
+        player = await YTDLSource.from_url(guild_id, link_tmp) # , loop=client.loop
         voice_channel.play(player)
-        await music_embed(message, player.data['webpage_url'], player.title, player.data['thumbnails'][-1]['url'])
+        await music_embed(message, player.data['webpage_url'], player.title, player.data['thumbnails'][-1]['url'], amia)
 
         while True:
             # Check if track is on pause or it's over
-            await music_status(voice_channel, message)
+            await music_status(voice_channel, message, amia)
             if not voice_channel.is_playing() and amia.server_music_is_pause[message.guild.id]:
                 pass
             elif not voice_channel.is_playing() and not amia.server_music_is_pause[message.guild.id] \
                     and queue != []:  # If  track is over -> delete it and start new
                 await clear_from_music(guild_id)
-                await play(message, queue, guild_id)
+                await play(message, queue, guild_id, amia)
                 break
             await asyncio.sleep(3)
     except IndexError:
@@ -112,7 +109,7 @@ async def clear_from_music(guild_id):
             os.remove(file)
 
 
-async def music_embed(message, video_link, player_title, img):
+async def music_embed(message, video_link, player_title, img, amia):
     """
     Send music embed to channel and add reactions to manage music player
 
@@ -144,7 +141,7 @@ async def music_embed(message, video_link, player_title, img):
     amia.server_embed_id[message.guild.id] = emb.id
 
 
-async def music_status(voice_channel, message):
+async def music_status(voice_channel, message, amia):
     """
     This function manages music player by checking embed reactions
 
@@ -162,7 +159,7 @@ async def music_status(voice_channel, message):
 
         if not voice_channel.is_playing() and amia.server_music_is_pause[message.guild.id]:
             if play_count % 2 == 0:
-                await play(message, amia.server_queue_list[message.guild.id], message.guild.id)
+                await play(message, amia.server_queue_list[message.guild.id], message.guild.id, amia)
         previous_count = mes.reactions[4].count
         if pause_count % 2 == 0:
             voice_channel.pause()
@@ -176,7 +173,7 @@ async def music_status(voice_channel, message):
         if next_count % 2 == 0:
             voice_channel.stop()
             amia.server_music_is_pause[message.guild.id] = False
-            await play(message, amia.server_queue_list[message.guild.id], message.guild.id)
+            await play(message, amia.server_queue_list[message.guild.id], message.guild.id, amia)
         if previous_count % 2 == 0:
             pass
     except discord.errors.NotFound:

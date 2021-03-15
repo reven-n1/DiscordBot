@@ -8,6 +8,7 @@ COGS = "Commands"
 class Bot(BotBase):
     def __init__(self):
         self.Prefix = '!'
+        self.Cogs = 'Commands'
         self.TOKEN = token
         self.VERSION = None
         self.scheduler = AsyncIOScheduler()

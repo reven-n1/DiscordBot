@@ -1,7 +1,6 @@
 import asyncio
 import datetime
 import random
-from asyncio import tasks
 from random import choice
 import re
 
@@ -13,9 +12,9 @@ from Bot import Bot as Amia
 
 
 class Commands(Cog):
-    def __init__(self, bot, amia):
+    def __init__(self, bot, bot_amia):
         self.bot = bot
-        self.amia = amia
+        self.bot_amia = bot_amia
 
     @command(name="hello", aliases=["hi"])
     async def hello(self, ctx):
@@ -24,11 +23,11 @@ class Commands(Cog):
     @command(name='info', aliases=['инфо'])
     async def info(self, ctx):
         await ctx.message.delete()
-        embed = discord.Embed(color=0xff9900, title=self.amia.name,
+        embed = discord.Embed(color=0xff9900, title=self.bot_amia.name,
                               url=f"https://www.youtube.com/watch?v=X5ULmETDiXI")
-        embed.add_field(name='Description', value=self.amia.bot_info['info'], inline=False)
+        embed.add_field(name='Description', value=self.bot_amia.bot_info['info'], inline=False)
         embed.add_field(name='Commands',
-                        value=str('\n'.join(self.amia.get_info())),
+                        value=str('\n'.join(self.bot_amia.get_info())),
                         inline=True)
         embed.set_thumbnail(
             url="https://aceship.github.io/AN-EN-Tags/img/characters/char_222_bpipe_race%231.png")
@@ -40,7 +39,7 @@ class Commands(Cog):
     async def myark(self, ctx):
         await ctx.message.delete()
         embed = discord.Embed(color=0xff9900)
-        collection = self.amia.get_ark_collection(ctx.message.author.id)
+        collection = self.bot_amia.get_ark_collection(ctx.message.author.id)
         if not collection:
             embed.add_field(name=f'{ctx.message.author.name} collection', value='Empty collection(((')
         else:
@@ -52,9 +51,9 @@ class Commands(Cog):
     @command(name='barter', aliases=['обмен'])
     async def barter(self, ctx):
         await ctx.message.delete()
-        barter_list = self.amia.get_barter_list(ctx.message.author.id)
+        barter_list = self.bot_amia.get_barter_list(ctx.message.author.id)
         if barter_list:
-            barter = self.amia.ark_barter(barter_list, ctx.message.author.id)
+            barter = self.bot_amia.ark_barter(barter_list, ctx.message.author.id)
             tmp = next(barter)
             try:
                 while tmp:
@@ -67,17 +66,17 @@ class Commands(Cog):
 
     @command(name='add')
     async def add(self, ctx):
-        await self.amia.add_music_to_queue(ctx.message, ctx.message.content, ctx.message.guild.id)
+        await self.bot_amia.add_music_to_queue(ctx.message, ctx.message.content, ctx.message.guild.id)
 
     @command(name='play')
     async def play(self, ctx):
         await ctx.message.delete()
-        self.amia.server_music_is_pause[ctx.message.guild.id] = False
+        self.bot_amia.server_music_is_pause[ctx.message.guild.id] = False
         try:
             voice_channel = ctx.message.author.voice.channel
-            queue = self.amia.server_queue_list[ctx.message.guild.id]
+            queue = self.bot_amia.server_queue_list[ctx.message.guild.id]
             await voice_channel.connect()
-            await m_p.play(ctx.message, queue, ctx.message.guild.id)
+            await m_p.play(ctx.message, queue, ctx.message.guild.id, self.bot_amia)
         except KeyError:
             await ctx.message.channel.send("***Queue is empty***")
         except AttributeError:
@@ -97,9 +96,9 @@ class Commands(Cog):
         server = ctx.message.guild
         voice_channel = server.voice_client
         try:
-            queue = self.amia.server_queue_list[ctx.message.guild.id]
+            queue = self.bot_amia.server_queue_list[ctx.message.guild.id]
             voice_channel.stop()
-            await m_p.play(ctx.message, queue, ctx.message.guild.id)
+            await m_p.play(ctx.message, queue, ctx.message.guild.id, self.bot_amia)
         except KeyError:
             await ctx.send('***Bot isn\'t in the voice channel or queue is empty***')
 
@@ -127,7 +126,7 @@ class Commands(Cog):
         if len(tmp) == 2 and tmp[1].isdigit():
             await ctx.message.channel.purge(limit=int(ctx.message.content.split()[1]))
         else:
-            await ctx.message.channel.purge(limit=await self.amia.return_delete_quantity())
+            await ctx.message.channel.purge(limit=await self.bot_amia.return_delete_quantity())
 
     @command(name='ger', aliases=['пук'])
     async def ger(self, ctx):
@@ -135,7 +134,7 @@ class Commands(Cog):
         random_user = random.choice(ctx.message.guild.members)
         while random_user == ctx.message.author:
             random_user = random.choice(ctx.message.guild.members.names)
-        ger = self.amia.ger_function(ctx.message.author, datetime.datetime.now(), random_user)
+        ger = self.bot_amia.ger_function(ctx.message.author, datetime.datetime.now(), random_user)
         if 'Идет' in ger:
             await ctx.send(ger, delete_after=7)
         else:
@@ -145,12 +144,13 @@ class Commands(Cog):
     async def ark(self, ctx):
         await ctx.message.delete()
 
-        tmp = self.amia.get_ark(datetime.datetime.now(), ctx.message.author.id)
+        tmp = self.bot_amia.get_ark(datetime.datetime.now(), ctx.message.author.id)
         if 'Копим' in tmp:
             await ctx.send(tmp, delete_after=7)
         else:
             await self.ark_embed(tmp, ctx.message)
-    #
+
+
     @staticmethod
     async def ark_embed(character_data, message):
         """
@@ -176,6 +176,6 @@ class Commands(Cog):
 
 
 def setup(bot):
-    amia = Amia()
-    bot.add_cog(Commands(bot, amia))
+    bot_amia = Amia()
+    bot.add_cog(Commands(bot, bot_amia))
 
