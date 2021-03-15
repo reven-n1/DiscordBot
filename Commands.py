@@ -3,7 +3,6 @@ import datetime
 import random
 from random import choice
 import re
-
 import discord
 from discord.ext.commands import Cog, BucketType
 from discord.ext.commands import command, cooldown
@@ -150,13 +149,12 @@ class Commands(Cog):
         else:
             await self.ark_embed(tmp, ctx.message)
 
-
     @staticmethod
     async def ark_embed(character_data, message):
         """
         This function creates embed from received data
 
-        :param character_data: 0 : character_id      1 : name     2 : description_first_part      3 : description_sec_part  4 : position      5 : tags        6 : traits      7 : profession      8 : emoji       9 : rarity
+        :param character_data: char_id, name, desc_first_part, desc_sec_part, position, tags, traits, profess, emoji, rarity
         :param message: to send to current channel
         :return: send embed to message channel
         """
@@ -178,4 +176,3 @@ class Commands(Cog):
 def setup(bot):
     bot_amia = Amia()
     bot.add_cog(Commands(bot, bot_amia))
-

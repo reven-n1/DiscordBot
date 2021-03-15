@@ -3,7 +3,6 @@ import os
 import discord
 import youtube_dl
 
-
 youtube_dl.utils.bug_reports_message = lambda: ''
 
 ytdl_format_options = {
@@ -60,6 +59,7 @@ async def play(message, queue, guild_id, amia):
     """
     Music player function
 
+    :param amia: bot
     :param message: to catch some data
     :param queue: music queue from current server
     :param guild_id: current guild id
@@ -71,7 +71,7 @@ async def play(message, queue, guild_id, amia):
     try:
         link_tmp = queue[0]  # Link to YouTube video
         del queue[0]
-        player = await YTDLSource.from_url(guild_id, link_tmp) # , loop=client.loop
+        player = await YTDLSource.from_url(guild_id, link_tmp)  # , loop=client.loop
         voice_channel.play(player)
         await music_embed(message, player.data['webpage_url'], player.title, player.data['thumbnails'][-1]['url'], amia)
 
@@ -113,6 +113,7 @@ async def music_embed(message, video_link, player_title, img, amia):
     """
     Send music embed to channel and add reactions to manage music player
 
+    :param amia: bot
     :param img: video preview
     :param message: to catch author and guild id
     :param video_link:
@@ -145,6 +146,7 @@ async def music_status(voice_channel, message, amia):
     """
     This function manages music player by checking embed reactions
 
+    :param amia: bot
     :param voice_channel: to manage music player of the current guild
     :param message: to catch current guild id
     :return: Nothing. Check embed reactions -> manage the music player
