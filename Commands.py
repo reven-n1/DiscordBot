@@ -83,7 +83,7 @@ class Commands(Cog):
         except discord.errors.ClientException:
             await ctx.message.channel.send("***Already playing***")
 
-    @command(name='stop', aliases=[''])
+    @command(name='stop')
     async def stop(self, ctx):
         server = ctx.message.guild
         voice_channel = server.voice_client
@@ -154,7 +154,7 @@ class Commands(Cog):
         """
         This function creates embed from received data
 
-        :param character_data: char_id, name, desc_first_part, desc_sec_part, position, tags, traits, profess, emoji, rarity
+        :param character_data: char_id, name, desc_first_part, desc_sec_part, position, tags, traits, prof, emoji, rar
         :param message: to send to current channel
         :return: send embed to message channel
         """

@@ -39,4 +39,3 @@ class Bot(BotBase):
 
 
 bot = Bot()
-
