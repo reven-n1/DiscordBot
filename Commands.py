@@ -50,11 +50,11 @@ class Commands(Cog):
         """
         await ctx.message.delete()
         embed = discord.Embed(color=0xff9900)
-        collection = self.bot_amia.get_ark_collection(ctx.message.author.id)
-        if not collection:
+        ark_collection = self.bot_amia.get_ark_collection(ctx.message.author.id)
+        if not ark_collection:
             embed.add_field(name=f'{ctx.message.author.name} collection', value='Empty collection(((')
         else:
-            embed.add_field(name=f'{ctx.message.author.name} collection', value='\n'.join(collection))
+            embed.add_field(name=f'{ctx.message.author.name} collection', value='\n'.join(ark_collection))
         embed.set_thumbnail(url=ctx.message.author.avatar_url)
         embed.set_footer(text=f'Requested by {ctx.message.author.name}')
         await ctx.send(embed=embed)
