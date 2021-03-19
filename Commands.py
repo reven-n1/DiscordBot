@@ -1,11 +1,10 @@
 import asyncio
 import datetime
-import random
 from random import choice
 import re
 import discord
-from discord.ext.commands import Cog, BucketType
-from discord.ext.commands import command, cooldown
+from discord.ext.commands import Cog  # , BucketType
+from discord.ext.commands import command  # , cooldown
 import music_player as m_p
 from Bot import Bot as Amia
 
@@ -15,12 +14,18 @@ class Commands(Cog):
         self.bot = bot
         self.bot_amia = bot_amia
 
-    @command(name="hello", aliases=["hi"])
-    async def hello(self, ctx):
-        await ctx.send(f"{choice(('Hello', 'Hi', 'Hey', 'Hiya'))} {ctx.author.mention}!")
+    # @command(name="hello", aliases=["hi"])
+    # async def hello(self, ctx):
+    #     await ctx.send(f"{choice(('Hello', 'Hi', 'Hey', 'Hiya'))} {ctx.author.mention}!")
 
     @command(name='info', aliases=['инфо'])
     async def info(self, ctx):
+        """
+        This command set bot info and commands list to discord embed
+
+        :param ctx: context
+        :return: send discord.embed to channel
+        """
         await ctx.message.delete()
         embed = discord.Embed(color=0xff9900, title=self.bot_amia.name,
                               url=f"https://www.youtube.com/watch?v=X5ULmETDiXI")
@@ -36,6 +41,13 @@ class Commands(Cog):
 
     @command(name='myark', aliases=['майарк'])
     async def myark(self, ctx):
+        """
+        This command sends embed with ark collection to channel.
+        If collection empty -> returns 'Empty collection'
+
+        :param ctx: context
+        :return: discord.embed
+        """
         await ctx.message.delete()
         embed = discord.Embed(color=0xff9900)
         collection = self.bot_amia.get_ark_collection(ctx.message.author.id)
@@ -49,6 +61,12 @@ class Commands(Cog):
 
     @command(name='barter', aliases=['обмен'])
     async def barter(self, ctx):
+        """
+        This command serves to exchange characters if possible else returns 'Нет операторов на обмен'
+
+        :param ctx: context
+        :return: either calls ark_embed function or returns 'Нет операторов на обмен'
+        """
         await ctx.message.delete()
         barter_list = self.bot_amia.get_barter_list(ctx.message.author.id)
         if barter_list:
@@ -65,10 +83,21 @@ class Commands(Cog):
 
     @command(name='add')
     async def add(self, ctx):
+        """
+        This command adds track to queue
+
+        :param ctx: context
+        """
         await self.bot_amia.add_music_to_queue(ctx.message, ctx.message.content, ctx.message.guild.id)
 
     @command(name='play')
     async def play(self, ctx):
+        """
+        This command starts music_player if server queue isn't empty
+
+        :param ctx: context
+        :return: 'Queue is empty', 'You aren't in the voice channel', 'Already playing' in extensions cases
+        """
         await ctx.message.delete()
         self.bot_amia.server_music_is_pause[ctx.message.guild.id] = False
         try:
@@ -85,12 +114,23 @@ class Commands(Cog):
 
     @command(name='stop')
     async def stop(self, ctx):
+        """
+        Stops music player
+
+        :param ctx: context
+        """
         server = ctx.message.guild
         voice_channel = server.voice_client
         voice_channel.stop()
 
     @command(name='next')
     async def next(self, ctx):
+        """
+        Starts next track
+
+        :param ctx: context
+        :return: 'Bot isn't in the voice channel or queue is empty' in extension case
+        """
         await ctx.message.delete()
         server = ctx.message.guild
         voice_channel = server.voice_client
@@ -103,6 +143,12 @@ class Commands(Cog):
 
     @command(name='leave')
     async def leave(self, ctx):
+        """
+        Disconnected bot from voice channel
+
+        :param ctx: context
+        :return: 'Bot isn't in the voice channel' in extension case
+        """
         try:
             await ctx.message.delete()
             voice_client = ctx.message.guild.voice_client
@@ -113,13 +159,18 @@ class Commands(Cog):
         except AttributeError:
             await ctx.send('***Bot isn\'t in the voice channel***')
 
-    @command(name="fact")
-    @cooldown(1, 60, BucketType.guild)
-    async def animal_fact(self, ctx):
-        await ctx.send(f"fact")
+    # @command(name="fact")
+    # @cooldown(1, 60, BucketType.guild)
+    # async def animal_fact(self, ctx):
+    #     await ctx.send(f"fact")
 
     @command(name="clear")
     async def clear(self, ctx):
+        """
+        Clears channel from messages
+
+        :param ctx: context
+        """
         await ctx.message.delete()
         tmp = ctx.message.content.split()
         if len(tmp) == 2 and tmp[1].isdigit():
@@ -129,10 +180,16 @@ class Commands(Cog):
 
     @command(name='ger', aliases=['пук'])
     async def ger(self, ctx):
+        """
+        This command calls ger function
+
+        :param ctx: context
+        :return: either cooldown or ger
+        """
         await ctx.message.delete()
-        random_user = random.choice(ctx.message.guild.members)
+        random_user = choice(ctx.message.guild.members)
         while random_user == ctx.message.author:
-            random_user = random.choice(ctx.message.guild.members.names)
+            random_user = choice(ctx.message.guild.members.names)
         ger = self.bot_amia.ger_function(ctx.message.author, datetime.datetime.now(), random_user)
         if 'Идет' in ger:
             await ctx.send(ger, delete_after=7)
@@ -141,8 +198,13 @@ class Commands(Cog):
 
     @command(name='ark', aliases=['арк'])
     async def ark(self, ctx):
-        await ctx.message.delete()
+        """
+        Ark command
 
+        :param ctx: context
+        :return: either cooldown or character
+        """
+        await ctx.message.delete()
         tmp = self.bot_amia.get_ark(datetime.datetime.now(), ctx.message.author.id)
         if 'Копим' in tmp:
             await ctx.send(tmp, delete_after=7)
@@ -152,7 +214,7 @@ class Commands(Cog):
     @staticmethod
     async def ark_embed(character_data, message):
         """
-        This function creates embed from received data
+        This command creates embed from received data
 
         :param character_data: char_id, name, desc_first_part, desc_sec_part, position, tags, traits, prof, emoji, rar
         :param message: to send to current channel
@@ -174,5 +236,11 @@ class Commands(Cog):
 
 
 def setup(bot):
+    """
+    Firs function adds cogs and creates bot class instance
+
+    :param bot:
+    :return:
+    """
     bot_amia = Amia()
     bot.add_cog(Commands(bot, bot_amia))

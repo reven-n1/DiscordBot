@@ -64,7 +64,7 @@ class Bot:
 
     async def add_music_to_queue(self, message, content, guild_id):
         try:
-            youtube_src = content.split()[1]
+            youtube_src = content.split()[-1:1]
             self.server_queue_list[guild_id].append(youtube_src)
             await message.channel.send(f'Added to queue - `{youtube_src}!`', delete_after=15)
 
@@ -88,6 +88,8 @@ class Bot:
 
     def get_ark_collection(self, collection_owner_id):
         """
+        This function returns al ark collection
+
         :param collection_owner_id: requested user id
         :return: character collection
         """
@@ -111,6 +113,8 @@ class Bot:
 
     def ger_function(self, message_author, current_time, random_member):
         """
+        "nf aeyrwbz gthlbn d hfyljvyjuj xktyf rfyfkf
+
         :param message_author: message_author
         :param current_time: datetime.now()
         :param random_member: random server member from server list
@@ -149,6 +153,8 @@ class Bot:
     @staticmethod
     def get_barter_list(author_id):
         """
+        Creates list of characters fro barter
+
         :param author_id: author id
         :return: list that contains rarity and character count
         """
@@ -173,6 +179,8 @@ class Bot:
 
     def ark_barter(self, barter_list, author_id):
         """
+        Exchanges characters and calls function to add them to db
+
         :param barter_list: character list for barter
         :param author_id: author id
         :return: yield random character from list
@@ -187,6 +195,8 @@ class Bot:
 
     def return_choice_list(self, rarity):
         """
+        This function creates list of characters
+
         :param rarity: character rarity
         :return: character list matching the rarity
         """
@@ -249,6 +259,8 @@ class Bot:
 
     def get_ark(self, time_now, author_id):
         """
+        Djpdhfoftn cjcjxre ltdjxre bkb reklfey
+
         :param time_now:
         :param author_id:
         :return: either cool down time or character data
