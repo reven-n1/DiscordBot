@@ -239,8 +239,7 @@ def setup(bot):
     """
     Firs function adds cogs and creates bot class instance
 
-    :param bot:
-    :return:
+    :param bot: bot instance
     """
     bot_amia = Amia()
     bot.add_cog(Commands(bot, bot_amia))

@@ -1,0 +1,88 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<Diagram>
+  <ID>Python</ID>
+  <OriginalElement>#F:/Studying/DiscordBotAmia</OriginalElement>
+  <nodes>
+    <node x="1110.6538461538462" y="2477.0">discord.ext.commands.bot.Bot</node>
+    <node x="860.5" y="706.0">discord.client.Client</node>
+    <node x="58.5" y="1420.0">discord.player.AudioSource</node>
+    <node x="1777.5" y="1179.0">discord.ext.commands.cog.Cog</node>
+    <node x="1265.5" y="937.0">discord.ext.commands.bot.BotBase</node>
+    <node x="1849.0" y="2312.0">Commands.Commands</node>
+    <node x="0.0" y="2389.0">discord.player.PCMVolumeTransformer</node>
+    <node x="1850.5" y="299.0">discord.ext.commands.cog.CogMeta</node>
+    <node x="78.0" y="2818.0">music_player.YTDLSource</node>
+    <node x="448.5" y="1047.0">Bot.Bot</node>
+    <node x="735.25" y="0.0">typing.Hashable</node>
+    <node x="733.25" y="112.0">object</node>
+  </nodes>
+  <notes />
+  <edges>
+    <edge source="discord.ext.commands.bot.Bot" target="discord.client.Client">
+      <point x="-99.0" y="-30.0" />
+      <point x="1209.6538461538462" y="2287.0" />
+      <point x="1053.0" y="2287.0" />
+      <point x="0.0" y="778.0" />
+    </edge>
+    <edge source="discord.player.AudioSource" target="object">
+      <point x="0.0" y="-64.0" />
+      <point x="243.5" y="676.0" />
+      <point x="762.125" y="676.0" />
+      <point x="-86.625" y="272.0" />
+    </edge>
+    <edge source="Bot.Bot" target="object">
+      <point x="0.0" y="-437.0" />
+      <point x="644.5" y="686.0" />
+      <point x="819.875" y="686.0" />
+      <point x="-28.875" y="272.0" />
+    </edge>
+    <edge source="discord.ext.commands.cog.Cog" target="object">
+      <point x="-99.0" y="-305.0" />
+      <point x="1876.5" y="676.0" />
+      <point x="935.375" y="676.0" />
+      <point x="86.625" y="272.0" />
+    </edge>
+    <edge source="music_player.YTDLSource" target="discord.player.PCMVolumeTransformer">
+      <point x="0.0" y="-85.0" />
+      <point x="0.0" y="118.0" />
+    </edge>
+    <edge source="discord.ext.commands.cog.Cog" target="discord.ext.commands.cog.CogMeta">
+      <point x="99.0" y="-305.0" />
+      <point x="0.0" y="85.0" />
+    </edge>
+    <edge source="discord.ext.commands.bot.Bot" target="discord.ext.commands.bot.BotBase">
+      <point x="99.0" y="-30.0" />
+      <point x="1407.6538461538462" y="2287.0" />
+      <point x="1511.5" y="2287.0" />
+      <point x="0.0" y="547.0" />
+    </edge>
+    <edge source="discord.player.PCMVolumeTransformer" target="discord.player.AudioSource">
+      <point x="0.0" y="-118.0" />
+      <point x="0.0" y="64.0" />
+    </edge>
+    <edge source="object" target="typing.Hashable">
+      <point x="0.0" y="-272.0" />
+      <point x="0.0" y="31.0" />
+    </edge>
+    <edge source="Commands.Commands" target="discord.ext.commands.cog.Cog">
+      <point x="0.0" y="-195.0" />
+      <point x="0.0" y="305.0" />
+    </edge>
+    <edge source="discord.client.Client" target="object">
+      <point x="0.0" y="-778.0" />
+      <point x="1053.0" y="686.0" />
+      <point x="877.625" y="686.0" />
+      <point x="28.875" y="272.0" />
+    </edge>
+  </edges>
+  <settings layout="Hierarchic Group" zoom="0.6000000000000001" x="1114.1666666666665" y="419.16666666666663" />
+  <SelectedNodes>
+    <node>object</node>
+  </SelectedNodes>
+  <Categories>
+    <Category>Fields</Category>
+    <Category>Inner Classes</Category>
+    <Category>Methods</Category>
+  </Categories>
+</Diagram>
+
