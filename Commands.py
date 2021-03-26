@@ -14,9 +14,10 @@ class Commands(Cog):
         self.bot = bot
         self.bot_amia = bot_amia
 
-    # @command(name="hello", aliases=["hi"])
-    # async def hello(self, ctx):
-    #     await ctx.send(f"{choice(('Hello', 'Hi', 'Hey', 'Hiya'))} {ctx.author.mention}!")
+    @command(name="hello", aliases=["hi"])
+    async def hello(self, ctx):
+        print(type(ctx.message))
+        await ctx.send(f"{choice(('Hello', 'Hi', 'Hey', 'Hiya'))} {ctx.author.mention}!")
 
     @command(name='info', aliases=['инфо'])
     async def info(self, ctx):
@@ -88,7 +89,8 @@ class Commands(Cog):
 
         :param ctx: context
         """
-        await self.bot_amia.add_music_to_queue(ctx.message, ctx.message.content, ctx.message.guild.id)
+        await ctx.message.delete()
+        await self.bot_amia.add_music_to_queue(ctx.message.channel, ctx.message.content, ctx.message.guild.id)
 
     @command(name='play')
     async def play(self, ctx):
@@ -106,11 +108,11 @@ class Commands(Cog):
             await voice_channel.connect()
             await m_p.play(ctx.message, queue, ctx.message.guild.id, self.bot_amia)
         except KeyError:
-            await ctx.message.channel.send("***Queue is empty***")
+            await ctx.message.channel.send("***Queue is empty***", delete_after=15)
         except AttributeError:
-            await ctx.message.channel.send("***You aren't in the voice channel***")
+            await ctx.message.channel.send("***You aren't in the voice channel***", delete_after=15)
         except discord.errors.ClientException:
-            await ctx.message.channel.send("***Already playing***")
+            await ctx.message.channel.send("***Already playing***", delete_after=15)
 
     @command(name='stop')
     async def stop(self, ctx):
@@ -135,9 +137,10 @@ class Commands(Cog):
         server = ctx.message.guild
         voice_channel = server.voice_client
         try:
-            queue = self.bot_amia.server_queue_list[ctx.message.guild.id]
-            voice_channel.stop()
-            await m_p.play(ctx.message, queue, ctx.message.guild.id, self.bot_amia)
+            if not voice_channel.is_playing():
+                queue = self.bot_amia.server_queue_list[ctx.message.guild.id]
+                voice_channel.stop()
+                await m_p.play(ctx.message, queue, ctx.message.guild.id, self.bot_amia)
         except KeyError:
             await ctx.send('***Bot isn\'t in the voice channel or queue is empty***')
 
@@ -157,7 +160,7 @@ class Commands(Cog):
             await asyncio.sleep(3)
             await m_p.clear_from_music(ctx.message.guild.id)
         except AttributeError:
-            await ctx.send('***Bot isn\'t in the voice channel***')
+            await ctx.send('***Bot isn\'t in the voice channel***', delete_after=15)
 
     # @command(name="fact")
     # @cooldown(1, 60, BucketType.guild)
@@ -176,7 +179,8 @@ class Commands(Cog):
         if len(tmp) == 2 and tmp[1].isdigit():
             await ctx.message.channel.purge(limit=int(ctx.message.content.split()[1]))
         else:
-            await ctx.message.channel.purge(limit=await self.bot_amia.return_delete_quantity())
+            clear_limit = await self.bot_amia.server_delete_quantity
+            await ctx.message.channel.purge(limit=clear_limit)
 
     @command(name='ger', aliases=['пук'])
     async def ger(self, ctx):

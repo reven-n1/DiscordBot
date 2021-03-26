@@ -59,22 +59,23 @@ class Bot:
     async def statuses(self):
         return random.choice(self.statuses)
 
-    async def return_delete_quantity(self):
+    @property
+    async def server_delete_quantity(self):
         return self.delete_quantity
 
-    async def add_music_to_queue(self, message, content, guild_id):
+    async def add_music_to_queue(self, channel, content, guild_id):
         try:
-            youtube_src = content.split()[-1:1]
+            youtube_src = ' '.join(content.split()[1:])
             self.server_queue_list[guild_id].append(youtube_src)
-            await message.channel.send(f'Added to queue - `{youtube_src}!`', delete_after=15)
+            await channel.send(f'Added to queue - `{youtube_src}!`', delete_after=15)
 
         except KeyError:
-            youtube_src = content.split()[1]
+            youtube_src = ' '.join(content.split()[1:])
             self.server_queue_list[guild_id] = [youtube_src]
-            await message.channel.send(f'Added to queue - `{youtube_src}!`', delete_after=15)
+            await channel.send(f'Added to queue - `{youtube_src}!`', delete_after=15)
 
         except IndexError:
-            await message.channel.send('***Maybe you lose space or forgot to add link?***', delete_after=15)
+            await channel.send('***Maybe you lose space or forgot to add link?***', delete_after=15)
 
     def get_commands(self):
         """
@@ -236,8 +237,8 @@ class Bot:
                     stars = self.stars_6
                 else:
                     stars = self.stars_0_5
-                choice_list[name] = character_id, name, description_first_part, description_sec_part, \
-                                    position, tags, traits, profession, stars, json_rarity
+                choice_list[name] = character_id, name, description_first_part, description_sec_part, position, tags, \
+                                    traits, profession, stars, json_rarity
 
         file.close()
         return choice_list

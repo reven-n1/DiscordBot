@@ -87,7 +87,7 @@ async def play(message, queue, guild_id, amia):
                 break
             await asyncio.sleep(3)
     except IndexError:
-        await message.channel.send('***Queue is empty***')
+        await message.channel.send('***Queue is empty***', delete_after=15)
         await clear_from_music(message.guild.id)
         await voice_channel.disconnect()
         return 0

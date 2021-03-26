@@ -8,7 +8,7 @@ from Bot_Token import token
 COGS = "Commands"
 
 
-class Bot(BotBase):
+class Bot_init(BotBase):
     def __init__(self):
         self.Prefix = '!'
         self.Cogs = 'Commands'
@@ -39,7 +39,7 @@ class Bot(BotBase):
 
     async def on_command_error(self, context, exception):
         if isinstance(exception, CommandNotFound):
-            await context.send('***Wrong command, check commands list***')
+            await context.send('***Wrong command, check commands list***', delete_after=15)
     #
     # @tasks.loop(seconds=5.0)
     # async def status_setter(self):
@@ -48,4 +48,4 @@ class Bot(BotBase):
     #     await bot.change_presence(status=discord.Status.idle, activity=activity)
 
 
-bot = Bot()
+bot = Bot_init()
