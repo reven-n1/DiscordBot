@@ -3,8 +3,8 @@ import datetime
 from random import choice
 import re
 import discord
-from discord.ext.commands import Cog  # , BucketType
-from discord.ext.commands import command  # , cooldown
+from discord.ext.commands import Cog
+from discord.ext.commands import command
 import music_player as m_p
 from Bot import Bot as Amia
 
@@ -162,11 +162,6 @@ class Commands(Cog):
         except AttributeError:
             await ctx.send('***Bot isn\'t in the voice channel***', delete_after=15)
 
-    # @command(name="fact")
-    # @cooldown(1, 60, BucketType.guild)
-    # async def animal_fact(self, ctx):
-    #     await ctx.send(f"fact")
-
     @command(name="clear")
     async def clear(self, ctx):
         """
@@ -194,11 +189,11 @@ class Commands(Cog):
         random_user = choice(ctx.message.guild.members)
         while random_user == ctx.message.author:
             random_user = choice(ctx.message.guild.members.names)
-        ger = self.bot_amia.ger_function(ctx.message.author, datetime.datetime.now(), random_user)
-        if 'Идет' in ger:
-            await ctx.send(ger, delete_after=7)
+        ger_message = self.bot_amia.ger_function(ctx.message.author, datetime.datetime.now(), random_user)
+        if 'Идет' in ger_message:
+            await ctx.send(ger_message, delete_after=7)
         else:
-            await ctx.send(ger)
+            await ctx.send(ger_message)
 
     @command(name='ark', aliases=['арк'])
     async def ark(self, ctx):
