@@ -1,4 +1,4 @@
-# DicordBot
+# DiscordBot
 Discord bot(Amia)
 
 
