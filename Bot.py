@@ -7,7 +7,7 @@ from Bot_Token import token
 
 db = sqlite3.connect('Bot_DB.db')
 cursor = db.cursor()
-
+# comment
 
 class Bot:
     def __init__(self):
