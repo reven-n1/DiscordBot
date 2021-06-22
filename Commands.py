@@ -16,7 +16,6 @@ class Commands(Cog):
 
     @command(name="hello", aliases=["hi"])
     async def hello(self, ctx):
-        print(type(ctx.message))
         await ctx.send(f"{choice(('Hello', 'Hi', 'Hey', 'Hiya'))} {ctx.author.mention}!")
 
     @command(name='info', aliases=['инфо'])
@@ -58,6 +57,7 @@ class Commands(Cog):
             embed.add_field(name=f'{ctx.message.author.name} collection', value='\n'.join(ark_collection))
         embed.set_thumbnail(url=ctx.message.author.avatar_url)
         embed.set_footer(text=f'Requested by {ctx.message.author.name}')
+        
         await ctx.send(embed=embed)
 
     @command(name='barter', aliases=['обмен'])

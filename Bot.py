@@ -3,11 +3,11 @@ import json
 import math
 import random
 import sqlite3
-from Bot_Token import token
+from bot_token import token
 
-db = sqlite3.connect('Bot_DB.db')
+    
+db = sqlite3.connect('/home/reven/Projects/Python/Amia(DiscrdBot)/Bot_DB.db')
 cursor = db.cursor()
-# comment
 
 class Bot:
     def __init__(self):
@@ -39,6 +39,7 @@ class Bot:
         self.server_embed_id = {}
         self.server_previous_music = {}
         self.server_queue_list = {}
+
 
     def get_info(self):
         """
@@ -98,6 +99,7 @@ class Bot:
         cursor.execute(f"SELECT rarity, operator_name, operator_count FROM users_ark_collection "
                        f"WHERE user_id == '{collection_owner_id}'")
         res = sorted(cursor.fetchall())
+        print(res)
         out_list = []
         prev_rar = 2
         for item in res:
@@ -121,7 +123,6 @@ class Bot:
         :param random_member: random server member from server list
         :return: either cooldown time or ger
         """
-
         cursor.execute(f"SELECT user_id, last_ger FROM guild_users_info WHERE user_id == '{message_author.id}'")
         res = cursor.fetchone()
         if res is None:

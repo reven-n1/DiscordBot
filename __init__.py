@@ -1,7 +1,8 @@
+from logging import error
 import discord
 from apscheduler.schedulers.asyncio import AsyncIOScheduler
 from discord.ext.commands import Bot as BotBase, CommandNotFound
-from Bot_Token import token
+from bot_token import token
 
 COGS = "Commands"
 
@@ -35,9 +36,13 @@ class Bot_init(BotBase):
         print(" ***bot ready***")
         await bot.change_presence(status=discord.Status.idle, activity=discord.Game('Жизнь'))
 
+    async def on_error(self, event_method, *args, **kwargs):
+        print(error)
+
     async def on_command_error(self, context, exception):
         if isinstance(exception, CommandNotFound):
-            await context.send('***Wrong command, check commands list***', delete_after=15)
+            await context.message.delete()
+            await context.send(f'{context.message.text} - ***Wrong command, check commands list***', delete_after=15)
 
 
 bot = Bot_init()
