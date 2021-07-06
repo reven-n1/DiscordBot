@@ -1,12 +1,14 @@
+from bot_token import token
+from os.path import abspath
 import datetime
+import sqlite3
+import random
 import json
 import math
-import random
-import sqlite3
-from bot_token import token
+
 
     
-db = sqlite3.connect('/home/reven/Projects/Python/Amia(DiscrdBot)/Bot_DB.db')
+db = sqlite3.connect(abspath('Bot_DB.db'))
 cursor = db.cursor()
 
 class Bot:

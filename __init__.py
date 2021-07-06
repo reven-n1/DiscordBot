@@ -1,8 +1,10 @@
-from logging import error
-import discord
-from apscheduler.schedulers.asyncio import AsyncIOScheduler
 from discord.ext.commands import Bot as BotBase, CommandNotFound
+from apscheduler.schedulers.asyncio import AsyncIOScheduler
 from bot_token import token
+from logging import error
+# import os.path as path
+import discord
+# import json
 
 COGS = "Commands"
 
@@ -17,6 +19,14 @@ class Bot_init(BotBase):
         super().__init__(command_prefix=self.Prefix)
 
     def setup(self):
+
+        # path_to_json = path.abspath("settings.json")
+        # with open(path_to_json,"rb") as json_settings_file:
+        #     data = json.load(json_settings_file)
+        #     for _ in data['settings']['cog_list']:
+        #         self.load_extension(f"{_}.py")
+        #         print(f"{_} - loaded")
+
         self.load_extension(f"{COGS}")
         print("setup complete")
 

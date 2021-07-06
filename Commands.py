@@ -1,12 +1,12 @@
-import asyncio
-import datetime
-from random import choice
-import re
-import discord
-from discord.ext.commands import Cog
 from discord.ext.commands import command
-import music_player as m_p
+from discord.ext.commands import Cog
 from Bot import Bot as Amia
+from random import choice
+import datetime
+import discord
+import re
+# import asyncio
+# import music_player as m_p
 
 
 class Commands(Cog):
@@ -39,7 +39,7 @@ class Commands(Cog):
         embed.set_footer(text=f'Requested by {ctx.message.author.name}')
         await ctx.send(embed=embed, delete_after=30)
 
-    @command(name='myark', aliases=['майарк'])
+    @command(name='myark', aliases=['моидевочки'])
     async def myark(self, ctx):
         """
         This command sends embed with ark collection to channel.
@@ -81,86 +81,86 @@ class Commands(Cog):
                 pass
         else:
             await ctx.send('***Нет операторов на обмен***', delete_after=15)
+#TODO : rewrite music bot -> rewrite commands
+    # @command(name='add')
+    # async def add(self, ctx):
+    #     """
+    #     This command adds track to queue
 
-    @command(name='add')
-    async def add(self, ctx):
-        """
-        This command adds track to queue
+    #     :param ctx: context
+    #     """
+    #     await ctx.message.delete()
+    #     await self.bot_amia.add_music_to_queue(ctx.message.channel, ctx.message.content, ctx.message.guild.id)
 
-        :param ctx: context
-        """
-        await ctx.message.delete()
-        await self.bot_amia.add_music_to_queue(ctx.message.channel, ctx.message.content, ctx.message.guild.id)
+    # @command(name='play')
+    # async def play(self, ctx):
+    #     """
+    #     This command starts music_player if server queue isn't empty
 
-    @command(name='play')
-    async def play(self, ctx):
-        """
-        This command starts music_player if server queue isn't empty
+    #     :param ctx: context
+    #     :return: 'Queue is empty', 'You aren't in the voice channel', 'Already playing' in extensions cases
+    #     """
+    #     await ctx.message.delete()
+    #     self.bot_amia.server_music_is_pause[ctx.message.guild.id] = False
+    #     try:
+    #         voice_channel = ctx.message.author.voice.channel
+    #         queue = self.bot_amia.server_queue_list[ctx.message.guild.id]
+    #         await voice_channel.connect()
+    #         await m_p.play(ctx.message, queue, ctx.message.guild.id, self.bot_amia)
+    #     except KeyError:
+    #         await ctx.message.channel.send("***Queue is empty***", delete_after=15)
+    #     except AttributeError:
+    #         await ctx.message.channel.send("***You aren't in the voice channel***", delete_after=15)
+    #     except discord.errors.ClientException:
+    #         await ctx.message.channel.send("***Already playing***", delete_after=15)
 
-        :param ctx: context
-        :return: 'Queue is empty', 'You aren't in the voice channel', 'Already playing' in extensions cases
-        """
-        await ctx.message.delete()
-        self.bot_amia.server_music_is_pause[ctx.message.guild.id] = False
-        try:
-            voice_channel = ctx.message.author.voice.channel
-            queue = self.bot_amia.server_queue_list[ctx.message.guild.id]
-            await voice_channel.connect()
-            await m_p.play(ctx.message, queue, ctx.message.guild.id, self.bot_amia)
-        except KeyError:
-            await ctx.message.channel.send("***Queue is empty***", delete_after=15)
-        except AttributeError:
-            await ctx.message.channel.send("***You aren't in the voice channel***", delete_after=15)
-        except discord.errors.ClientException:
-            await ctx.message.channel.send("***Already playing***", delete_after=15)
+    # @command(name='stop')
+    # async def stop(self, ctx):
+    #     """
+    #     Stops music player
 
-    @command(name='stop')
-    async def stop(self, ctx):
-        """
-        Stops music player
+    #     :param ctx: context
+    #     """
+    #     server = ctx.message.guild
+    #     voice_channel = server.voice_client
+    #     voice_channel.stop()
 
-        :param ctx: context
-        """
-        server = ctx.message.guild
-        voice_channel = server.voice_client
-        voice_channel.stop()
+    # @command(name='next')
+    # async def next(self, ctx):
+    #     """
+    #     Starts next track
 
-    @command(name='next')
-    async def next(self, ctx):
-        """
-        Starts next track
+    #     :param ctx: context
+    #     :return: 'Bot isn't in the voice channel or queue is empty' in extension case
+    #     """
+    #     await ctx.message.delete()
+    #     server = ctx.message.guild
+    #     voice_channel = server.voice_client
+    #     try:
+    #         if not voice_channel.is_playing():
+    #             queue = self.bot_amia.server_queue_list[ctx.message.guild.id]
+    #             voice_channel.stop()
+    #             await m_p.play(ctx.message, queue, ctx.message.guild.id, self.bot_amia)
+    #     except KeyError:
+    #         await ctx.send('***Bot isn\'t in the voice channel or queue is empty***')
 
-        :param ctx: context
-        :return: 'Bot isn't in the voice channel or queue is empty' in extension case
-        """
-        await ctx.message.delete()
-        server = ctx.message.guild
-        voice_channel = server.voice_client
-        try:
-            if not voice_channel.is_playing():
-                queue = self.bot_amia.server_queue_list[ctx.message.guild.id]
-                voice_channel.stop()
-                await m_p.play(ctx.message, queue, ctx.message.guild.id, self.bot_amia)
-        except KeyError:
-            await ctx.send('***Bot isn\'t in the voice channel or queue is empty***')
+    # @command(name='leave')
+    # async def leave(self, ctx):
+    #     """
+    #     Disconnected bot from voice channel
 
-    @command(name='leave')
-    async def leave(self, ctx):
-        """
-        Disconnected bot from voice channel
-
-        :param ctx: context
-        :return: 'Bot isn't in the voice channel' in extension case
-        """
-        try:
-            await ctx.message.delete()
-            voice_client = ctx.message.guild.voice_client
-            voice_client.stop()
-            await voice_client.disconnect()
-            await asyncio.sleep(3)
-            await m_p.clear_from_music(ctx.message.guild.id)
-        except AttributeError:
-            await ctx.send('***Bot isn\'t in the voice channel***', delete_after=15)
+    #     :param ctx: context
+    #     :return: 'Bot isn't in the voice channel' in extension case
+    #     """
+    #     try:
+    #         await ctx.message.delete()
+    #         voice_client = ctx.message.guild.voice_client
+    #         voice_client.stop()
+    #         await voice_client.disconnect()
+    #         await asyncio.sleep(3)
+    #         await m_p.clear_from_music(ctx.message.guild.id)
+    #     except AttributeError:
+    #         await ctx.send('***Bot isn\'t in the voice channel***', delete_after=15)
 
     @command(name="clear")
     async def clear(self, ctx):

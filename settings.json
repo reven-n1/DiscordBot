@@ -1,0 +1,16 @@
+{
+    "default_settings": {
+        "cog_list": ["ark", "games", "ger", "music"],
+        "setting2": "inf",
+        "setting3": "inf",
+        "setting4": "inf"
+    },
+
+    "server_settings": {
+        "commands_list": "inf",
+        "setting2": "inf",
+        "setting3": "inf",
+        "setting4": "inf"
+    }
+    
+}
