@@ -1,0 +1,22 @@
+{
+    "default_settings": {
+        "cog_list": ["default"],
+        "bot_statuses":
+        {
+            "game_statuses": ["жизнь", "Detroit: Become Human", "Warface"],
+            "music_statuses": ["music_status1", "music_status2", "music_status3"],
+            "stream_statuses": ["stream_status1", "stream_status2", "stream_status3"],
+            "watching_statuses": ["listen_status1", "listen_status2", "listen_status3"]
+        },       
+        "setting3": "inf",
+        "setting4": "inf"
+    },
+
+    "server_settings": {
+        "commands_list": "inf",
+        "setting2": "inf",
+        "setting3": "inf",
+        "setting4": "inf"
+    }
+    
+}

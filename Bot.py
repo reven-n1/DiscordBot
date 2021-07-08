@@ -1,3 +1,4 @@
+import discord
 from bot_token import token
 from os.path import abspath
 import datetime
@@ -5,6 +6,7 @@ import sqlite3
 import random
 import json
 import math
+from discord.ext import tasks
 
 
     

@@ -5,6 +5,7 @@ from random import choice
 import datetime
 import discord
 import re
+import random
 # import asyncio
 # import music_player as m_p
 
@@ -81,6 +82,7 @@ class Commands(Cog):
                 pass
         else:
             await ctx.send('***Нет операторов на обмен***', delete_after=15)
+
 #TODO : rewrite music bot -> rewrite commands
     # @command(name='add')
     # async def add(self, ctx):

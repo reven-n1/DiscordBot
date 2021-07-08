@@ -1,12 +1,13 @@
 from discord.ext.commands import Bot as BotBase, CommandNotFound
 from apscheduler.schedulers.asyncio import AsyncIOScheduler
+from discord.ext import tasks
 from bot_token import token
 from logging import error
-# import os.path as path
+import os.path as path
 import discord
-# import json
-
-COGS = "Commands"
+import random
+import json
+import sys
 
 
 class Bot_init(BotBase):
@@ -16,19 +17,21 @@ class Bot_init(BotBase):
         self.TOKEN = token
         self.VERSION = None
         self.scheduler = AsyncIOScheduler()
+        if not path.isfile("config.json"):
+            sys.exit("'config.json' not found!")
+        self.path_to_config = path.abspath("config.json")
         super().__init__(command_prefix=self.Prefix)
 
     def setup(self):
 
-        # path_to_json = path.abspath("settings.json")
-        # with open(path_to_json,"rb") as json_settings_file:
-        #     data = json.load(json_settings_file)
-        #     for _ in data['settings']['cog_list']:
-        #         self.load_extension(f"{_}.py")
-        #         print(f"{_} - loaded")
+        with open(self.path_to_config,"rb") as json_config_file:
+            data = json.load(json_config_file)
+            for _ in data['default_settings']['cog_list']:
+                self.load_extension(f'cogs.{_}')
 
-        self.load_extension(f"{COGS}")
+        self.load_extension("Commands")
         print("setup complete")
+
 
     def run(self, version):
         self.VERSION = version
@@ -37,22 +40,58 @@ class Bot_init(BotBase):
         print("running bot...")
         super().run(self.TOKEN, reconnect=True)
 
+
     @staticmethod
     async def on_connect():
         print(" bot connected")
+        
 
-    @staticmethod
-    async def on_ready():
+    async def on_ready(self):
         print(" ***bot ready***")
-        await bot.change_presence(status=discord.Status.idle, activity=discord.Game('Жизнь'))
-
+        status_setter.start(self.path_to_config)
+        
+       
+    
     async def on_error(self, event_method, *args, **kwargs):
         print(error)
+        print(event_method)
+        
 
     async def on_command_error(self, context, exception):
         if isinstance(exception, CommandNotFound):
             await context.message.delete()
-            await context.send(f'{context.message.text} - ***Wrong command, check commands list***', delete_after=15)
+            await context.send(f'{context.message.content} - ***Wrong command, check commands list***', delete_after=15)
 
 
 bot = Bot_init()
+
+@tasks.loop(seconds=10)
+async def status_setter(path_to_config):
+    statuses = [set_gaming_status, set_listening_status, set_streaming_status, set_watching_status]
+
+    with open(path_to_config,"rb") as json_config_file:
+            data = json.load(json_config_file)
+            json_statuses = data['default_settings']['bot_statuses']
+            statuses_list = []
+            for _ in json_statuses:
+                statuses_list.append(_)
+
+            random_choice = random.randint(0, len(statuses_list)-1)
+            await statuses[random_choice](random.choice(json_statuses[statuses_list[random_choice]]))
+
+
+async def set_streaming_status(status):
+    await bot.change_presence(activity=discord.Streaming(name='recrent', url='https://www.twitch.tv/recrent'))
+
+
+async def set_gaming_status(status):
+    await bot.change_presence(activity=discord.Game(status))
+
+
+async def set_watching_status(status):
+    await bot.change_presence(activity=discord.Activity(type=discord.ActivityType.watching, name="на твой песюн"))
+
+
+async def set_listening_status(status):
+    await bot.change_presence(activity=discord.Activity(type=discord.ActivityType.listening, name="a song"))
+ 
