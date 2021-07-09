@@ -1,9 +1,9 @@
-import datetime
 from discord.ext.commands import command
 from discord.ext.commands import Cog
-import discord
 from Bot import Bot as Amia
 from re import sub
+import datetime
+import discord
 
 
 class Commands(Cog):
@@ -12,7 +12,7 @@ class Commands(Cog):
         self.bot_amia = bot_amia
 
 
-    @command(name='myark', aliases=['моидевочки'])
+    @command(name="myark", aliases=["моидевочки"])
     async def myark(self, ctx):
         """
         This command sends embed with ark collection to channel.
@@ -25,15 +25,15 @@ class Commands(Cog):
         embed = discord.Embed(color=0xff9900)
         ark_collection = self.bot_amia.get_ark_collection(ctx.message.author.id)
         if not ark_collection:
-            embed.add_field(name=f'{ctx.message.author.name} collection', value='Empty collection(((')
+            embed.add_field(name=f"{ctx.message.author.name} collection", value="Empty collection(((")
         else:
-            embed.add_field(name=f'{ctx.message.author.name} collection', value='\n'.join(ark_collection))
+            embed.add_field(name=f"{ctx.message.author.name} collection", value="\n".join(ark_collection))
         embed.set_thumbnail(url=ctx.message.author.avatar_url)
-        embed.set_footer(text=f'Requested by {ctx.message.author.name}')
+        embed.set_footer(text=f"Requested by {ctx.message.author.name}")
         await ctx.send(embed=embed)
 
 
-    @command(name='barter', aliases=['обмен'])
+    @command(name="barter", aliases=["обмен"])
     async def barter(self, ctx):
         """
         This command serves to exchange characters if possible else returns 'Нет операторов на обмен'
@@ -53,10 +53,10 @@ class Commands(Cog):
             except StopIteration:
                 pass
         else:
-            await ctx.send('***Нет операторов на обмен***', delete_after=15)
+            await ctx.send("***Нет операторов на обмен***", delete_after=15)
 
 
-    @command(name='ark', aliases=['арк'])
+    @command(name="ark", aliases=["арк"])
     async def ark(self, ctx):
         """
         Ark command
@@ -66,7 +66,7 @@ class Commands(Cog):
         """
         await ctx.message.delete()
         tmp = self.bot_amia.get_ark(datetime.datetime.now(), ctx.message.author.id)
-        if 'Копим' in tmp:
+        if "Копим" in tmp:
             await ctx.send(tmp, delete_after=7)
         else:
             await self.ark_embed(tmp, ctx.message)
@@ -81,18 +81,17 @@ class Commands(Cog):
         :param message: to send to current channel
         :return: send embed to message channel
         """
-
         embed = discord.Embed(color=0xff9900, title=character_data[1],
                               description=str(character_data[8]) * character_data[9],
                               url=f"https://aceship.github.io/AN-EN-Tags/akhrchars.html?opname={character_data[1]}")
-        embed.add_field(name='Description', value=f'{character_data[2]}\n{character_data[3]}', inline=False)
-        embed.add_field(name='Position', value=character_data[4])
-        embed.add_field(name='Tags', value=str(character_data[5]), inline=True)
+        embed.add_field(name="Description", value=f"{character_data[2]}\n{character_data[3]}", inline=False)
+        embed.add_field(name="Position", value=character_data[4])
+        embed.add_field(name="Tags", value=str(character_data[5]), inline=True)
         line = sub('[<@.>/]', '', character_data[6])  # Delete all tags in line
-        embed.add_field(name='Traits', value=line, inline=False)
+        embed.add_field(name="Traits", value=line, inline=False)
         embed.set_thumbnail(url=character_data[7])
         embed.set_image(url=f"https://aceship.github.io/AN-EN-Tags/img/characters/{character_data[0]}_1.png")
-        embed.set_footer(text=f'Requested by {message.author.name}')
+        embed.set_footer(text=f"Requested by {message.author.name}")
         await message.channel.send(embed=embed)
 
 

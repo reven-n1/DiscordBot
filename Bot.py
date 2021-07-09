@@ -1,4 +1,3 @@
-import discord
 from bot_token import token
 from os.path import abspath
 import datetime
@@ -35,8 +34,6 @@ class Bot:
         self.ger_variants = ['пернул в ротешник', 'насрал в рот', 'высрал какулю на лицо']
         self.bot_commands = ['!ger', '!пук', '!арк', '!ark', '!clear', '!members', '!commands']
         self.ger_self_variants = ['обосрался с подливой', 'напрудил в штанишки']
-        # self.statuses = ['Warface', 'Жизнь', 'твоего батю', 'человека', 'Detroit: Become Human', 'RAID: Shadow Legends',
-        #                  'программиста']
         self.server_music_is_pause = {}
         self.server_embed_id = {}
         self.server_previous_music = {}

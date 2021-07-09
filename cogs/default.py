@@ -16,7 +16,7 @@ class Commands(Cog):
         await ctx.send(f"{choice(('Hello', 'Hi', 'Hey', 'Hiya'))} {ctx.author.mention}!")
 
 
-    @command(name='info', aliases=['инфо'])
+    @command(name="info", aliases=["инфо"])
     async def info(self, ctx):
         """
         This command set bot info and commands list to discord embed
@@ -27,18 +27,18 @@ class Commands(Cog):
         await ctx.message.delete()
         embed = discord.Embed(color=0xff9900, title=self.bot_amia.name,
                               url=f"https://www.youtube.com/watch?v=X5ULmETDiXI")
-        embed.add_field(name='Description', value=self.bot_amia.bot_info['info'], inline=False)
-        embed.add_field(name='Commands',
-                        value=str('\n'.join(self.bot_amia.get_info())),
+        embed.add_field(name="Description", value=self.bot_amia.bot_info["info"], inline=False)
+        embed.add_field(name="Commands",
+                        value=str("\n".join(self.bot_amia.get_info())),
                         inline=True)
         embed.set_thumbnail(
             url="https://aceship.github.io/AN-EN-Tags/img/characters/char_222_bpipe_race%231.png")
         embed.set_image(url="https://aceship.github.io/AN-EN-Tags/img/characters/char_002_amiya_epoque%234.png")
-        embed.set_footer(text=f'Requested by {ctx.message.author.name}')
+        embed.set_footer(text=f"Requested by {ctx.message.author.name}")
         await ctx.send(embed=embed, delete_after=30)
 
 
-    @command(name="clear")
+    @command(name="clear", aliases=["очистить"])
     async def clear(self, ctx):
         """
         Clears channel from messages

@@ -12,8 +12,7 @@ import discord
 
 class Bot_init(BotBase):
     def __init__(self):
-        self.Prefix = '!'
-        self.Cogs = 'Commands'
+        self.Prefix = "!"
         self.TOKEN = token
         self.VERSION = None
         self.scheduler = AsyncIOScheduler()
@@ -62,7 +61,7 @@ class Bot_init(BotBase):
     async def on_command_error(self, context, exception):
         if isinstance(exception, CommandNotFound):
             await context.message.delete()
-            await context.send(f'{context.message.content} - ***Wrong command, check commands list***', delete_after=15)
+            await context.send(f"{context.message.content} - ***Wrong command, check commands list***", delete_after=15)
 
 
 bot = Bot_init()
@@ -74,7 +73,7 @@ async def status_setter(path_to_config):
 
     with open(path_to_config,"rb") as json_config_file:
             data = load(json_config_file)
-            json_statuses = data['default_settings']['bot_statuses']
+            json_statuses = data["default_settings"]["bot_statuses"]
             statuses_list = []
             for _ in json_statuses:
                 statuses_list.append(_)
@@ -84,7 +83,7 @@ async def status_setter(path_to_config):
 
 
 async def set_streaming_status(status):
-    await bot.change_presence(activity=discord.Streaming(name='recrent', url='https://www.twitch.tv/recrent'))
+    await bot.change_presence(activity=discord.Streaming(name=status, url="https://www.twitch.tv/recrent"))
 
 
 async def set_gaming_status(status):
@@ -92,9 +91,9 @@ async def set_gaming_status(status):
 
 
 async def set_watching_status(status):
-    await bot.change_presence(activity=discord.Activity(type=discord.ActivityType.watching, name="на твой песюн"))
+    await bot.change_presence(activity=discord.Activity(type=discord.ActivityType.watching, name=status))
 
 
 async def set_listening_status(status):
-    await bot.change_presence(activity=discord.Activity(type=discord.ActivityType.listening, name="a song"))
+    await bot.change_presence(activity=discord.Activity(type=discord.ActivityType.listening, name=status))
  
