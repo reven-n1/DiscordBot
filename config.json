@@ -1,13 +1,27 @@
 {
     "default_settings": {
-        "cog_list": ["default"],
+        
+        "cog_list": ["default", "ark", "games", "ger", "music"],
+        
+        "allowed_channels": ["arkbot", "bots", "android"],
+        
+        "ger": {
+            "self_ger_chance": "10",
+            "ger_recoil": "86400"
+        },
+        
+        "ark": {
+            "ark_recoil": "28800"
+        },
+        
         "bot_statuses":
         {
             "game_statuses": ["жизнь", "Detroit: Become Human", "Warface"],
             "music_statuses": ["music_status1", "music_status2", "music_status3"],
             "stream_statuses": ["stream_status1", "stream_status2", "stream_status3"],
             "watching_statuses": ["listen_status1", "listen_status2", "listen_status3"]
-        },       
+        }, 
+
         "setting3": "inf",
         "setting4": "inf"
     },
@@ -17,6 +31,8 @@
         "setting2": "inf",
         "setting3": "inf",
         "setting4": "inf"
-    }
+    },
+
+    "isDefault": "True"
     
 }

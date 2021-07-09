@@ -6,8 +6,6 @@ import sqlite3
 import random
 import json
 import math
-from discord.ext import tasks
-
 
     
 db = sqlite3.connect(abspath('Bot_DB.db'))
@@ -193,7 +191,7 @@ class Bot:
         """
 
         for operators in barter_list:
-            for count in range(0, operators[1]):
+            for _ in range(0, operators[1]):
                 choice_list = self.return_choice_list(operators[0])
                 random_choice = random.choice(list(choice_list.values()))
                 self.add_ark_to_db(author_id, random_choice)

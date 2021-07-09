@@ -1,13 +1,13 @@
 from discord.ext.commands import Bot as BotBase, CommandNotFound
 from apscheduler.schedulers.asyncio import AsyncIOScheduler
+from random import randint, choice
 from discord.ext import tasks
 from bot_token import token
 from logging import error
 import os.path as path
+from json import load
+from sys import exit
 import discord
-import random
-import json
-import sys
 
 
 class Bot_init(BotBase):
@@ -18,18 +18,20 @@ class Bot_init(BotBase):
         self.VERSION = None
         self.scheduler = AsyncIOScheduler()
         if not path.isfile("config.json"):
-            sys.exit("'config.json' not found!")
+            exit("'config.json' not found!")
         self.path_to_config = path.abspath("config.json")
         super().__init__(command_prefix=self.Prefix)
 
+
     def setup(self):
-
         with open(self.path_to_config,"rb") as json_config_file:
-            data = json.load(json_config_file)
-            for _ in data['default_settings']['cog_list']:
-                self.load_extension(f'cogs.{_}')
+            data = load(json_config_file)
+            try:
+                for _ in data['default_settings']['cog_list']:
+                    self.load_extension(f'cogs.{_}')
+            except KeyError:
+                exit("'config.json' is damaged!")
 
-        self.load_extension("Commands")
         print("setup complete")
 
 
@@ -49,12 +51,12 @@ class Bot_init(BotBase):
     async def on_ready(self):
         print(" ***bot ready***")
         status_setter.start(self.path_to_config)
-        
+
        
-    
     async def on_error(self, event_method, *args, **kwargs):
         print(error)
         print(event_method)
+        print(error.message)
         
 
     async def on_command_error(self, context, exception):
@@ -65,19 +67,20 @@ class Bot_init(BotBase):
 
 bot = Bot_init()
 
-@tasks.loop(seconds=10)
+
+@tasks.loop(minutes=1.0)
 async def status_setter(path_to_config):
     statuses = [set_gaming_status, set_listening_status, set_streaming_status, set_watching_status]
 
     with open(path_to_config,"rb") as json_config_file:
-            data = json.load(json_config_file)
+            data = load(json_config_file)
             json_statuses = data['default_settings']['bot_statuses']
             statuses_list = []
             for _ in json_statuses:
                 statuses_list.append(_)
 
-            random_choice = random.randint(0, len(statuses_list)-1)
-            await statuses[random_choice](random.choice(json_statuses[statuses_list[random_choice]]))
+            random_choice = randint(0, len(statuses_list)-1)
+            await statuses[random_choice](choice(json_statuses[statuses_list[random_choice]]))
 
 
 async def set_streaming_status(status):
