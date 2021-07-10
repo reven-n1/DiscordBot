@@ -1,14 +1,15 @@
+from random import randint, choice, randrange
+from datetime import datetime
 from bot_token import token
 from os.path import abspath
-import datetime
+from json import loads
+from math import floor
 import sqlite3
-import random
-import json
-import math
 
     
 db = sqlite3.connect(abspath('Bot_DB.db'))
 cursor = db.cursor()
+
 
 class Bot:
     def __init__(self):
@@ -55,13 +56,16 @@ class Bot:
 
         return info_list
 
+
     @property
     async def statuses(self):
-        return random.choice(self.statuses)
+        return choice(self.statuses)
+
 
     @property
     async def server_delete_quantity(self):
         return self.delete_quantity
+
 
     async def add_music_to_queue(self, channel, content, guild_id):
         try:
@@ -77,6 +81,7 @@ class Bot:
         except IndexError:
             await channel.send('***Maybe you lose space or forgot to add link?***', delete_after=15)
 
+
     def get_commands(self):
         """
         :return: bot commands
@@ -86,6 +91,7 @@ class Bot:
         for key, values in self.bot_info['commands'].items():
             out_str += f'{key} - {values}\n'
         return out_str
+
 
     def get_ark_collection(self, collection_owner_id):
         """
@@ -113,6 +119,7 @@ class Bot:
             prev_rar = item[0]
         return out_list
 
+
     def ger_function(self, message_author, current_time, random_member):
         """
         "nf aeyrwbz gthlbn d hfyljvyjuj xktyf rfyfkf
@@ -126,30 +133,31 @@ class Bot:
         res = cursor.fetchone()
         if res is None:
             cursor.execute(f"INSERT INTO guild_users_info VALUES (?,?,?)",
-                           (f"{message_author.id}", None, datetime.datetime.now()))
-            last_time = datetime.datetime(2020, 11, 11, 11, 11, 11)
+                           (f"{message_author.id}", None, datetime.now()))
+            last_time = datetime(2020, 11, 11, 11, 11, 11)
             db.commit()
         elif res[1] is None:
-            last_time = datetime.datetime(2020, 11, 11, 11, 11, 11)
+            last_time = datetime(2020, 11, 11, 11, 11, 11)
         else:
-            last_time = datetime.datetime.strptime(res[1], '%Y-%m-%d %H:%M:%S.%f')
+            last_time = datetime.strptime(res[1], '%Y-%m-%d %H:%M:%S.%f')
 
         time_difference = self.return_time_difference(current_time, last_time, 'ger')
 
         if time_difference is True:  # If more time passed allows !ger
             cursor.execute(
-                f"UPDATE guild_users_info SET last_ger = '{datetime.datetime.now()}' WHERE user_id ='{message_author.id}'")
+                f"UPDATE guild_users_info SET last_ger = '{datetime.now()}' WHERE user_id ='{message_author.id}'")
             db.commit()
 
-            if random.randint(0, 101) >= self.ger_self_chance:  # Chance to обосраться
+            if randint(0, 101) >= self.ger_self_chance:  # Chance to обосраться
 
                 return (f'{message_author.mention} '
-                        f'{random.choice(self.ger_variants)} {random_member.mention}')
+                        f'{choice(self.ger_variants)} {random_member.mention}')
             else:
-                return f'{message_author.mention} {random.choice(self.ger_self_variants)}'  # Самообсер
+                return f'{message_author.mention} {choice(self.ger_self_variants)}'  # Самообсер
 
         else:
             return time_difference
+
 
     @staticmethod
     def get_barter_list(author_id):
@@ -178,6 +186,7 @@ class Bot:
             db.commit()
         return barter_list
 
+
     def ark_barter(self, barter_list, author_id):
         """
         Exchanges characters and calls function to add them to db
@@ -190,9 +199,10 @@ class Bot:
         for operators in barter_list:
             for _ in range(0, operators[1]):
                 choice_list = self.return_choice_list(operators[0])
-                random_choice = random.choice(list(choice_list.values()))
+                random_choice = choice(list(choice_list.values()))
                 self.add_ark_to_db(author_id, random_choice)
                 yield random_choice
+
 
     def return_choice_list(self, rarity):
         """
@@ -204,7 +214,7 @@ class Bot:
 
         choice_list = {}
         file = open('char_table.json', "rb")
-        json_data = json.loads(file.read())  # Извлекаем JSON
+        json_data = loads(file.read())  # Извлекаем JSON
         for line in json_data:
             tmp = json_data[str(line)]
             json_rarity = int(tmp['rarity']) + 1
@@ -243,12 +253,13 @@ class Bot:
         file.close()
         return choice_list
 
+
     def get_ark_rarity(self):
         """
         :return: random character rarity
         """
 
-        rarity = random.randrange(0, 100000)
+        rarity = randrange(0, 100000)
         if rarity <= self.six_star_chance * 1000:
             return 6
         elif rarity <= self.five_star_chance * 1000:
@@ -257,6 +268,7 @@ class Bot:
             return 4
         elif rarity <= self.three_star_chance * 1000:
             return 3
+
 
     def get_ark(self, time_now, author_id):
         """
@@ -272,27 +284,28 @@ class Bot:
         if res is None:
             cursor.execute(f"INSERT INTO guild_users_info VALUES (?,?,?)",
                            (f"{author_id}", None, None))
-            last_time = datetime.datetime(2020, 11, 11, 11, 11, 11)
+            last_time = datetime(2020, 11, 11, 11, 11, 11)
             db.commit()
         elif res[1] is None:
-            last_time = datetime.datetime(2020, 11, 11, 11, 11, 11)
+            last_time = datetime(2020, 11, 11, 11, 11, 11)
         else:
-            last_time = datetime.datetime.strptime(res[1], '%Y-%m-%d %H:%M:%S.%f')
+            last_time = datetime.strptime(res[1], '%Y-%m-%d %H:%M:%S.%f')
 
         time_difference = self.return_time_difference(time_now, last_time, 'ark')
 
         if time_difference is True:  # If more time passed allow !ger
 
             choice_list = self.return_choice_list(self.get_ark_rarity())
-            rand_item_from_list = random.choice(list(choice_list.values()))
+            rand_item_from_list = choice(list(choice_list.values()))
             cursor.execute(
-                f"UPDATE guild_users_info SET last_ark = '{datetime.datetime.now()}' WHERE user_id ='{author_id}'")
+                f"UPDATE guild_users_info SET last_ark = '{datetime.now()}' WHERE user_id ='{author_id}'")
 
             self.add_ark_to_db(author_id, rand_item_from_list)
             return rand_item_from_list
 
         else:  # if passed time less then 24 h
             return time_difference
+
 
     @staticmethod
     def add_ark_to_db(author_id, rand_item_from_list):
@@ -316,6 +329,7 @@ class Bot:
                            f"WHERE user_id ='{author_id}'AND operator_name == '{rand_item_from_list[1]}'")
         db.commit()
 
+
     def return_time_difference(self, current_time, last_time, status):
         """
         This function return either True or cooldown time
@@ -326,8 +340,8 @@ class Bot:
         :return:
         """
         time_difference = current_time - last_time  # Разница во времени между сейчас и прошлым прокрутом
-        time_difference = math.floor(time_difference.total_seconds())  # Перевел в секунды
-        sec = divmod(math.floor(time_difference), 60)  # sec[1] - секунды / sec[0] - оставшиеся минуты
+        time_difference = floor(time_difference.total_seconds())  # Перевел в секунды
+        sec = divmod(floor(time_difference), 60)  # sec[1] - секунды / sec[0] - оставшиеся минуты
         minutes = divmod(sec[0], 60)  # minutes[1] - минуты / minutes[0] - часы
         hours = minutes[0]  # часы
         if hours >= self.ger_recoil / 3600:  # If more time passed allow !ger
@@ -339,7 +353,7 @@ class Bot:
             else:
                 sentence = 'Идет зарядка жепы'
             time_difference2 = self.ger_recoil - time_difference
-            sec = divmod(math.floor(time_difference2), 60)  # sec[1] - секунды / sec[0] - оставшиеся минуты
+            sec = divmod(floor(time_difference2), 60)  # sec[1] - секунды / sec[0] - оставшиеся минуты
             minutes = divmod(sec[0], 60)  # minutes[1] - минуты /
             hours = minutes[0]  # minutes[0] - часы
             if hours == 0:  # choice return output variants

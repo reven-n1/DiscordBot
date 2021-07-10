@@ -7,11 +7,18 @@
         
         "ger": {
             "self_ger_chance": "10",
-            "ger_recoil": "86400"
+            "ger_recoil": "86400",
+            "phrase_variants": ["пернул в ротешник", "насрал в рот", "высрал какулю на лицо"]
         },
         
         "ark": {
-            "ark_recoil": "28800"
+            "ark_recoil": "28800",
+            "chance": {
+                "six_star": "2",
+                "five_star": "10",
+                "four_star": "60",
+                "three_star": "100"
+            }
         },
         
         "bot_statuses":
@@ -22,7 +29,7 @@
             "watching_statuses": ["listen_status1", "listen_status2", "listen_status3"]
         }, 
 
-        "setting3": "inf",
+        "info": "info",
         "setting4": "inf"
     },
 
