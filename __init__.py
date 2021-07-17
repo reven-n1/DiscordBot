@@ -1,13 +1,15 @@
+from discord import Activity, ActivityType, Game, Streaming, Intents
 from discord.ext.commands import Bot as BotBase, CommandNotFound
-from apscheduler.schedulers.asyncio import AsyncIOScheduler
+from discord.ext.commands.errors import CommandOnCooldown
 from random import randint, choice
+from datetime import timedelta
 from discord.ext import tasks
 from bot_token import token
 from logging import error
 import os.path as path
 from json import load
+from math import ceil
 from sys import exit
-import discord
 
 
 class Bot_init(BotBase):
@@ -15,11 +17,10 @@ class Bot_init(BotBase):
         self.Prefix = "!"
         self.TOKEN = token
         self.VERSION = None
-        self.scheduler = AsyncIOScheduler()
         if not path.isfile("config.json"):
             exit("'config.json' not found!")
         self.path_to_config = path.abspath("config.json")
-        super().__init__(command_prefix=self.Prefix)
+        super().__init__(command_prefix=self.Prefix, intents=Intents().all())
 
 
     def setup(self):
@@ -55,10 +56,16 @@ class Bot_init(BotBase):
     async def on_error(self, event_method, *args, **kwargs):
         print(error)
         print(event_method)
-        print(error.message)
         
 
     async def on_command_error(self, context, exception):
+        if isinstance(exception, CommandOnCooldown):
+            cooldown_time = timedelta(seconds=ceil(exception.retry_after))
+            if context.message.content == "!ger":
+                await context.send(f"***Заряжаем жепу, осталось: {cooldown_time}***", delete_after=15)
+            else:
+                await context.send(f"***Копим орундум, осталось: {cooldown_time}***", delete_after=15)
+
         if isinstance(exception, CommandNotFound):
             await context.message.delete()
             await context.send(f"{context.message.content} - ***Wrong command, check commands list***", delete_after=15)
@@ -83,17 +90,16 @@ async def status_setter(path_to_config):
 
 
 async def set_streaming_status(status):
-    await bot.change_presence(activity=discord.Streaming(name=status, url="https://www.twitch.tv/recrent"))
+    await bot.change_presence(activity=Streaming(name=status, url="https://www.twitch.tv/recrent"))
 
 
 async def set_gaming_status(status):
-    await bot.change_presence(activity=discord.Game(status))
+    await bot.change_presence(activity=Game(status))
 
 
 async def set_watching_status(status):
-    await bot.change_presence(activity=discord.Activity(type=discord.ActivityType.watching, name=status))
+    await bot.change_presence(activity=Activity(type=ActivityType.watching, name=status))
 
 
 async def set_listening_status(status):
-    await bot.change_presence(activity=discord.Activity(type=discord.ActivityType.listening, name=status))
- 
+    await bot.change_presence(activity=Activity(type=ActivityType.listening, name=status))

@@ -1,5 +1,6 @@
-from discord.ext.commands import command
+from discord.ext.commands import command, cooldown
 from discord.ext.commands import Cog
+from discord.ext.commands.cooldowns import BucketType
 from Bot import Bot as Amia
 
 
@@ -8,6 +9,7 @@ class Commands(Cog):
         self.bot = bot
         self.bot_amia = bot_amia
 
+    @cooldown(1,20, BucketType.user)
     @command(name="tst3", aliases=["tst33"])
     async def test(self, ctx):
         await ctx.send(f"test by - {ctx.author.mention}!")

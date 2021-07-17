@@ -1,4 +1,5 @@
-from discord.ext.commands import command
+from discord.ext.commands.cooldowns import BucketType
+from discord.ext.commands import command, cooldown
 from discord.ext.commands import Cog
 from Bot import Bot as Amia
 from re import sub
@@ -56,6 +57,7 @@ class Commands(Cog):
             await ctx.send("***Нет операторов на обмен***", delete_after=15)
 
 
+    @cooldown(1, 28800, BucketType.user)
     @command(name="ark", aliases=["арк"])
     async def ark(self, ctx):
         """
@@ -66,10 +68,7 @@ class Commands(Cog):
         """
         await ctx.message.delete()
         tmp = self.bot_amia.get_ark(datetime.datetime.now(), ctx.message.author.id)
-        if "Копим" in tmp:
-            await ctx.send(tmp, delete_after=7)
-        else:
-            await self.ark_embed(tmp, ctx.message)
+        await self.ark_embed(tmp, ctx.message)
 
 
     @staticmethod

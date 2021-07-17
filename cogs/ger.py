@@ -1,8 +1,8 @@
-from discord.ext.commands import command
+from discord.ext.commands.cooldowns import BucketType
+from discord.ext.commands import command, cooldown
 from discord.ext.commands import Cog
 from Bot import Bot as Amia
 from random import choice
-import datetime
 
 
 class Commands(Cog):
@@ -11,6 +11,7 @@ class Commands(Cog):
         self.bot_amia = bot_amia
 
 
+    @cooldown(1, 86400, BucketType.user)
     @command(name="ger", aliases=["пук"])
     async def ger(self, ctx):
         """
@@ -23,11 +24,8 @@ class Commands(Cog):
         random_user = choice(ctx.message.guild.members)
         while random_user == ctx.message.author:
             random_user = choice(ctx.message.guild.members.names)
-        ger_message = self.bot_amia.ger_function(ctx.message.author, datetime.datetime.now(), random_user)
-        if "Идет" in ger_message:
-            await ctx.send(ger_message, delete_after=7)
-        else:
-            await ctx.send(ger_message)
+        ger_message = self.bot_amia.ger_function(ctx.message.author, random_user)
+        await ctx.send(ger_message)
 
 
 def setup(bot):

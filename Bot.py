@@ -1,9 +1,7 @@
 from random import randint, choice, randrange
-from datetime import datetime
 from bot_token import token
 from os.path import abspath
 from json import loads
-from math import floor
 import sqlite3
 
     
@@ -13,6 +11,11 @@ cursor = db.cursor()
 
 class Bot:
     def __init__(self):
+        try:
+            pass
+        except Exception as e:
+            print("'config.json' is damaged")
+
         self.token = token
         self.name = 'Amia(bot)'
         self.bot_img = 'BotImg.png'
@@ -55,11 +58,6 @@ class Bot:
             count += 1
 
         return info_list
-
-
-    @property
-    async def statuses(self):
-        return choice(self.statuses)
 
 
     @property
@@ -120,7 +118,7 @@ class Bot:
         return out_list
 
 
-    def ger_function(self, message_author, current_time, random_member):
+    def ger_function(self, message_author, random_member):
         """
         "nf aeyrwbz gthlbn d hfyljvyjuj xktyf rfyfkf
 
@@ -129,34 +127,14 @@ class Bot:
         :param random_member: random server member from server list
         :return: either cooldown time or ger
         """
-        cursor.execute(f"SELECT user_id, last_ger FROM guild_users_info WHERE user_id == '{message_author.id}'")
-        res = cursor.fetchone()
-        if res is None:
-            cursor.execute(f"INSERT INTO guild_users_info VALUES (?,?,?)",
-                           (f"{message_author.id}", None, datetime.now()))
-            last_time = datetime(2020, 11, 11, 11, 11, 11)
-            db.commit()
-        elif res[1] is None:
-            last_time = datetime(2020, 11, 11, 11, 11, 11)
+        
+        if randint(0, 101) >= self.ger_self_chance:  # Chance to обосраться
+
+            return (f'{message_author.mention} '
+                    f'{choice(self.ger_variants)} {random_member.mention}')
         else:
-            last_time = datetime.strptime(res[1], '%Y-%m-%d %H:%M:%S.%f')
+            return f'{message_author.mention} {choice(self.ger_self_variants)}'  # Самообсер
 
-        time_difference = self.return_time_difference(current_time, last_time, 'ger')
-
-        if time_difference is True:  # If more time passed allows !ger
-            cursor.execute(
-                f"UPDATE guild_users_info SET last_ger = '{datetime.now()}' WHERE user_id ='{message_author.id}'")
-            db.commit()
-
-            if randint(0, 101) >= self.ger_self_chance:  # Chance to обосраться
-
-                return (f'{message_author.mention} '
-                        f'{choice(self.ger_variants)} {random_member.mention}')
-            else:
-                return f'{message_author.mention} {choice(self.ger_self_variants)}'  # Самообсер
-
-        else:
-            return time_difference
 
 
     @staticmethod
@@ -278,33 +256,10 @@ class Bot:
         :param author_id:
         :return: either cool down time or character data
         """
-
-        cursor.execute(f"SELECT user_id, last_ark  FROM guild_users_info WHERE user_id == '{author_id}'")
-        res = cursor.fetchone()
-        if res is None:
-            cursor.execute(f"INSERT INTO guild_users_info VALUES (?,?,?)",
-                           (f"{author_id}", None, None))
-            last_time = datetime(2020, 11, 11, 11, 11, 11)
-            db.commit()
-        elif res[1] is None:
-            last_time = datetime(2020, 11, 11, 11, 11, 11)
-        else:
-            last_time = datetime.strptime(res[1], '%Y-%m-%d %H:%M:%S.%f')
-
-        time_difference = self.return_time_difference(time_now, last_time, 'ark')
-
-        if time_difference is True:  # If more time passed allow !ger
-
-            choice_list = self.return_choice_list(self.get_ark_rarity())
-            rand_item_from_list = choice(list(choice_list.values()))
-            cursor.execute(
-                f"UPDATE guild_users_info SET last_ark = '{datetime.now()}' WHERE user_id ='{author_id}'")
-
-            self.add_ark_to_db(author_id, rand_item_from_list)
-            return rand_item_from_list
-
-        else:  # if passed time less then 24 h
-            return time_difference
+        choice_list = self.return_choice_list(self.get_ark_rarity())
+        rand_item_from_list = choice(list(choice_list.values()))
+        self.add_ark_to_db(author_id, rand_item_from_list)
+        return rand_item_from_list
 
 
     @staticmethod
@@ -328,37 +283,3 @@ class Bot:
             cursor.execute(f"UPDATE users_ark_collection SET operator_count = '{res[0] + 1}'"
                            f"WHERE user_id ='{author_id}'AND operator_name == '{rand_item_from_list[1]}'")
         db.commit()
-
-
-    def return_time_difference(self, current_time, last_time, status):
-        """
-        This function return either True or cooldown time
-
-        :param current_time: datetime.now()
-        :param last_time: recent use
-        :param status: ark or ger function
-        :return:
-        """
-        time_difference = current_time - last_time  # Разница во времени между сейчас и прошлым прокрутом
-        time_difference = floor(time_difference.total_seconds())  # Перевел в секунды
-        sec = divmod(floor(time_difference), 60)  # sec[1] - секунды / sec[0] - оставшиеся минуты
-        minutes = divmod(sec[0], 60)  # minutes[1] - минуты / minutes[0] - часы
-        hours = minutes[0]  # часы
-        if hours >= self.ger_recoil / 3600:  # If more time passed allow !ger
-            return True
-
-        else:  # if passed time less then 24 h
-            if 'ark' in status:
-                sentence = 'Копим орундум'
-            else:
-                sentence = 'Идет зарядка жепы'
-            time_difference2 = self.ger_recoil - time_difference
-            sec = divmod(floor(time_difference2), 60)  # sec[1] - секунды / sec[0] - оставшиеся минуты
-            minutes = divmod(sec[0], 60)  # minutes[1] - минуты /
-            hours = minutes[0]  # minutes[0] - часы
-            if hours == 0:  # choice return output variants
-                return f'{sentence}, осталось {minutes[1]} мин {sec[1]} сек'
-            elif hours == 0 and minutes[1] == 0:
-                return f'{sentence}, осталось {sec[1]} сек'
-            else:
-                return f'{sentence}, осталось {hours} ч {minutes[1]} мин {sec[1]} сек'
