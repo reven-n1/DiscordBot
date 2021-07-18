@@ -1,4 +1,8 @@
-from __init__ import bot
+from bot.__init__ import bot
 
-version = 1.1
-bot.run(version)
+def main():
+    version = 1.1
+    bot.run(version)
+
+if __name__ == "__main__":
+    main()

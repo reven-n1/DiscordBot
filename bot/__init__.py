@@ -4,7 +4,7 @@ from discord.ext.commands.errors import CommandOnCooldown
 from random import randint, choice
 from datetime import timedelta
 from discord.ext import tasks
-from bot_token import token
+from bot.bot_token import token
 from logging import error
 import os.path as path
 from json import load
@@ -17,7 +17,7 @@ class Bot_init(BotBase):
         self.Prefix = "!"
         self.TOKEN = token
         self.VERSION = None
-        if not path.isfile("config.json"):
+        if not path.isfile("/config/config.json"):
             exit("'config.json' not found!")
         self.path_to_config = path.abspath("config.json")
         super().__init__(command_prefix=self.Prefix, intents=Intents().all())
@@ -60,6 +60,7 @@ class Bot_init(BotBase):
 
     async def on_command_error(self, context, exception):
         if isinstance(exception, CommandOnCooldown):
+            await context.messege.delete()
             cooldown_time = timedelta(seconds=ceil(exception.retry_after))
             if context.message.content == "!ger":
                 await context.send(f"***Заряжаем жепу, осталось: {cooldown_time}***", delete_after=15)

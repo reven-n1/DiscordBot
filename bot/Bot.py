@@ -102,7 +102,6 @@ class Bot:
         cursor.execute(f"SELECT rarity, operator_name, operator_count FROM users_ark_collection "
                        f"WHERE user_id == '{collection_owner_id}'")
         res = sorted(cursor.fetchall())
-        print(res)
         out_list = []
         prev_rar = 2
         for item in res:
