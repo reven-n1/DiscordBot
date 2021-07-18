@@ -1,7 +1,7 @@
 from discord.ext.commands.cooldowns import BucketType
 from discord.ext.commands import command, cooldown
 from discord.ext.commands import Cog
-from Bot import Bot as Amia
+from bot.Bot import Bot as Amia
 from random import choice
 
 

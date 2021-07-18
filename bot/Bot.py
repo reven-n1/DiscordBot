@@ -1,5 +1,5 @@
 from random import randint, choice, randrange
-from bot_token import token
+from bot.bot_token import token
 from os.path import abspath
 from json import loads
 import sqlite3
@@ -190,7 +190,7 @@ class Bot:
         """
 
         choice_list = {}
-        file = open('char_table.json', "rb")
+        file = open('config/char_table.json', "rb")
         json_data = loads(file.read())  # Извлекаем JSON
         for line in json_data:
             tmp = json_data[str(line)]
@@ -247,7 +247,7 @@ class Bot:
             return 3
 
 
-    def get_ark(self, time_now, author_id):
+    def get_ark(self, author_id):
         """
         Djpdhfoftn cjcjxre ltdjxre bkb reklfey
 

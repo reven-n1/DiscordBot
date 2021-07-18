@@ -17,9 +17,9 @@ class Bot_init(BotBase):
         self.Prefix = "!"
         self.TOKEN = token
         self.VERSION = None
-        if not path.isfile("/config/config.json"):
+        if not path.isfile("config/config.json"):
             exit("'config.json' not found!")
-        self.path_to_config = path.abspath("config.json")
+        self.path_to_config = path.abspath("config/config.json")
         super().__init__(command_prefix=self.Prefix, intents=Intents().all())
 
 
@@ -28,7 +28,7 @@ class Bot_init(BotBase):
             data = load(json_config_file)
             try:
                 for _ in data['default_settings']['cog_list']:
-                    self.load_extension(f'cogs.{_}')
+                    self.load_extension(f'bot.cogs.{_}')
             except KeyError:
                 exit("'config.json' is damaged!")
 
@@ -59,17 +59,22 @@ class Bot_init(BotBase):
         
 
     async def on_command_error(self, context, exception):
+
+        await context.message.delete()
         if isinstance(exception, CommandOnCooldown):
-            await context.messege.delete()
             cooldown_time = timedelta(seconds=ceil(exception.retry_after))
             if context.message.content == "!ger":
                 await context.send(f"***Заряжаем жепу, осталось: {cooldown_time}***", delete_after=15)
             else:
                 await context.send(f"***Копим орундум, осталось: {cooldown_time}***", delete_after=15)
 
-        if isinstance(exception, CommandNotFound):
+        elif isinstance(exception, CommandNotFound):
             await context.message.delete()
             await context.send(f"{context.message.content} - ***Wrong command, check commands list***", delete_after=15)
+
+        else:
+            print(context.message.content())
+            print(exception)
 
 
 bot = Bot_init()

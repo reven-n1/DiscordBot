@@ -1,9 +1,8 @@
 from discord.ext.commands.cooldowns import BucketType
 from discord.ext.commands import command, cooldown
 from discord.ext.commands import Cog
-from Bot import Bot as Amia
+from bot.Bot import Bot as Amia
 from re import sub
-import datetime
 import discord
 
 
@@ -67,7 +66,7 @@ class Commands(Cog):
         :return: either cooldown or character
         """
         await ctx.message.delete()
-        tmp = self.bot_amia.get_ark(datetime.datetime.now(), ctx.message.author.id)
+        tmp = self.bot_amia.get_ark(ctx.message.author.id)
         await self.ark_embed(tmp, ctx.message)
 
 
