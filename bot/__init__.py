@@ -2,9 +2,9 @@ from discord import Activity, ActivityType, Game, Streaming, Intents
 from discord.ext.commands import Bot as BotBase, CommandNotFound
 from discord.ext.commands.errors import CommandOnCooldown
 from random import randint, choice
+from bot.bot_token import token
 from datetime import timedelta
 from discord.ext import tasks
-from bot.bot_token import token
 from logging import error
 import os.path as path
 from json import load
@@ -60,7 +60,7 @@ class Bot_init(BotBase):
 
     async def on_command_error(self, context, exception):
 
-        await context.message.delete()
+
         if isinstance(exception, CommandOnCooldown):
             cooldown_time = timedelta(seconds=ceil(exception.retry_after))
             if context.message.content == "!ger":
@@ -69,13 +69,10 @@ class Bot_init(BotBase):
                 await context.send(f"***Копим орундум, осталось: {cooldown_time}***", delete_after=15)
 
         elif isinstance(exception, CommandNotFound):
-            await context.message.delete()
             await context.send(f"{context.message.content} - ***Wrong command, check commands list***", delete_after=15)
 
         else:
-            print(context.message.content())
-            print(exception)
-
+            print(exception.name)
 
 bot = Bot_init()
 

@@ -58,12 +58,12 @@ class Commands(Cog):
 
     @cooldown(1, 28800, BucketType.user)
     @command(name="ark", aliases=["арк"])
-    async def ark(self, ctx):
+    async def ark(self, ctx):      
         """
         Ark command
 
         :param ctx: context
-        :return: either cooldown or character
+        :return: character
         """
         await ctx.message.delete()
         tmp = self.bot_amia.get_ark(ctx.message.author.id)
@@ -86,7 +86,7 @@ class Commands(Cog):
         embed.add_field(name="Position", value=character_data[4])
         embed.add_field(name="Tags", value=str(character_data[5]), inline=True)
         line = sub('[<@.>/]', '', character_data[6])  # Delete all tags in line
-        embed.add_field(name="Traits", value=line, inline=False)
+        embed.add_field(name="Traits", value=line.replace('bakw', ''), inline=False)
         embed.set_thumbnail(url=character_data[7])
         embed.set_image(url=f"https://aceship.github.io/AN-EN-Tags/img/characters/{character_data[0]}_1.png")
         embed.set_footer(text=f"Requested by {message.author.name}")

@@ -1,7 +1,7 @@
 from random import randint, choice, randrange
 from bot.bot_token import token
+from json import loads, load
 from os.path import abspath
-from json import loads
 import sqlite3
 
     
@@ -12,9 +12,14 @@ cursor = db.cursor()
 class Bot:
     def __init__(self):
         try:
-            pass
+            with open(abspath("config/config.json"),"rb") as json_config_file:
+                data = load(json_config_file)['default_settings']
+                self.ger_self_chance = data['ger']['self_ger_chance']
+                self.ger_phrase_variants = data['ger']['phrase_variants']
+
         except Exception as e:
-            print("'config.json' is damaged")
+            print("'config.json' is damaged or lost")
+            print(e)
 
         self.token = token
         self.name = 'Amia(bot)'

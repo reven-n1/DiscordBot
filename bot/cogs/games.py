@@ -5,14 +5,14 @@ from bot.Bot import Bot as Amia
 
 
 class Commands(Cog):
-    def __init__(self, bot, bot_amia):
+    def __init__(self, bot):
         self.bot = bot
-        self.bot_amia = bot_amia
 
     @cooldown(1,20, BucketType.user)
     @command(name="tst3", aliases=["tst33"])
     async def test(self, ctx):
         await ctx.send(f"test by - {ctx.author.mention}!")
+        await Amia.get_info()
 
 
 def setup(bot):
@@ -21,5 +21,4 @@ def setup(bot):
 
     :param bot: bot instance
     """
-    bot_amia = Amia()
-    bot.add_cog(Commands(bot, bot_amia))
+    bot.add_cog(Commands(bot))
