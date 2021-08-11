@@ -1,3 +1,5 @@
+from inspect import Traceback
+import logging
 from discord import Activity, ActivityType, Game, Streaming, Intents
 from discord.ext.commands import Bot as BotBase, CommandNotFound
 from discord.ext.commands.errors import CommandOnCooldown
@@ -10,6 +12,7 @@ import os.path as path
 from json import load
 from math import ceil
 from sys import exit
+import traceback
 
 
 class Bot_init(BotBase):
@@ -54,6 +57,7 @@ class Bot_init(BotBase):
 
        
     async def on_error(self, event_method, *args, **kwargs):
+        logging.warning(traceback.format_exc())
         print(error)
         print(event_method)
         
@@ -72,7 +76,7 @@ class Bot_init(BotBase):
             await context.send(f"{context.message.content} - ***Wrong command, check commands list***", delete_after=15)
 
         else:
-            print(exception.name)
+            print(exception)
 
 bot = Bot_init()
 

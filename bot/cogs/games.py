@@ -11,8 +11,7 @@ class Commands(Cog):
     @cooldown(1,20, BucketType.user)
     @command(name="tst3", aliases=["tst33"])
     async def test(self, ctx):
-        await ctx.send(f"test by - {ctx.author.mention}!")
-        await Amia.get_info()
+        await ctx.message.author.send(f"test by - {ctx.author.name}!")
 
 
 def setup(bot):

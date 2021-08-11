@@ -22,15 +22,9 @@ class Commands(Cog):
         :return: discord.embed
         """
         await ctx.message.delete()
-        embed = discord.Embed(color=0xff9900)
         ark_collection = self.bot_amia.get_ark_collection(ctx.message.author.id)
-        if not ark_collection:
-            embed.add_field(name=f"{ctx.message.author.name} collection", value="Empty collection(((")
-        else:
-            embed.add_field(name=f"{ctx.message.author.name} collection", value="\n".join(ark_collection))
-        embed.set_thumbnail(url=ctx.message.author.avatar_url)
-        embed.set_footer(text=f"Requested by {ctx.message.author.name}")
-        await ctx.send(embed=embed)
+        collection_message = f"***{ctx.message.author.name}  collection***\n"+ "\n".join(ark_collection)
+        await ctx.message.author.send(f"\n>>> {collection_message}")
 
 
     @command(name="barter", aliases=["обмен"])
@@ -99,5 +93,6 @@ def setup(bot):
 
     :param bot: bot instance
     """
+    #TODO: call class methods directly instead of instantiating the class
     bot_amia = Amia()
     bot.add_cog(Commands(bot, bot_amia))

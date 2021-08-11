@@ -21,5 +21,7 @@ def setup(bot):
 
     :param bot: bot instance
     """
+    #TODO: call class methods directly instead of instantiating the class
+
     bot_amia = Amia()
     bot.add_cog(Commands(bot, bot_amia))

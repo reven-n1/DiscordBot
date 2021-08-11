@@ -1,6 +1,5 @@
 bot_token.py
-lol.py
-test_func.py
+test.py
 # Byte-compiled / optimized / DLL files
 __pycache__/
 *.py[cod]
