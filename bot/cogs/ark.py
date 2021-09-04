@@ -1,28 +1,24 @@
 from discord.ext.commands.cooldowns import BucketType
 from discord.ext.commands import command, cooldown
 from discord.ext.commands import Cog
-from bot.Bot import Bot as Amia
+from bot.__init__ import Amia
 from re import sub
 import discord
 
 
 class Commands(Cog):
-    def __init__(self, bot, bot_amia):
+    def __init__(self, bot):
         self.bot = bot
-        self.bot_amia = bot_amia
 
 
     @command(name="myark", aliases=["моидевочки"])
     async def myark(self, ctx):
         """
-        This command sends embed with ark collection to channel.
+        This command sends embed with ark collection to channel.\n
         If collection empty -> returns 'Empty collection'
-
-        :param ctx: context
-        :return: discord.embed
         """
         await ctx.message.delete()
-        ark_collection = self.bot_amia.get_ark_collection(ctx.message.author.id)
+        ark_collection = Amia.get_ark_collection(ctx.message.author.id)
         collection_message = f"***{ctx.message.author.name}  collection***\n"+ "\n".join(ark_collection)
         await ctx.message.author.send(f"\n>>> {collection_message}")
 
@@ -30,15 +26,12 @@ class Commands(Cog):
     @command(name="barter", aliases=["обмен"])
     async def barter(self, ctx):
         """
-        This command serves to exchange characters if possible else returns 'Нет операторов на обмен'
-
-        :param ctx: context
-        :return: either calls ark_embed function or returns 'Нет операторов на обмен'
+        Serves to exchange characters if possible else returns 'Нет операторов на обмен'
         """
         await ctx.message.delete()
-        barter_list = self.bot_amia.get_barter_list(ctx.message.author.id)
+        barter_list = Amia.get_barter_list(ctx.message.author.id)
         if barter_list:
-            barter = self.bot_amia.ark_barter(barter_list, ctx.message.author.id)
+            barter = Amia.ark_barter(barter_list, ctx.message.author.id)
             tmp = next(barter)
             try:
                 while tmp:
@@ -54,24 +47,21 @@ class Commands(Cog):
     @command(name="ark", aliases=["арк"])
     async def ark(self, ctx):      
         """
-        Ark command
-
-        :param ctx: context
-        :return: character
+        ark function - return a random character from char_table.json
         """
         await ctx.message.delete()
-        tmp = self.bot_amia.get_ark(ctx.message.author.id)
-        await self.ark_embed(tmp, ctx.message)
+        character_data = Amia.get_ark(ctx.message.author.id)
+        await self.ark_embed(character_data, ctx.message)
 
 
     @staticmethod
     async def ark_embed(character_data, message):
         """
-        This command creates embed from received data
+        Generates embed form recieved ark data
 
-        :param character_data: char_id, name, desc_first_part, desc_sec_part, position, tags, traits, prof, emoji, rar
-        :param message: to send to current channel
-        :return: send embed to message channel
+        Args:
+            character_data (list): random character data from char_table.json
+            message (discord.message): message
         """
         embed = discord.Embed(color=0xff9900, title=character_data[1],
                               description=str(character_data[8]) * character_data[9],
@@ -89,10 +79,6 @@ class Commands(Cog):
 
 def setup(bot):
     """
-    Firs function adds cogs and creates bot class instance
-
-    :param bot: bot instance
+    Adds cogs
     """
-    #TODO: call class methods directly instead of instantiating the class
-    bot_amia = Amia()
-    bot.add_cog(Commands(bot, bot_amia))
+    bot.add_cog(Commands(bot))

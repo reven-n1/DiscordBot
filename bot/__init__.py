@@ -1,18 +1,19 @@
-from inspect import Traceback
-import logging
+from discord.ext.commands.errors import CommandOnCooldown, MissingPermissions
 from discord import Activity, ActivityType, Game, Streaming, Intents
 from discord.ext.commands import Bot as BotBase, CommandNotFound
-from discord.ext.commands.errors import CommandOnCooldown
 from random import randint, choice
 from bot.bot_token import token
 from datetime import timedelta
 from discord.ext import tasks
 from logging import error
+from bot.Bot import Bot
 import os.path as path
 from json import load
 from math import ceil
 from sys import exit
 import traceback
+import logging
+
 
 
 class Bot_init(BotBase):
@@ -75,10 +76,14 @@ class Bot_init(BotBase):
         elif isinstance(exception, CommandNotFound):
             await context.send(f"{context.message.content} - ***Wrong command, check commands list***", delete_after=15)
 
+        elif isinstance(exception, MissingPermissions):
+            await context.send(f"{context.message.author} ***- You don't have permission to do that***", delete_after=15)
+
         else:
             print(exception)
 
 bot = Bot_init()
+Amia = Bot()
 
 
 @tasks.loop(minutes=1.0)

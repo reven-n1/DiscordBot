@@ -11,13 +11,14 @@ class Commands(Cog):
     @cooldown(1,20, BucketType.user)
     @command(name="tst3", aliases=["tst33"])
     async def test(self, ctx):
-        await ctx.message.author.send(f"test by - {ctx.author.name}!")
+        """
+        Test command
+        """
+        await ctx.send(ctx.message.author.id)
 
 
 def setup(bot):
     """
-    Firs function adds cogs and creates bot class instance
-
-    :param bot: bot instance
+    Adds cogs
     """
     bot.add_cog(Commands(bot))

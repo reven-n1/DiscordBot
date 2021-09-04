@@ -1,14 +1,15 @@
 {
     "default_settings": {
         
-        "cog_list": ["default", "ark", "games", "ger", "music"],
+        "cog_list": ["administration", "default", "ark", "games", "ger", "music"],
         
         "allowed_channels": ["arkbot", "bots", "android"],
         
         "ger": {
             "self_ger_chance": "10",
             "ger_recoil": "86400",
-            "phrase_variants": ["пернул в ротешник", "насрал в рот", "высрал какулю на лицо"]
+            "phrase_variants": ["пернул в ротешник", "насрал в рот", "высрал какулю на лицо"],
+            "self_phrase_variants": ["обосрался с подливой", "напрудил в штанишки"]
         },
         
         "ark": {
