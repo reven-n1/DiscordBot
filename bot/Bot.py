@@ -3,7 +3,7 @@ from json import loads, load
 from os.path import abspath
 import sqlite3
     
-db = sqlite3.connect(abspath("bot/Bot_DB.db"))
+db = sqlite3.connect(abspath("bot/data/Bot_DB.db"))
 cursor = db.cursor()
 
 
@@ -29,7 +29,6 @@ class Bot:
             print(e)
 
         self.name = "Amia(bot)"
-        self.bot_img = "BotImg.png"
         self.delete_quantity = 100       
         self.stars_0_5 = "<:star:801095671720968203>"
         self.stars_6 = "<:star2:801105195958140928>"

@@ -22,7 +22,7 @@ class Commands(Cog):
     @command(name="myark", aliases=["моидевочки"])
     async def myark(self, ctx):
         """
-        This command sends embed with ark collection to channel.\n
+        This command sends ark collection to private messages.\n
         If collection empty -> returns 'Empty collection'
         """
         await ctx.message.delete()
@@ -34,7 +34,8 @@ class Commands(Cog):
     @command(name="barter", aliases=["обмен"])
     async def barter(self, ctx):
         """
-        Serves to exchange characters if possible else returns 'Нет операторов на обмен'
+        Serves to exchange 5 characters for 1 rank higher\n
+        if possible else returns 'Нет операторов на обмен'
         """
         await ctx.message.delete()
         barter_list = Amia.get_barter_list(ctx.message.author.id)
@@ -55,7 +56,7 @@ class Commands(Cog):
     @command(name="ark", aliases=["арк"])
     async def ark(self, ctx):      
         """
-        ark function - return a random character from char_table.json
+        Return a random arknigts character (from char_table.json)
         """
         await ctx.message.delete()
         character_data = Amia.get_ark(ctx.message.author.id)

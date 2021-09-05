@@ -31,8 +31,8 @@ class Bot_init(BotBase):
         with open(self.path_to_config,"rb") as json_config_file:
             data = load(json_config_file)
             try:
-                for _ in data['default_settings']['cog_list']:
-                    self.load_extension(f'bot.cogs.{_}')
+                for _ in data["default_settings"]["cog_list"]:
+                    self.load_extension(f"bot.cogs.{_}")
             except KeyError:
                 exit("'config.json' is damaged!")
 

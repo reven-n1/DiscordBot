@@ -30,15 +30,7 @@
             "watching_statuses": ["listen_status1", "listen_status2", "listen_status3"]
         }, 
 
-        "info": "info",
-        "setting4": "inf"
-    },
-
-    "server_settings": {
-        "commands_list": "inf",
-        "setting2": "inf",
-        "setting3": "inf",
-        "setting4": "inf"
+        "info": "info"
     },
 
     "isDefault": "True"

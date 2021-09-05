@@ -21,11 +21,10 @@ class Commands(Cog):
     @command(name="ger", aliases=["пук"])
     async def ger(self, ctx):
         """
-        This this funny function farts on random server member or whoever called it
+        This funny function farts on random server member or whoever called it
         """
         await ctx.message.delete()
         random_user = choice(ctx.message.guild.members)
-        print(random_user)
         while random_user == ctx.message.author:
             random_user = choice(ctx.message.guild.members)
         ger_message = Amia.ger_function(ctx.message.author, random_user)

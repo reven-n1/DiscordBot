@@ -12,7 +12,7 @@ class Commands(Cog):
 
     @command(name="hello", aliases=["hi"])
     async def hello(self, ctx):
-        """"
+        """
         Congratulations command
         """
         await ctx.message.delete()
@@ -22,7 +22,7 @@ class Commands(Cog):
     @command(name="info", aliases=["инфо"])
     async def info(self, ctx):
         """
-        This command sends bot info and commands list to channel
+        This command shows bot info
         """
         await ctx.message.delete()
         embed = discord.Embed(color=0xff9900, title=Amia.name,
@@ -41,7 +41,7 @@ class Commands(Cog):
     @command(name="clear", aliases=["очистить"])
     async def clear(self, ctx):
         """
-        Clears channel from messages
+        Clears channel from messages(takes quantity to delete)(in default 1000)
         """
         await ctx.message.delete()
         message_text = ctx.message.content.split()
