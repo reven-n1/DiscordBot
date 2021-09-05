@@ -65,14 +65,14 @@ class Bot_init(BotBase):
 
     async def on_command_error(self, context, exception):
 
-
+        await context.message.delete(delay=15)#change to cfg
         if isinstance(exception, CommandOnCooldown):
             cooldown_time = timedelta(seconds=ceil(exception.retry_after))
             if context.message.content == "!ger":
                 await context.send(f"***Заряжаем жепу, осталось: {cooldown_time}***", delete_after=15)
             else:
                 await context.send(f"***Копим орундум, осталось: {cooldown_time}***", delete_after=15)
-            await context.message.delete()
+            
 
         elif isinstance(exception, CommandNotFound):
             await context.send(f"{context.message.content} - ***Wrong command, check commands list***", delete_after=15)
