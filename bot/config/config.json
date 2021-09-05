@@ -1,7 +1,7 @@
 {
     "default_settings": {
         
-        "cog_list": ["administration", "default", "ark", "games", "ger", "music"],
+        "cog_list": ["administration", "default", "ark", "games", "ger", "music", "welcome"],
         
         "allowed_channels": ["arkbot", "bots", "android"],
         

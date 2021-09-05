@@ -21,9 +21,9 @@ class Bot_init(BotBase):
         self.Prefix = "!"
         self.TOKEN = token
         self.VERSION = None
-        if not path.isfile("config/config.json"):
+        if not path.isfile("bot/config/config.json"):
             exit("'config.json' not found!")
-        self.path_to_config = path.abspath("config/config.json")
+        self.path_to_config = path.abspath("bot/config/config.json")
         super().__init__(command_prefix=self.Prefix, intents=Intents().all())
 
 
@@ -54,7 +54,7 @@ class Bot_init(BotBase):
 
     async def on_ready(self):
         print(" ***bot ready***")
-        status_setter.start(self.path_to_config)
+        status_setter.start()
 
        
     async def on_error(self, event_method, *args, **kwargs):
@@ -87,18 +87,18 @@ Amia = Bot()
 
 
 @tasks.loop(minutes=1.0)
-async def status_setter(path_to_config):
+async def status_setter():
     statuses = [set_gaming_status, set_listening_status, set_streaming_status, set_watching_status]
 
-    with open(path_to_config,"rb") as json_config_file:
+    with open("config/config.json","rb") as json_config_file:
             data = load(json_config_file)
             json_statuses = data["default_settings"]["bot_statuses"]
             statuses_list = []
             for _ in json_statuses:
                 statuses_list.append(_)
 
-            random_choice = randint(0, len(statuses_list)-1)
-            await statuses[random_choice](choice(json_statuses[statuses_list[random_choice]]))
+    random_choice = randint(0, len(statuses_list)-1)
+    await statuses[random_choice](choice(json_statuses[statuses_list[random_choice]]))
 
 
 async def set_streaming_status(status):

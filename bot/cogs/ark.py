@@ -2,10 +2,18 @@ from discord.ext.commands.cooldowns import BucketType
 from discord.ext.commands import command, cooldown
 from discord.ext.commands import Cog
 from bot.__init__ import Amia
+from json import load
 from re import sub
 import discord
 
 
+with open("bot/config/config.json","rb") as json_config_file:
+    data = load(json_config_file)
+    try:
+        ark_cooldown = int(data["default_settings"]["ark"]["ark_recoil"])
+    except KeyError:
+        exit("'config.json' is damaged!")
+        
 class Commands(Cog):
     def __init__(self, bot):
         self.bot = bot
@@ -43,7 +51,7 @@ class Commands(Cog):
             await ctx.send("***Нет операторов на обмен***", delete_after=15)
 
 
-    @cooldown(1, 28800, BucketType.user)
+    @cooldown(1, ark_cooldown, BucketType.user)
     @command(name="ark", aliases=["арк"])
     async def ark(self, ctx):      
         """
@@ -69,8 +77,8 @@ class Commands(Cog):
         embed.add_field(name="Description", value=f"{character_data[2]}\n{character_data[3]}", inline=False)
         embed.add_field(name="Position", value=character_data[4])
         embed.add_field(name="Tags", value=str(character_data[5]), inline=True)
-        line = sub('[<@.>/]', '', character_data[6])  # Delete all tags in line
-        embed.add_field(name="Traits", value=line.replace('bakw', ''), inline=False)
+        line = sub("[<@.>/]", "", character_data[6])  # Delete all tags in line
+        embed.add_field(name="Traits", value=line.replace("bakw", ""), inline=False)
         embed.set_thumbnail(url=character_data[7])
         embed.set_image(url=f"https://aceship.github.io/AN-EN-Tags/img/characters/{character_data[0]}_1.png")
         embed.set_footer(text=f"Requested by {message.author.name}")

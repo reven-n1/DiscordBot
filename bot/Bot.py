@@ -1,25 +1,23 @@
 from random import randint, choice, randrange
-from bot.bot_token import token
 from json import loads, load
 from os.path import abspath
 import sqlite3
-
     
-db = sqlite3.connect(abspath("Bot_DB.db"))
+db = sqlite3.connect(abspath("bot/Bot_DB.db"))
 cursor = db.cursor()
 
 
 class Bot:
     def __init__(self):
         try:
-            with open(abspath("config/config.json"),"rb") as json_config_file:
-                data = load(json_config_file)['default_settings']
+            with open(abspath("bot/config/config.json"),"rb") as json_config_file:
+                data = load(json_config_file)["default_settings"]
 
                 self.bot_channels = data["allowed_channels"]
 
-                self.ger_self_chance = int(data['ger']['self_ger_chance'])
-                self.ger_phrases = data['ger']['phrase_variants']
-                self.ger_self_phrases = data['ger']['phrase_variants']
+                self.ger_self_chance = int(data["ger"]["self_ger_chance"])
+                self.ger_phrases = data["ger"]["phrase_variants"]
+                self.ger_self_phrases = data["ger"]["phrase_variants"]
         
                 self.six_star_chance = int(data["ark"]["chance"]["six_star"])
                 self.five_star_chance = int(data["ark"]["chance"]["five_star"])
@@ -30,13 +28,12 @@ class Bot:
             print("'config.json' is damaged or lost")
             print(e)
 
-        self.token = token
-        self.name = 'Amia(bot)'
-        self.bot_img = 'BotImg.png'
+        self.name = "Amia(bot)"
+        self.bot_img = "BotImg.png"
         self.delete_quantity = 100       
-        self.stars_0_5 = '<:star:801095671720968203>'
-        self.stars_6 = '<:star2:801105195958140928>'
-        self.bot_info = {'info': ' хуйня никому не нужная(бот тупой, но перспективный(нет))',
+        self.stars_0_5 = "<:star:801095671720968203>"
+        self.stars_6 = "<:star2:801105195958140928>"
+        self.bot_info = {"info": ' хуйня никому не нужная(бот тупой, но перспективный(нет))',
                          'commands': {'!ger или !пук': 'Смачный пердеж кому-нибудь куда-нибудь..',
                                       '!myark или !майарк': 'Все полученые персонажи',
                                       '!ark или !арк': 'Рол персонажа',
@@ -51,9 +48,9 @@ class Bot:
 
         info_list = []
         count = 0
-        for line in self.bot_info['commands'].keys():
+        for line in self.bot_info["commands"].keys():
             info_list.append(f'{line} - ')
-        for line in self.bot_info['commands'].values():
+        for line in self.bot_info["commands"].values():
             info_list[count] += line
             count += 1
 
@@ -75,8 +72,8 @@ class Bot:
         """
         Print all bot commands
         """
-        out_str = ''
-        for key, values in self.bot_info['commands'].items():
+        out_str = ""
+        for key, values in self.bot_info["commands"].items():
             out_str += f'{key} - {values}\n'
         return out_str
 
@@ -98,13 +95,13 @@ class Bot:
         prev_rar = 2
         for item in res:
             if prev_rar < item[0]:
-                out_list.append('')
-                out_list.append(f'{self.stars_0_5 * item[0]}')
+                out_list.append("")
+                out_list.append(f"{self.stars_0_5 * item[0]}")
             elif prev_rar < item[0] == 6:
-                out_list.append('')
-                out_list.append(f'{self.stars_6 * item[0]}')
+                out_list.append("")
+                out_list.append(f"{self.stars_6 * item[0]}")
 
-            out_list.append(f'{item[1]} x{item[2]}')
+            out_list.append(f"{item[1]} x{item[2]}")
             prev_rar = item[0]
         return out_list
 
@@ -118,15 +115,15 @@ class Bot:
             random_member (guild.member): random guild member
 
         Returns:
-            str: string with phrase
+            str: string with fart phrase
         """
         
         if randint(0, 101) >= self.ger_self_chance:  # Chance to обосраться
 
-            return (f'{message_author.mention} '
-                    f'{choice(self.ger_phrases)} {random_member.mention}')
+            return (f"{message_author.mention} "
+                    f"{choice(self.ger_phrases)} {random_member.mention}")
         else:
-            return f'{message_author.mention} {choice(self.ger_self_phrases)}'  # Самообсер
+            return f"{message_author.mention} {choice(self.ger_self_phrases)}"  # Самообсер
 
 
 
@@ -191,36 +188,36 @@ class Bot:
             list: list that contains characters
         """
         choice_list = {}
-        file = open('config/char_table.json', "rb")
+        file = open("bot/config/char_table.json", "rb")
         json_data = loads(file.read())  # Извлекаем JSON
         for line in json_data:
             tmp = json_data[str(line)]
-            json_rarity = int(tmp['rarity']) + 1
-            if rarity == json_rarity and tmp['itemDesc'] is not None:  # to ignore magalan skills and other rarities
-                profession = ''
-                if tmp['profession'] == 'CASTER':
-                    profession = 'https://aceship.github.io/AN-EN-Tags/img/classes/class_caster.png'
-                elif tmp['profession'] == 'SNIPER':
-                    profession = 'https://aceship.github.io/AN-EN-Tags/img/classes/class_sniper.png'
-                elif tmp['profession'] == 'WARRIOR':
-                    profession = 'https://aceship.github.io/AN-EN-Tags/img/classes/class_guard.png'
-                elif tmp['profession'] == 'PIONEER':
-                    profession = 'https://aceship.github.io/AN-EN-Tags/img/classes/class_vanguard.png'
-                elif tmp['profession'] == 'SUPPORT':
-                    profession = 'https://aceship.github.io/AN-EN-Tags/img/classes/class_supporter.png'
-                elif tmp['profession'] == 'MEDIC':
-                    profession = 'https://aceship.github.io/AN-EN-Tags/img/classes/class_medic.png'
-                elif tmp['profession'] == 'SPECIAL':
-                    profession = 'https://aceship.github.io/AN-EN-Tags/img/classes/class_specialist.png'
-                elif tmp['profession'] == 'TANK':
-                    profession = 'https://aceship.github.io/AN-EN-Tags/img/classes/class_defender.png'
+            json_rarity = int(tmp["rarity"]) + 1
+            if rarity == json_rarity and tmp["itemDesc"] is not None:  # to ignore magalan skills and other rarities
+                profession = ""
+                if tmp["profession"] == "CASTER":
+                    profession = "https://aceship.github.io/AN-EN-Tags/img/classes/class_caster.png"
+                elif tmp["profession"] == "SNIPER":
+                    profession = "https://aceship.github.io/AN-EN-Tags/img/classes/class_sniper.png"
+                elif tmp["profession"] == "WARRIOR":
+                    profession = "https://aceship.github.io/AN-EN-Tags/img/classes/class_guard.png"
+                elif tmp["profession"] == "PIONEER":
+                    profession = "https://aceship.github.io/AN-EN-Tags/img/classes/class_vanguard.png"
+                elif tmp["profession"] == "SUPPORT":
+                    profession = "https://aceship.github.io/AN-EN-Tags/img/classes/class_supporter.png"
+                elif tmp["profession"] == "MEDIC":
+                    profession = "https://aceship.github.io/AN-EN-Tags/img/classes/class_medic.png"
+                elif tmp["profession"] == "SPECIAL":
+                    profession = "https://aceship.github.io/AN-EN-Tags/img/classes/class_specialist.png"
+                elif tmp["profession"] == "TANK":
+                    profession = "https://aceship.github.io/AN-EN-Tags/img/classes/class_defender.png"
                 character_id = line
-                name = tmp['name'].replace(' ', '_').replace("'", "")
-                description_first_part = tmp['itemUsage']
-                description_sec_part = tmp['itemDesc']
-                position = tmp['position']
-                tags = ', '.join(tmp['tagList'])
-                traits = tmp['description']
+                name = tmp["name"].replace(" ", "_").replace("'", "")
+                description_first_part = tmp["itemUsage"]
+                description_sec_part = tmp["itemDesc"]
+                position = tmp["position"]
+                tags = ", ".join(tmp["tagList"])
+                traits = tmp["description"]
                 if json_rarity == 6:
                     stars = self.stars_6
                 else:
@@ -260,7 +257,7 @@ class Bot:
         """
         choice_list = self.return_choice_list(self.get_ark_rarity())
         rand_item_from_list = choice(list(choice_list.values()))
-        self.add_ark_to_db(author_id, rand_item_from_list)
+        self.add_ark_to_db(author_id, rand_item_from_list[1], rand_item_from_list[9])
         return rand_item_from_list
 
 

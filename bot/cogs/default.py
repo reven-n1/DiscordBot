@@ -25,9 +25,9 @@ class Commands(Cog):
         This command sends bot info and commands list to channel
         """
         await ctx.message.delete()
-        embed = discord.Embed(color=0xff9900, title=self.bot_amia.name,
+        embed = discord.Embed(color=0xff9900, title=Amia.name,
                               url=f"https://www.youtube.com/watch?v=X5ULmETDiXI")
-        embed.add_field(name="Description", value=self.bot_amia.bot_info["info"], inline=False)
+        embed.add_field(name="Description", value=Amia.bot_info["info"], inline=False)
         embed.add_field(name="Commands",
                         value=str("\n".join(Amia.get_info())),
                         inline=True)
@@ -36,11 +36,6 @@ class Commands(Cog):
         embed.set_image(url="https://aceship.github.io/AN-EN-Tags/img/characters/char_002_amiya_epoque%234.png")
         embed.set_footer(text=f"Requested by {ctx.message.author.name}")
         await ctx.send(embed=embed, delete_after=30)
-    
-    
-    @command(name="details", aliases=["помощь"])
-    async def command_details(self, ctx):
-        await ctx.send(f"в процессе разработки")
 
 
     @command(name="clear", aliases=["очистить"])
