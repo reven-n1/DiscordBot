@@ -72,6 +72,7 @@ class Bot_init(BotBase):
                 await context.send(f"***Заряжаем жепу, осталось: {cooldown_time}***", delete_after=15)
             else:
                 await context.send(f"***Копим орундум, осталось: {cooldown_time}***", delete_after=15)
+            await context.message.delete()
 
         elif isinstance(exception, CommandNotFound):
             await context.send(f"{context.message.content} - ***Wrong command, check commands list***", delete_after=15)
