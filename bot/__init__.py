@@ -14,6 +14,22 @@ from sys import exit
 import traceback
 import logging
 
+# TODO wladbelsky
+# 1. roma pdr
+# 2. markdaun ridme.txt
+# 3. embed ark ls
+# 4. music bot (colaborative task)
+# 5. move any strict numbers to cfg omg it so cool to have numbers in config man! cuz it look so professiAnal
+# TODO reven_n1
+# 1. move key to cfg
+# 2. music bot (colaborative task)
+# 3. hack pentagon
+# 4. make me rich
+# 5. buy slaves
+# 6. elect presedent
+# 7. build space rocket
+# 8. invent electrocar
+# 9. launch fucking electrocar in space on fucking rocket wtf man r u insane???
 
 
 class Bot_init(BotBase):
