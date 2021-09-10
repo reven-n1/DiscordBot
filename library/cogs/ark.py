@@ -1,13 +1,13 @@
 from discord.ext.commands.cooldowns import BucketType
 from discord.ext.commands import command, cooldown
 from discord.ext.commands import Cog
-from lib.__init__ import Amia
+from library.__init__ import Amia
 from json import load
 from re import sub
 import discord
 
 
-with open("lib/config/config.json","rb") as json_config_file:
+with open("library/config/config.json","rb") as json_config_file:
     data = load(json_config_file)
     try:
         ark_cooldown = int(data["default_settings"]["ark"]["ark_recoil"])

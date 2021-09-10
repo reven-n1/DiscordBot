@@ -3,14 +3,14 @@ from json import loads, load
 from os.path import abspath
 import sqlite3
     
-db = sqlite3.connect(abspath("lib/data/Bot_DB.db"))
+db = sqlite3.connect(abspath("library/data/Bot_DB.db"))
 cursor = db.cursor()
 
 
 class Bot:
     def __init__(self):
         try:
-            with open(abspath("lib/config/config.json"),"rb") as json_config_file:
+            with open(abspath("library/config/config.json"),"rb") as json_config_file:
                 data = load(json_config_file)["default_settings"]
 
                 self.bot_channels = data["allowed_channels"]
@@ -187,7 +187,7 @@ class Bot:
             list: list that contains characters
         """
         choice_list = {}
-        file = open("lib/config/char_table.json", "rb")
+        file = open("library/config/char_table.json", "rb")
         json_data = loads(file.read())  # Извлекаем JSON
         for line in json_data:
             tmp = json_data[str(line)]

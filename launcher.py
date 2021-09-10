@@ -1,4 +1,4 @@
-from lib.__init__ import bot
+from library.__init__ import bot
 
 def main():
     version = 1.3

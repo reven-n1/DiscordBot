@@ -1,6 +1,6 @@
 from discord.ext.commands import command
 from discord.ext.commands import Cog
-from lib.__init__ import Amia
+from library.__init__ import Amia
 from random import choice
 import discord
 
