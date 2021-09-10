@@ -1,80 +1,25 @@
-from random import randint, choice, randrange
-from json import loads, load
+from library.data.json_data import six_star_chance, five_star_chance, \
+four_star_chance, three_star_chance #, character_json
+from random import choice, randrange
 from os.path import abspath
+from json import loads
 import sqlite3
     
 db = sqlite3.connect(abspath("library/data/Bot_DB.db"))
 cursor = db.cursor()
 
 
-class Bot:
+class Ark_bot:
     def __init__(self):
-        try:
-            with open(abspath("library/config/config.json"),"rb") as json_config_file:
-                data = load(json_config_file)["default_settings"]
-
-                self.bot_channels = data["allowed_channels"]
-
-                self.ger_self_chance = int(data["ger"]["self_ger_chance"])
-                self.ger_phrases = data["ger"]["phrase_variants"]
-                self.ger_self_phrases = data["ger"]["self_phrase_variants"]
+        # self.characters_data = character_json
+      
+        self.six_star_chance = six_star_chance
+        self.five_star_chance = five_star_chance
+        self.four_star_chance = four_star_chance
+        self.three_star_chance = three_star_chance
         
-                self.six_star_chance = int(data["ark"]["chance"]["six_star"])
-                self.five_star_chance = int(data["ark"]["chance"]["five_star"])
-                self.four_star_chance = int(data["ark"]["chance"]["four_star"])
-                self.three_star_chance = int(data["ark"]["chance"]["three_star"])
-
-        except Exception as e:
-            print("'config.json' is damaged or lost")
-            print(e)
-
-        self.name = "Amia(bot)"
-        self.delete_quantity = 100       
         self.stars_0_5 = "<:star:801095671720968203>"
         self.stars_6 = "<:star2:801105195958140928>"
-        self.bot_info = {"info": ' хуйня никому не нужная(бот тупой, но перспективный(нет))',
-                         'commands': {'!ger или !пук': 'Смачный пердеж кому-нибудь куда-нибудь..',
-                                      '!myark или !майарк': 'Все полученые персонажи',
-                                      '!ark или !арк': 'Рол персонажа',
-                                      '!clear': 'Удаляет последние 100 сообщений(или число указанное после команды)'}}
-        self.bot_commands = ['!ger', '!пук', '!арк', '!ark', '!clear', '!members', '!commands']
-
-
-    def get_info(self):
-        """
-        Returns info list
-        """
-
-        info_list = []
-        count = 0
-        for line in self.bot_info["commands"].keys():
-            info_list.append(f'{line} - ')
-        for line in self.bot_info["commands"].values():
-            info_list[count] += line
-            count += 1
-
-        return info_list
-
-
-    @property
-    async def server_delete_quantity(self):
-        """
-        Default message delete quantity getter 
-
-        Returns:
-            int: quantity
-        """
-        return self.delete_quantity
-
-
-    def get_commands(self):
-        """
-        Print all bot commands
-        """
-        out_str = ""
-        for key, values in self.bot_info["commands"].items():
-            out_str += f'{key} - {values}\n'
-        return out_str
 
 
     def get_ark_collection(self, collection_owner_id):
@@ -99,26 +44,6 @@ class Bot:
             out_list[item[0]].append(item)
 
         return out_list
-
-
-    def ger_function(self, message_author, random_member):
-        """
-        Farts on random server member or whoever called it
-
-        Args:
-            message_author (message.author.id): requestor id
-            random_member (guild.member): random guild member
-
-        Returns:
-            str: string with fart phrase
-        """
-        
-        if randint(0, 101) >= self.ger_self_chance:  # Chance to обосраться
-
-            return (f"{message_author.mention} "
-                    f"{choice(self.ger_phrases)} {random_member.mention}")
-        else:
-            return f"{message_author.mention} {choice(self.ger_self_phrases)}"  # Самообсер
 
 
 
@@ -163,7 +88,6 @@ class Bot:
         Yields:
             str: random character
         """
-
         for operators in barter_list:
             for _ in range(0, operators[1]):
                 choice_list = self.return_choice_list(operators[0])
@@ -183,9 +107,12 @@ class Bot:
             list: list that contains characters
         """
         choice_list = {}
-        file = open("library/config/char_table.json", "rb")
-        json_data = loads(file.read())  # Извлекаем JSON
+        character_json = open("library/config/char_table.json", "rb")
+        json_data = loads(character_json.read())  # Извлекаем JSON
+        
+        #for line in self.characters_data:
         for line in json_data:
+            # tmp = self.characters_data[str(line)]
             tmp = json_data[str(line)]
             json_rarity = int(tmp["rarity"]) + 1
             if rarity == json_rarity and tmp["itemDesc"] is not None:  # to ignore magalan skills and other rarities
@@ -220,7 +147,6 @@ class Bot:
                 choice_list[name] = character_id, name, description_first_part, description_sec_part, position, tags, \
                                     traits, profession, stars, json_rarity
 
-        file.close()
         return choice_list
 
 
@@ -228,7 +154,6 @@ class Bot:
         """
         Returns random character rarity
         """
-
         rarity = randrange(0, 100000)
         if rarity <= self.six_star_chance * 1000:
             return 6
@@ -266,7 +191,6 @@ class Bot:
             character_name (str): received character name
             character_rarity (int): received chaaracter rarity
         """
-
         cursor.execute(
             f"SELECT operator_count FROM users_ark_collection WHERE user_id == '{author_id}' "
             f"AND operator_name == '{character_name}'")

@@ -1,16 +1,16 @@
-from discord.ext.commands.errors import CommandOnCooldown, MissingPermissions
+from discord.ext.commands.errors import CommandOnCooldown, MissingPermissions, \
+NSFWChannelRequired
 from discord import Activity, ActivityType, Game, Streaming, Intents
 from discord.ext.commands import Bot as BotBase, CommandNotFound
+from library.bots.Default_bot import Default_bot
+from library.data.json_data import cog_list
+from library.bot_token import token
 from random import randint, choice
-from library.bot.Bot import Bot
 from datetime import timedelta
 from discord.ext import tasks
-from library.bot_token import token
 from logging import error
-import os.path as path
 from json import load
 from math import ceil
-from sys import exit
 import traceback
 import logging
 
@@ -20,21 +20,14 @@ class Bot_init(BotBase):
         self.Prefix = "!"
         self.TOKEN = token
         self.VERSION = None
-        if not path.isfile("library/config/config.json"):
-            exit("'config.json' not found!")
-        self.path_to_config = path.abspath("library/config/config.json")
         super().__init__(command_prefix=self.Prefix, intents=Intents().all())
 
 
     def setup(self):
         bot.remove_command('help')
-        with open(self.path_to_config,"rb") as json_config_file:
-            data = load(json_config_file)
-            try:
-                for _ in data["default_settings"]["cog_list"]:
-                    self.load_extension(f"library.cogs.{_}")
-            except KeyError:
-                exit("'config.json' is damaged!")
+        for _ in cog_list:
+            self.load_extension(f"library.cogs.{_}")
+
         print("setup complete")
 
 
@@ -64,26 +57,32 @@ class Bot_init(BotBase):
 
     async def on_command_error(self, context, exception):
 
-        await context.message.delete(delay=15)#change to cfg
+        await context.message.delete(delay=7)# TODO: change to cfg
+
         if isinstance(exception, CommandOnCooldown):
             cooldown_time = timedelta(seconds=ceil(exception.retry_after))
-            if context.message.content == "!ger":
+            if any(pfr in context.message.content for pfr in ["!ger", "!пук"]):
                 await context.send(f"***Заряжаем жепу, осталось: {cooldown_time}***", delete_after=15)
-            else:
+            if any(pfr in context.message.content for pfr in ["!ark", "!арк"]):
                 await context.send(f"***Копим орундум, осталось: {cooldown_time}***", delete_after=15)
+            else:
+                await context.send(f"***Ожидайте: {cooldown_time}***", delete_after=15)
             
-
         elif isinstance(exception, CommandNotFound):
             await context.send(f"{context.message.content} - ***В последнее время я тебя совсем не понимаю***:crying_cat_face: ", delete_after=15)
 
         elif isinstance(exception, MissingPermissions):
             await context.send(f"{context.message.author} ***- Я же сказала низя!***", delete_after=15)
 
+        elif isinstance(exception, NSFWChannelRequired):
+            await context.send(f"{context.message.author} ***- Доступно только в NSFW ***", delete_after=15)
+
         else:
             print(exception)
 
+
 bot = Bot_init()
-Amia = Bot()
+Amia = Default_bot()
 
 
 @tasks.loop(minutes=1.0)

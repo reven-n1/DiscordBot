@@ -13,7 +13,7 @@
         },
         
         "ark": {
-            "ark_recoil": "1",
+            "ark_recoil": "10",
             "chance": {
                 "six_star": "2",
                 "five_star": "10",

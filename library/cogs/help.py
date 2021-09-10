@@ -1,19 +1,8 @@
-import discord
-from discord.errors import Forbidden
 from discord.ext.commands import command
+from discord.errors import Forbidden
 from discord.ext.commands import Cog
-import discord
 from json import load
-
-"""This custom help command is a perfect replacement for the default one on any Discord Bot written in Discord.py!
-However, you must put "bot.remove_command('help')" in your bot, and the command must be in a cog for it to work.
-Original concept by Jared Newsom (AKA Jared M.F.)
-[Deleted] https://gist.github.com/StudioMFTechnologies/ad41bfd32b2379ccffe90b0e34128b8b
-Rewritten and optimized by github.com/nonchris
-https://gist.github.com/nonchris/1c7060a14a9d94e7929aa2ef14c41bc2
-You need to set three variables to make that cog run.
-Have a look at line 51 to 57
-"""
+import discord
 
 
 async def send_embed(ctx, embed):
@@ -37,13 +26,9 @@ async def send_embed(ctx, embed):
 
 
 class Commands(Cog):
-    """
-    Sends this help message
-    """
-
     def __init__(self, bot):
         self.bot = bot
-        with open("bot/config/config.json","rb") as json_config_file:
+        with open("library/config/config.json","rb") as json_config_file:
             data = load(json_config_file)
             try:
                 self.embed_color = int(data["default_settings"]["embed_color"],16)
@@ -91,7 +76,6 @@ class Commands(Cog):
                                             "https://github.com/reven-n1/DiscordBot",
                                 color=discord.Color.red())
 
-        # sending reply embed using our own function defined above
         await send_embed(ctx, emb)
 
 

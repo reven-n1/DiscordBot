@@ -1,7 +1,7 @@
 from discord.ext.commands import command, has_permissions
 from discord.errors import HTTPException, NotFound
 from discord.ext.commands import Cog
-from bot.__init__ import Amia
+from library.__init__ import Amia
 import discord.member
 
 
