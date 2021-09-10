@@ -10,7 +10,7 @@ import discord
 with open("library/config/config.json","rb") as json_config_file:
     data = load(json_config_file)
     try:
-        ark_cooldown = int(data["default_settings"]["ark"]["ark_recoil"])
+        ark_cooldown = int(data["default_settings"]["ark"]["ark_cooldown"])
         embed_color = int(data["default_settings"]["embed_color"],16)
     except KeyError:
         exit("'config.json' is damaged!")

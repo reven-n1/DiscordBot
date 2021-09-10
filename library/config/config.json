@@ -7,13 +7,13 @@
         
         "ger": {
             "self_ger_chance": "10",
-            "ger_recoil": "86400",
+            "ger_cooldown": "86400",
             "phrase_variants": ["пернул в ротешник", "насрал в рот", "высрал какулю на лицо","пернул в ухо", "пустил шептуна за щеку","запустил струю подливы в ротешник"],
             "self_phrase_variants": ["обосрался с подливой", "напрудил в штанишки","пустил шептуна","выдал звучную трель","громогласно перданул","жоплодирует!"]
         },
         
         "ark": {
-            "ark_recoil": "1",
+            "ark_cooldown": "1",
             "chance": {
                 "six_star": "2",
                 "five_star": "10",
@@ -22,6 +22,8 @@
             }
         },
         
+        "chat_misc_cooldown":"1800",
+
         "bot_statuses":
         {
             "game_statuses": ["жизнь", "Detroit: Become Human", "Warface"],

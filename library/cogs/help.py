@@ -1,40 +1,10 @@
 import discord
+from discord import embeds
 from discord.errors import Forbidden
 from discord.ext.commands import command
 from discord.ext.commands import Cog
-import discord
 from json import load
-
-"""This custom help command is a perfect replacement for the default one on any Discord Bot written in Discord.py!
-However, you must put "bot.remove_command('help')" in your bot, and the command must be in a cog for it to work.
-Original concept by Jared Newsom (AKA Jared M.F.)
-[Deleted] https://gist.github.com/StudioMFTechnologies/ad41bfd32b2379ccffe90b0e34128b8b
-Rewritten and optimized by github.com/nonchris
-https://gist.github.com/nonchris/1c7060a14a9d94e7929aa2ef14c41bc2
-You need to set three variables to make that cog run.
-Have a look at line 51 to 57
-"""
-
-
-async def send_embed(ctx, embed):
-    """
-    Function that handles the sending of embeds
-    -> Takes context and embed to send
-    - tries to send embed in channel
-    - tries to send normal message when that fails
-    - tries to send embed private with information abot missing permissions
-    If this all fails: https://youtu.be/dQw4w9WgXcQ
-    """
-    try:
-        await ctx.send(embed=embed)
-    except Forbidden:
-        try:
-            await ctx.send("Hey, seems like I can't send embeds. Please check my permissions :)")
-        except Forbidden:
-            await ctx.author.send(
-                f"Hey, seems like I can't send any message in {ctx.channel.name} on {ctx.guild.name}\n"
-                f"May you inform the server team about this issue? :slight_smile: ", embed=embed)
-
+import discord
 
 class Commands(Cog):
     """
@@ -43,7 +13,7 @@ class Commands(Cog):
 
     def __init__(self, bot):
         self.bot = bot
-        with open("bot/config/config.json","rb") as json_config_file:
+        with open("library/config/config.json","rb") as json_config_file:
             data = load(json_config_file)
             try:
                 self.embed_color = int(data["default_settings"]["embed_color"],16)
@@ -91,8 +61,7 @@ class Commands(Cog):
                                             "https://github.com/reven-n1/DiscordBot",
                                 color=discord.Color.red())
 
-        # sending reply embed using our own function defined above
-        await send_embed(ctx, emb)
+        await ctx.messege.channel.send(embed=emb)
 
 
 def setup(bot):

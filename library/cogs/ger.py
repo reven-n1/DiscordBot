@@ -8,7 +8,7 @@ from json import load
 with open("library/config/config.json","rb") as json_config_file:
     data = load(json_config_file)
     try:
-        ger_cooldown = int(data["default_settings"]["ger"]["ger_recoil"])
+        ger_cooldown = int(data["default_settings"]["ger"]["ger_cooldown"])
     except KeyError:
         exit("'config.json' is damaged!")
 
