@@ -1,22 +1,20 @@
 from discord.ext.commands.cooldowns import BucketType
 from discord.ext.commands import command, cooldown
+from library.data.json_data import ger_cooldown
+from discord.ext.commands.core import is_nsfw
+from library.bots.Fun_bot import Fun_bot
 from discord.ext.commands import Cog
-from library.__init__ import Amia
 from random import choice
-from json import load
 
-with open("library/config/config.json","rb") as json_config_file:
-    data = load(json_config_file)
-    try:
-        ger_cooldown = int(data["default_settings"]["ger"]["ger_cooldown"])
-    except KeyError:
-        exit("'config.json' is damaged!")
+
+Fun_bot = Fun_bot()
+
 
 class Commands(Cog):
     def __init__(self, bot):
         self.bot = bot
 
-
+    @is_nsfw()
     @cooldown(1, ger_cooldown, BucketType.user)
     @command(name="ger", aliases=["пук"])
     async def ger(self, ctx):
@@ -27,7 +25,7 @@ class Commands(Cog):
         random_user = choice(ctx.message.guild.members)
         while random_user == ctx.message.author:
             random_user = choice(ctx.message.guild.members)
-        ger_message = Amia.ger_function(ctx.message.author, random_user)
+        ger_message = Fun_bot.ger_function(ctx.message.author, random_user)
         await ctx.send(ger_message)
 
 

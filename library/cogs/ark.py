@@ -1,20 +1,16 @@
+from library.data.json_data import ark_cooldown, embed_color
 from discord.ext.commands.cooldowns import BucketType
 from discord.ext.commands import command, cooldown
+from discord.ext.commands.core import is_nsfw
+from library.bots.Ark_bot import Ark_bot
 from discord.ext.commands import Cog
-from library.__init__ import Amia
-from json import load
 from re import sub
 import discord
 
 
-with open("library/config/config.json","rb") as json_config_file:
-    data = load(json_config_file)
-    try:
-        ark_cooldown = int(data["default_settings"]["ark"]["ark_cooldown"])
-        embed_color = int(data["default_settings"]["embed_color"],16)
-    except KeyError:
-        exit("'config.json' is damaged!")
-        
+Amia = Ark_bot()
+
+
 class Commands(Cog):
     def __init__(self, bot):
         self.bot = bot
@@ -60,7 +56,7 @@ class Commands(Cog):
         else:
             await ctx.send("***Нет операторов на обмен***", delete_after=15)
 
-
+    @is_nsfw()
     @cooldown(1, ark_cooldown, BucketType.user)
     @command(name="ark", aliases=["арк"])
     async def ark(self, ctx):      

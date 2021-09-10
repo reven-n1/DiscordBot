@@ -1,16 +1,31 @@
-import discord
-from discord import embeds
-from discord.errors import Forbidden
 from discord.ext.commands import command
+from discord.errors import Forbidden
 from discord.ext.commands import Cog
 from json import load
 import discord
 
-class Commands(Cog):
-    """
-    Sends this help message
-    """
 
+async def send_embed(ctx, embed):
+    """
+    Function that handles the sending of embeds
+    -> Takes context and embed to send
+    - tries to send embed in channel
+    - tries to send normal message when that fails
+    - tries to send embed private with information abot missing permissions
+    If this all fails: https://youtu.be/dQw4w9WgXcQ
+    """
+    try:
+        await ctx.send(embed=embed)
+    except Forbidden:
+        try:
+            await ctx.send("Hey, seems like I can't send embeds. Please check my permissions :)")
+        except Forbidden:
+            await ctx.author.send(
+                f"Hey, seems like I can't send any message in {ctx.channel.name} on {ctx.guild.name}\n"
+                f"May you inform the server team about this issue? :slight_smile: ", embed=embed)
+
+
+class Commands(Cog):
     def __init__(self, bot):
         self.bot = bot
         with open("library/config/config.json","rb") as json_config_file:
