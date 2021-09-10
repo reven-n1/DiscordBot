@@ -1,6 +1,5 @@
 from discord.ext.commands import command
 from discord.ext.commands import Cog
-from bot.Bot import Bot as Amia
 
 
 class Commands(Cog):

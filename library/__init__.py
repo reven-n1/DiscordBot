@@ -2,11 +2,11 @@ from discord.ext.commands.errors import CommandOnCooldown, MissingPermissions
 from discord import Activity, ActivityType, Game, Streaming, Intents
 from discord.ext.commands import Bot as BotBase, CommandNotFound
 from random import randint, choice
-from bot.bot_token import token
+from lib.bot_token import token
 from datetime import timedelta
 from discord.ext import tasks
 from logging import error
-from bot.Bot import Bot
+from lib.bot.Bot import Bot
 import os.path as path
 from json import load
 from math import ceil
@@ -21,9 +21,9 @@ class Bot_init(BotBase):
         self.Prefix = "!"
         self.TOKEN = token
         self.VERSION = None
-        if not path.isfile("bot/config/config.json"):
+        if not path.isfile("lib/config/config.json"):
             exit("'config.json' not found!")
-        self.path_to_config = path.abspath("bot/config/config.json")
+        self.path_to_config = path.abspath("lib/config/config.json")
         super().__init__(command_prefix=self.Prefix, intents=Intents().all())
 
 
@@ -32,7 +32,7 @@ class Bot_init(BotBase):
             data = load(json_config_file)
             try:
                 for _ in data["default_settings"]["cog_list"]:
-                    self.load_extension(f"bot.cogs.{_}")
+                    self.load_extension(f"lib.cogs.{_}")
             except KeyError:
                 exit("'config.json' is damaged!")
 

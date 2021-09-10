@@ -1,11 +1,11 @@
 from discord.ext.commands.cooldowns import BucketType
 from discord.ext.commands import command, cooldown
 from discord.ext.commands import Cog
-from bot.__init__ import Amia
+from lib.__init__ import Amia
 from random import choice
 from json import load
 
-with open("bot/config/config.json","rb") as json_config_file:
+with open("lib/config/config.json","rb") as json_config_file:
     data = load(json_config_file)
     try:
         ger_cooldown = int(data["default_settings"]["ger"]["ger_recoil"])
