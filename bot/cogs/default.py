@@ -1,4 +1,4 @@
-from discord.ext.commands import command
+from discord.ext.commands import command, has_permissions
 from discord.ext.commands import Cog
 from bot.__init__ import Amia
 from random import choice
@@ -18,6 +18,16 @@ class Commands(Cog):
         await ctx.message.delete()
         await ctx.send(f"{choice(('Hello', 'Hi', 'Hey', 'Hiya'))} {ctx.author.mention}!")
 
+    @command(name="say", aliases=["скажи"], brief='This is the brief description', description='This is the full description')
+    @has_permissions(administrator=True)
+    async def say(self, ctx, *input):
+        """
+        Bot say what u what whenever u want. Need administrator rights.
+        """
+        #TODO: send pm or msg to channel via arguments
+        await ctx.message.channel.send(" ".join(input))
+        await ctx.message.delete()
+
 
     @command(name="info", aliases=["инфо"])
     async def info(self, ctx):
@@ -36,20 +46,6 @@ class Commands(Cog):
         embed.set_image(url="https://aceship.github.io/AN-EN-Tags/img/characters/char_002_amiya_epoque%234.png")
         embed.set_footer(text=f"Requested by {ctx.message.author.name}")
         await ctx.send(embed=embed, delete_after=30)
-
-
-    @command(name="clear", aliases=["очистить"])
-    async def clear(self, ctx):
-        """
-        Clears channel from messages(takes quantity to delete)(in default 1000)
-        """
-        await ctx.message.delete()
-        message_text = ctx.message.content.split()
-        if len(message_text) == 2 and message_text[1].isdigit():
-            await ctx.message.channel.purge(limit=int(ctx.message.content.split()[1]))
-        else:
-            clear_limit = await Amia.server_delete_quantity
-            await ctx.message.channel.purge(limit=clear_limit)
 
 
 def setup(bot):

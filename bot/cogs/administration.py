@@ -1,6 +1,7 @@
 from discord.ext.commands import command, has_permissions
 from discord.errors import HTTPException, NotFound
 from discord.ext.commands import Cog
+from bot.__init__ import Amia
 import discord.member
 
 
@@ -98,6 +99,20 @@ class Commands(Cog):
         """
         await ctx.message.delete()
         await member.remove_roles(role)
+
+
+    @command(name="clear", aliases=["очистить"])
+    async def clear(self, ctx):
+        """
+        Clears channel from messages(takes quantity to delete)(in default 1000)
+        """
+        await ctx.message.delete()
+        message_text = ctx.message.content.split()
+        if len(message_text) == 2 and message_text[1].isdigit():
+            await ctx.message.channel.purge(limit=int(ctx.message.content.split()[1]))
+        else:
+            clear_limit = await Amia.server_delete_quantity
+            await ctx.message.channel.purge(limit=clear_limit)
 
 
 def setup(bot):

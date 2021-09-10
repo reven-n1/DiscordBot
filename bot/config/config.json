@@ -1,19 +1,19 @@
 {
     "default_settings": {
         
-        "cog_list": ["administration", "default", "ark", "games", "ger", "music", "welcome"],
+        "cog_list": ["default", "ark", "ger", "music", "help"],
         
         "allowed_channels": ["arkbot", "bots", "android"],
         
         "ger": {
             "self_ger_chance": "10",
             "ger_recoil": "86400",
-            "phrase_variants": ["пернул в ротешник", "насрал в рот", "высрал какулю на лицо"],
-            "self_phrase_variants": ["обосрался с подливой", "напрудил в штанишки"]
+            "phrase_variants": ["пернул в ротешник", "насрал в рот", "высрал какулю на лицо","пернул в ухо", "пустил шептуна за щеку","запустил струю подливы в ротешник"],
+            "self_phrase_variants": ["обосрался с подливой", "напрудил в штанишки","пустил шептуна","выдал звучную трель","громогласно перданул","жоплодирует!"]
         },
         
         "ark": {
-            "ark_recoil": "28800",
+            "ark_recoil": "1",
             "chance": {
                 "six_star": "2",
                 "five_star": "10",
@@ -30,7 +30,7 @@
             "watching_statuses": ["listen_status1", "listen_status2", "listen_status3"]
         }, 
 
-        "info": "info"
+        "embed_color":"ff9900"
     },
 
     "isDefault": "True"

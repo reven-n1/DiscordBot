@@ -7,10 +7,11 @@ from re import sub
 import discord
 
 
-with open("bot/config/config.json","rb") as json_config_file:
+with open("bot/config/config.json","rb") as json_config_file:#TODO: fix abs path
     data = load(json_config_file)
     try:
         ark_cooldown = int(data["default_settings"]["ark"]["ark_recoil"])
+        embed_color = int(data["default_settings"]["embed_color"],16)
     except KeyError:
         exit("'config.json' is damaged!")
         
@@ -27,8 +28,16 @@ class Commands(Cog):
         """
         await ctx.message.delete()
         ark_collection = Amia.get_ark_collection(ctx.message.author.id)
-        collection_message = f"***{ctx.message.author.name}  collection***\n"+ "\n".join(ark_collection)
-        await ctx.message.author.send(f"\n>>> {collection_message}")
+        collection_message = discord.Embed(title=f"{ctx.author.name}'s collection 0/0 (0%) скоро доделаю:wink:", color=embed_color)
+        for rarity,characters in ark_collection.items():
+            characters_list = ""
+            for character in characters:
+                characters_list += f"{character[1]} x {character[2]}\n"
+            collection_message.add_field(name=":star:"*rarity if rarity<6 else ":star2:"*rarity, value=characters_list, inline=False)
+        if len(ark_collection) == 0:
+            collection_message.add_field(name="Ти бомж", value="иди покрути девочек!")
+        collection_message.set_footer(text=f"Используй команду !майарк <имя> чтоб посмотреть на персонажа. Это тоже пока не работает(")
+        await ctx.message.author.send(embed=collection_message)
 
 
     @command(name="barter", aliases=["обмен"])
@@ -72,7 +81,7 @@ class Commands(Cog):
             character_data (list): random character data from char_table.json
             message (discord.message): message
         """
-        embed = discord.Embed(color=0xff9900, title=character_data[1],
+        embed = discord.Embed(color=embed_color, title=character_data[1],
                               description=str(character_data[8]) * character_data[9],
                               url=f"https://aceship.github.io/AN-EN-Tags/akhrchars.html?opname={character_data[1]}")
         embed.add_field(name="Description", value=f"{character_data[2]}\n{character_data[3]}", inline=False)

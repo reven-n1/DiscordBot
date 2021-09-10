@@ -17,7 +17,7 @@ class Bot:
 
                 self.ger_self_chance = int(data["ger"]["self_ger_chance"])
                 self.ger_phrases = data["ger"]["phrase_variants"]
-                self.ger_self_phrases = data["ger"]["phrase_variants"]
+                self.ger_self_phrases = data["ger"]["self_phrase_variants"]
         
                 self.six_star_chance = int(data["ark"]["chance"]["six_star"])
                 self.five_star_chance = int(data["ark"]["chance"]["five_star"])
@@ -90,18 +90,14 @@ class Bot:
         cursor.execute(f"SELECT rarity, operator_name, operator_count FROM users_ark_collection "
                        f"WHERE user_id == '{collection_owner_id}'")
         res = sorted(cursor.fetchall())
-        out_list = []
-        prev_rar = 2
+        out_list = {}
+        if res is None:
+            return {}
         for item in res:
-            if prev_rar < item[0]:
-                out_list.append("")
-                out_list.append(f"{self.stars_0_5 * item[0]}")
-            elif prev_rar < item[0] == 6:
-                out_list.append("")
-                out_list.append(f"{self.stars_6 * item[0]}")
+            if item[0] not in out_list.keys():
+                out_list[item[0]] = list()
+            out_list[item[0]].append(item)
 
-            out_list.append(f"{item[1]} x{item[2]}")
-            prev_rar = item[0]
         return out_list
 
 
