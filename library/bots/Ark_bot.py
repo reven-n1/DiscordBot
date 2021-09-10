@@ -149,6 +149,16 @@ class Ark_bot:
 
         return choice_list
 
+    def get_ark_count(self):
+        count = 0
+        json_data = loads(open("library/config/char_table.json", "rb").read())
+        for line in json_data.values():
+            if line["rarity"] >= 2  and line["itemDesc"] is not None:
+                count += 1
+        return count
+        # character_json = open("library/config/char_table.json", "rb")
+        # json_data = loads(character_json.read())  # Извлекаем JSON
+        # return len(json_data)
 
     def get_ark_rarity(self):
         """

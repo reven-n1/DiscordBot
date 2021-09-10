@@ -25,14 +25,14 @@ with open(path_to_json,"rb") as json_config_file:
         ger_self_chance = int(data["ger"]["self_ger_chance"])
         ger_phrases = data["ger"]["phrase_variants"]
         ger_self_phrases = data["ger"]["self_phrase_variants"]
-        ger_cooldown = int(data["ger"]["ger_recoil"])
+        ger_cooldown = int(data["ger"]["ger_cooldown"])
 
         # arknights drop chances and cooldown
         six_star_chance = int(data["ark"]["chance"]["six_star"])
         five_star_chance = int(data["ark"]["chance"]["five_star"])
         four_star_chance = int(data["ark"]["chance"]["four_star"])
         three_star_chance = int(data["ark"]["chance"]["three_star"])
-        ark_cooldown = int(data["ark"]["ark_recoil"])
+        ark_cooldown = int(data["ark"]["ark_cooldown"])
 
         # embed color
         embed_color = int(data["embed_color"],16)

@@ -16,7 +16,7 @@ class Commands(Cog):
         self.bot = bot
 
 
-    @command(name="myark", aliases=["моидевочки"])
+    @command(name="myark", aliases=["моидевочки","майарк"])
     async def myark(self, ctx):
         """
         This command sends ark collection to private messages.\n
@@ -24,7 +24,11 @@ class Commands(Cog):
         """
         await ctx.message.delete()
         ark_collection = Amia.get_ark_collection(ctx.message.author.id)
-        collection_message = discord.Embed(title=f"{ctx.author.name}'s collection 0/0 (0%) скоро доделаю:wink:", color=embed_color)
+        all_chara_count = Amia.get_ark_count()
+        user_chara_count = 0
+        for characters in ark_collection.values():
+            user_chara_count += len(characters)
+        collection_message = discord.Embed(title=f"{ctx.author.name}'s collection {user_chara_count}/{all_chara_count} ({round((user_chara_count/all_chara_count)*100,2)}%)", color=embed_color)
         for rarity,characters in ark_collection.items():
             characters_list = ""
             for character in characters:
