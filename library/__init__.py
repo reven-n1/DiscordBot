@@ -2,11 +2,11 @@ from discord.ext.commands.errors import CommandOnCooldown, MissingPermissions
 from discord import Activity, ActivityType, Game, Streaming, Intents
 from discord.ext.commands import Bot as BotBase, CommandNotFound
 from random import randint, choice
-from bot.bot_token import token
+from library.bot.Bot import Bot
 from datetime import timedelta
 from discord.ext import tasks
+from library.bot_token import token
 from logging import error
-from bot.Bot import Bot
 import os.path as path
 from json import load
 from math import ceil
@@ -14,23 +14,15 @@ from sys import exit
 import traceback
 import logging
 
-# TODO wladbelsky
-# 2. markdaun ridme.txt
-# 4. music bot (colaborative task)
-# 5. move any strict numbers to cfg omg it so cool to have numbers in config man! cuz it look so professiAnal
-# TODO reven_n1
-# 1. move key to cfg
-# 2. music bot (colaborative task)
-
 
 class Bot_init(BotBase):
     def __init__(self):
         self.Prefix = "!"
         self.TOKEN = token
         self.VERSION = None
-        if not path.isfile("bot/config/config.json"):
+        if not path.isfile("library/config/config.json"):
             exit("'config.json' not found!")
-        self.path_to_config = path.abspath("bot/config/config.json")
+        self.path_to_config = path.abspath("library/config/config.json")
         super().__init__(command_prefix=self.Prefix, intents=Intents().all())
 
 
@@ -40,7 +32,7 @@ class Bot_init(BotBase):
             data = load(json_config_file)
             try:
                 for _ in data["default_settings"]["cog_list"]:
-                    self.load_extension(f"bot.cogs.{_}")
+                    self.load_extension(f"library.cogs.{_}")
             except KeyError:
                 exit("'config.json' is damaged!")
         print("setup complete")
