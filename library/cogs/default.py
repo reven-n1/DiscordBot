@@ -1,4 +1,4 @@
-from discord.ext.commands import command, has_permissions, cooldown
+from discord.ext.commands import command, has_permissions, cooldown, guild_only
 from discord.ext.commands.cooldowns import BucketType
 from discord.ext.commands import Cog
 from library.__init__ import Amia
@@ -33,6 +33,7 @@ class Commands(Cog):
         await ctx.send(f"{choice(('Hello', 'Hi', 'Hey', 'Hiya'))} {ctx.author.mention}!")
 
     @command(name="say", aliases=["скажи"], brief='This is the brief description', description='This is the full description')
+    @guild_only()
     @has_permissions(administrator=True)
     async def say(self, ctx, *input):
         """
@@ -43,6 +44,7 @@ class Commands(Cog):
         await ctx.message.channel.send(" ".join(input))
         await ctx.message.delete()
 
+    @guild_only()
     @command(name="f", aliases=["ф"], brief='This is the brief description', description='This is the full description')
     @cooldown(1, misc_cooldown, BucketType.user)
     async def pressf(self, ctx, *input):
@@ -58,6 +60,7 @@ class Commands(Cog):
         emb.set_image(url="https://pbs.twimg.com/media/D-5sUKNXYAA5K9l.jpg")
         await ctx.message.channel.send(embed=emb)
         
+    @guild_only()
     @command(name="o7", aliases=["07","о7"], brief='This is the brief description', description='This is the full description')
     @cooldown(1, misc_cooldown, BucketType.user)
     async def o7(self, ctx, *input):
@@ -147,6 +150,7 @@ class Commands(Cog):
         emb.set_image(url=choice(fimages))
         await ctx.message.channel.send(embed=emb)        
 
+    @guild_only()
     @command(name="info", aliases=["инфо"])
     async def info(self, ctx):
         """

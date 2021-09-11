@@ -1,5 +1,5 @@
 from discord.ext.commands.errors import CommandOnCooldown, MissingPermissions, \
-NSFWChannelRequired
+NSFWChannelRequired, NoPrivateMessage
 from discord import Activity, ActivityType, Game, Streaming, Intents
 from discord.ext.commands import Bot as BotBase, CommandNotFound
 from library.bots.Default_bot import Default_bot
@@ -63,7 +63,7 @@ class Bot_init(BotBase):
             cooldown_time = timedelta(seconds=ceil(exception.retry_after))
             if any(pfr in context.message.content for pfr in ["!ger", "!пук"]):
                 await context.send(f"***Заряжаем жепу, осталось: {cooldown_time}***", delete_after=15)
-            if any(pfr in context.message.content for pfr in ["!ark", "!арк"]):
+            elif any(pfr in context.message.content for pfr in ["!ark", "!арк"]):
                 await context.send(f"***Копим орундум, осталось: {cooldown_time}***", delete_after=15)
             else:
                 await context.send(f"***Ожидайте: {cooldown_time}***", delete_after=15)
@@ -76,6 +76,9 @@ class Bot_init(BotBase):
 
         elif isinstance(exception, NSFWChannelRequired):
             await context.send(f"{context.message.author} ***- Доступно только в NSFW ***", delete_after=15)
+
+        elif isinstance(exception, NoPrivateMessage):
+            await context.send(f"{context.message.author} ***- Доступно только на сервере ***", delete_after=15)
 
         else:
             print(exception)

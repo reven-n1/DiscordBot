@@ -1,5 +1,6 @@
 from discord.ext.commands import command, has_permissions
 from discord.errors import HTTPException, NotFound
+from discord.ext.commands.core import guild_only
 from discord.ext.commands import Cog
 from library.__init__ import Amia
 import discord.member
@@ -10,6 +11,7 @@ class Commands(Cog):
         self.bot = bot
 
     @command(name="ban", aliases=["бан"])
+    @guild_only()
     @has_permissions(ban_members=True)
     async def ban(self, ctx, member: discord.Member, reason=None):
         """
@@ -25,6 +27,7 @@ class Commands(Cog):
         await ctx.message.channel.send(f"{member} is banned", delete_after=15)
 
     @command(name="kick", aliases=["кик"])
+    @guild_only()
     @has_permissions(kick_members=True)
     async def kick(self, ctx, member: discord.Member, reason=None):
         """
@@ -41,6 +44,7 @@ class Commands(Cog):
 
 
     @command(name="unban", aliases=["разбан"])
+    @guild_only()
     @has_permissions(administrator=True)
     async def unban(self, ctx, user:discord.User):
         """
@@ -55,6 +59,7 @@ class Commands(Cog):
 
 
     @command(name="ban_list", aliases=["бан_лист"])
+    @guild_only()
     @has_permissions(ban_members=True)
     async def ban_list(self, ctx):
         """
@@ -72,6 +77,7 @@ class Commands(Cog):
 
 
     @command(name="give_role", aliases=["повысить"])
+    @guild_only()
     @has_permissions(administrator=True)
     async def give_role(self, ctx, member:discord.Member, role:discord.Role):
         """
@@ -87,6 +93,7 @@ class Commands(Cog):
     
 
     @command(name="remove_role", aliases=["понизить"])
+    @guild_only()
     @has_permissions(administrator=True)
     async def remove_role(self, ctx, member:discord.Member, role:discord.Role):
         """
@@ -102,6 +109,7 @@ class Commands(Cog):
 
 
     @command(name="clear", aliases=["очистить"])
+    @guild_only()
     async def clear(self, ctx):
         """
         Clears channel from messages(takes quantity to delete)(in default 1000)
