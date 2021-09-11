@@ -1,4 +1,5 @@
 from discord.ext.commands import command, has_permissions
+from discord.ext.commands.core import guild_only
 from discord.ext.commands import Cog
 from library.__init__ import Amia
 from random import choice
@@ -19,6 +20,7 @@ class Commands(Cog):
         await ctx.send(f"{choice(('Hello', 'Hi', 'Hey', 'Hiya'))} {ctx.author.mention}!")
 
     @command(name="say", aliases=["скажи"], brief='This is the brief description', description='This is the full description')
+    @guild_only()
     @has_permissions(administrator=True)
     async def say(self, ctx, *input):
         """
@@ -28,7 +30,7 @@ class Commands(Cog):
         await ctx.message.channel.send(" ".join(input))
         await ctx.message.delete()
 
-
+    @guild_only()
     @command(name="info", aliases=["инфо"])
     async def info(self, ctx):
         """

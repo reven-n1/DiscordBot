@@ -1,7 +1,7 @@
+from discord.ext.commands.core import is_nsfw, guild_only
 from discord.ext.commands.cooldowns import BucketType
 from discord.ext.commands import command, cooldown
 from library.data.json_data import ger_cooldown
-from discord.ext.commands.core import is_nsfw
 from library.bots.Fun_bot import Fun_bot
 from discord.ext.commands import Cog
 from random import choice
@@ -15,6 +15,7 @@ class Commands(Cog):
         self.bot = bot
 
     @is_nsfw()
+    @guild_only()
     @cooldown(1, ger_cooldown, BucketType.user)
     @command(name="ger", aliases=["пук"])
     async def ger(self, ctx):

@@ -1,7 +1,7 @@
 from library.data.json_data import ark_cooldown, embed_color
+from discord.ext.commands.core import guild_only, is_nsfw
 from discord.ext.commands.cooldowns import BucketType
 from discord.ext.commands import command, cooldown
-from discord.ext.commands.core import is_nsfw
 from library.bots.Ark_bot import Ark_bot
 from discord.ext.commands import Cog
 from re import sub
@@ -36,6 +36,7 @@ class Commands(Cog):
         await ctx.message.author.send(embed=collection_message)
 
 
+    @guild_only()
     @command(name="barter", aliases=["обмен"])
     async def barter(self, ctx):
         """
@@ -57,6 +58,7 @@ class Commands(Cog):
             await ctx.send("***Нет операторов на обмен***", delete_after=15)
 
     @is_nsfw()
+    @guild_only()
     @cooldown(1, ark_cooldown, BucketType.user)
     @command(name="ark", aliases=["арк"])
     async def ark(self, ctx):      
