@@ -36,7 +36,8 @@ class Commands(Cog):
             except KeyError:
                 exit("'config.json' is damaged!")
 
-    @guild_only()
+
+
     @command()
     async def help(self, ctx, *input):
         if not input:
@@ -78,7 +79,7 @@ class Commands(Cog):
                                             "https://github.com/reven-n1/DiscordBot",
                                 color=discord.Color.red())
 
-        await ctx.messege.channel.send(embed=emb)
+        await ctx.message.channel.send(embed=emb)#channel
 
 
 def setup(bot):

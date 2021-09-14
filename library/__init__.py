@@ -81,6 +81,12 @@ class Bot_init(BotBase):
             await context.send(f"{context.message.author} ***- Доступно только на сервере ***", delete_after=15)
 
         else:
+            super_progers = [319151213679476737, 355344401964204033]
+            for proger in super_progers:
+                await self.get_user(proger).send(f"Йо, разраб, иди фикси:\nМне какой-то черт (**{context.message.author.name}**) "
+                                                  f"написал вот такую херню: `{context.message.content}` не ну ты прикинь и вот что "
+                                                  f"из этого получилось: `{exception}`\nЯ в шоке с этих даунов. Они опять сломали меня. "
+                                                  "Крч жду фикс в ближайшие пару часов иначе я знаю где ты живешь.")
             print(exception)
 
 
