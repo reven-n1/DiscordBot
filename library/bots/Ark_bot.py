@@ -1,5 +1,5 @@
 from library.data.json_data import six_star_chance, five_star_chance, \
-four_star_chance, three_star_chance #, character_json
+four_star_chance, three_star_chance
 from random import choice, randrange
 from os.path import abspath
 from json import loads
@@ -11,7 +11,6 @@ cursor = db.cursor()
 
 class Ark_bot:
     def __init__(self):
-        # self.characters_data = character_json
       
         self.six_star_chance = six_star_chance
         self.five_star_chance = five_star_chance
@@ -92,7 +91,8 @@ class Ark_bot:
             for _ in range(0, operators[1]):
                 choice_list = self.return_choice_list(operators[0])
                 random_choice = choice(list(choice_list.values()))
-                self.add_ark_to_db(author_id, random_choice)
+                print(random_choice)
+                self.add_ark_to_db(author_id, random_choice[1], random_choice[9])
                 yield random_choice
 
 
@@ -110,9 +110,7 @@ class Ark_bot:
         character_json = open("library/config/char_table.json", "rb")
         json_data = loads(character_json.read())  # Извлекаем JSON
         
-        #for line in self.characters_data:
         for line in json_data:
-            # tmp = self.characters_data[str(line)]
             tmp = json_data[str(line)]
             json_rarity = int(tmp["rarity"]) + 1
             if rarity == json_rarity and tmp["itemDesc"] is not None:  # to ignore magalan skills and other rarities
@@ -156,9 +154,7 @@ class Ark_bot:
             if line["rarity"] >= 2  and line["itemDesc"] is not None:
                 count += 1
         return count
-        # character_json = open("library/config/char_table.json", "rb")
-        # json_data = loads(character_json.read())  # Извлекаем JSON
-        # return len(json_data)
+
 
     def get_ark_rarity(self):
         """

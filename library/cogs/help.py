@@ -78,7 +78,7 @@ class Commands(Cog):
                                             "https://github.com/reven-n1/DiscordBot",
                                 color=discord.Color.red())
 
-        await ctx.messege.channel.send(embed=emb)
+        await ctx.messege.channl.send(embed=emb)#channel
 
 
 def setup(bot):
