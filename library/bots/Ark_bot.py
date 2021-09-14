@@ -92,7 +92,7 @@ class Ark_bot:
             for _ in range(0, operators[1]):
                 choice_list = self.return_choice_list(operators[0])
                 random_choice = choice(list(choice_list.values()))
-                self.add_ark_to_db(author_id, random_choice)
+                self.add_ark_to_db(author_id, random_choice[1], random_choice[9])
                 yield random_choice
 
 
