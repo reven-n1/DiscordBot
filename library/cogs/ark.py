@@ -53,11 +53,12 @@ class Commands(Cog):
         barter_list = Amia.get_barter_list(ctx.message.author.id)
         if barter_list:
             barter = Amia.ark_barter(barter_list, ctx.message.author.id)
-            tmp = next(barter)
             try:
-                while tmp:
-                    await self.ark_embed(tmp, ctx.message)
-                    tmp = next(barter)
+                new_char = next(barter)
+                
+                while new_char:
+                    await self.ark_embed(new_char, ctx.message)
+                    new_char = next(barter)
             except StopIteration:
                 pass
         else:

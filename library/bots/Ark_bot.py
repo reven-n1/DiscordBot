@@ -1,3 +1,4 @@
+from os import error
 from library.data.json_data import six_star_chance, five_star_chance, \
 four_star_chance, three_star_chance #, character_json
 from random import choice, randrange
@@ -60,19 +61,27 @@ class Ark_bot:
         """
         cursor.execute(
             f"SELECT rarity, operator_count, operator_name FROM users_ark_collection WHERE user_id == '{author_id}'"
-            f" AND operator_count > 5 ")
+            f" AND operator_count >= 6 ")
         res = sorted(cursor.fetchall())
         barter_list = []
-        for rarity, count, name in res:
-            if rarity < 6:
-                barter_list.append([rarity + 1, count // 5])
-            new_count = count % 5
-            if new_count == 0:
-                cursor.execute(
-                    f"DELETE FROM users_ark_collection WHERE user_id == '{author_id}' AND operator_count >= 5 ")
-            else:
-                cursor.execute(f"UPDATE users_ark_collection SET operator_count = '{new_count}'"
-                               f"WHERE user_id ='{author_id}'AND operator_name == '{name}'")
+        for rarity, count, _ in res:
+            if rarity < 6 and count > 5:
+                if count % 5 != 0:
+                    new_char_quantity = count % 5
+                elif count % 5 == 0:
+                    new_char_quantity = (count // 5) - 1
+                else:
+                    pass
+                
+                barter_list.append([rarity + 1, new_char_quantity])
+
+                cursor.execute(f"""UPDATE users_ark_collection SET operator_count = 
+                                CASE 
+                                    WHEN operator_count % 5 != 0  THEN operator_count % 5 
+                                    WHEN operator_count  % 5 == 0 THEN 5
+                                    ELSE operator_count
+                                END
+                                WHERE rarity < 6 AND operator_count > 5 AND user_id ='{author_id}'""")
             db.commit()
         return barter_list
 
