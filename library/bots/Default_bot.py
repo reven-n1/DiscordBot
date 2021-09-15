@@ -9,12 +9,8 @@ class Default_bot:
         Returns info list
         """
         info_list = []
-        count = 0
-        for line in self.bot_info["commands"].keys():
-            info_list.append(f'{line} - ')
-        for line in self.bot_info["commands"].values():
-            info_list[count] += line
-            count += 1
+        for command_name, command_desc in self.bot_info["commands"].values():
+            info_list.append(f"{command_name} - {command_desc}")
 
         return info_list
 

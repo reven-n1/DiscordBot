@@ -11,7 +11,9 @@ with open("library/config/config.json","rb") as json_config_file:
     try:
         misc_cooldown = int(data["default_settings"]["chat_misc_cooldown"])
     except KeyError:
-        exit("'config.json' is damaged!")   
+        exit("'config.json' is damaged!") 
+
+
 class Commands(Cog):
     def __init__(self, bot):
         self.bot = bot
@@ -148,7 +150,8 @@ class Commands(Cog):
             title=f"**{ctx.author.name}** приветствует вас командиры. o7"
         emb = discord.Embed(title=title, color=self.embed_color)
         emb.set_image(url=choice(fimages))
-        await ctx.message.channel.send(embed=emb)        
+        await ctx.message.channel.send(embed=emb)  
+              
 
     @guild_only()
     @command(name="info", aliases=["инфо"])
@@ -159,10 +162,15 @@ class Commands(Cog):
         await ctx.message.delete()
         embed = discord.Embed(color=self.embed_color, title=Amia.name,
                               url=f"https://www.youtube.com/watch?v=X5ULmETDiXI")
-        embed.add_field(name="Description", value=Amia.bot_info["info"], inline=False)
-        embed.add_field(name="Commands",
-                        value=str("\n".join(Amia.get_info())),
-                        inline=True)
+        embed.add_field(name="Description", value="Тупая деффка еще и бот", inline=False)
+        
+        commands = []
+        for command in self.bot.walk_commands():
+            commands.append(command.name)
+
+        embed.add_field(name="Commands", value="\n".join(commands), inline=False)
+  
+        
         embed.set_thumbnail(
             url="https://aceship.github.io/AN-EN-Tags/img/characters/char_222_bpipe_race%231.png")
         embed.set_image(url="https://aceship.github.io/AN-EN-Tags/img/characters/char_002_amiya_epoque%234.png")
