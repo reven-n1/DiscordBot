@@ -172,7 +172,7 @@ class Commands(Cog):
   
         
         embed.set_thumbnail(
-            url="https://aceship.github.io/AN-EN-Tags/img/characters/char_222_bpipe_race%231.png")
+            url="https://aceship.github.io/AN-EN-Tags/img/factions/logo_rhodes.png")
         embed.set_image(url="https://aceship.github.io/AN-EN-Tags/img/characters/char_002_amiya_epoque%234.png")
         embed.set_footer(text=f"Requested by {ctx.message.author.name}")
         await ctx.send(embed=embed, delete_after=30)

@@ -57,7 +57,7 @@ class Bot_init(BotBase):
 
     async def on_command_error(self, context, exception):
 
-        await context.message.delete(delay=7)# TODO: change to cfg
+        await context.message.delete(delay=15)# TODO: change to cfg
 
         if isinstance(exception, CommandOnCooldown):
             cooldown_time = timedelta(seconds=ceil(exception.retry_after))
@@ -81,6 +81,10 @@ class Bot_init(BotBase):
             await context.send(f"{context.message.author} ***- Доступно только на сервере ***", delete_after=15)
 
         else:
+            await context.message.channel.send(f"Здарова {context.message.author.mention}, тут такое дело, вот эта команда "
+                                               f"`{context.message.content}` вызвала ошибку, разрабов я уже оповестила, "
+                                               "так что не спамь там все дела, веди себя хорошо)"
+                                                ,delete_after=15)
             super_progers = [319151213679476737, 355344401964204033]
             for proger in super_progers:
                 await self.get_user(proger).send(f"Йо, разраб, иди фикси:\nМне какой-то черт (**{context.message.author.name}**) "
