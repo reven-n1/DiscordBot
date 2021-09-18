@@ -1,3 +1,4 @@
+from library.my_Exceptions.validator import NonOwnedCharacter, NonExistentCharacter
 from library.data.json_data import ark_cooldown, embed_color
 from discord.ext.commands.core import guild_only, is_nsfw
 from discord.ext.commands.cooldowns import BucketType
@@ -17,15 +18,21 @@ class Commands(Cog):
 
 
     @command(name="myark", aliases=["моидевочки","майарк"])
-    async def myark(self, ctx, *input):
+    async def myark(self, ctx):
         """
         This command sends ark collection to private messages.\n
         If collection empty -> returns 'Empty collection'
         """
+        try:
+            char_name = ctx.message.content.split()[1]
+
+        except:
+            char_name=""
+
         if not isinstance(ctx.channel, discord.channel.DMChannel):
             await ctx.message.delete()
         ark_collection = Amia.get_ark_collection(ctx.message.author.id)
-        if len(input) == 0:
+        if char_name == "":
             all_chara_count = Amia.get_ark_count()
             user_chara_count = 0
             for characters in ark_collection.values():
@@ -41,15 +48,16 @@ class Commands(Cog):
             collection_message.set_footer(text=f"Используй команду !майарк <имя> чтоб посмотреть на персонажа. Это тоже пока не работает(")
             await ctx.message.author.send(embed=collection_message)
         else:
-            pass
-            # character_name = " ".join(input)
-            # for chars in ark_collection.values():
-            #     for char in chars:
-            #         if char[1] == character_name:
-            #             embed = self.ark_embed(Amia.parse_character_json("",Amia.get_character_data(character_name)), ctx.message)
-            #             break
-            # await ctx.message.channel.send(embed=embed)
+            try:
+                await ctx.message.author.send(embed=self.ark_embed(Amia.show_character(char_name, ctx.message.author.id), ctx.message))
 
+            except NonOwnedCharacter:
+                await ctx.message.author.send("***Лох, у тебя нет такой дивочки***")
+            
+            except NonExistentCharacter:
+                await ctx.message.author.send("***Лох, неправильно написал имя дивочки***")
+
+            
     @guild_only()
     @command(name="barter", aliases=["обмен"])
     async def barter(self, ctx):
@@ -72,6 +80,7 @@ class Commands(Cog):
         else:
             await ctx.send("***Нет операторов на обмен***", delete_after=15)
 
+
     @is_nsfw()
     @guild_only()
     @cooldown(1, ark_cooldown, BucketType.user)
@@ -84,6 +93,7 @@ class Commands(Cog):
         character_data = Amia.roll_random_character(ctx.message.author.id)
         await ctx.message.channel.send(embed=self.ark_embed(character_data, ctx.message))
 
+
     @staticmethod
     def ark_embed(character_data, message):
         """
@@ -93,16 +103,17 @@ class Commands(Cog):
             character_data (list): random character data from char_table.json
             message (discord.message): message
         """
-        embed = discord.Embed(color=embed_color, title=character_data[1],
-                              description=str(character_data[8]) * character_data[9],
-                              url=f"https://aceship.github.io/AN-EN-Tags/akhrchars.html?opname={character_data[1]}")
-        embed.add_field(name="Description", value=f"{character_data[2]}\n{character_data[3]}", inline=False)
-        embed.add_field(name="Position", value=character_data[4])
-        embed.add_field(name="Tags", value=str(character_data[5]), inline=True)
-        line = sub("[<@.>/]", "", character_data[6])  # Delete all tags in line
+        embed = discord.Embed(color=embed_color, title=character_data.name,
+                              description=str(character_data.stars) * character_data.rarity,
+                              url=f"https://aceship.github.io/AN-EN-Tags/akhrchars.html?opname={character_data.name}")
+        embed.add_field(name="Description", value=f"{character_data.description_first_part}\n{character_data.description_sec_part}", \
+                        inline=False)
+        embed.add_field(name="Position", value=character_data.position)
+        embed.add_field(name="Tags", value=str(character_data.tags), inline=True)
+        line = sub("[<@.>/]", "", character_data.traits)  # Delete all tags in line
         embed.add_field(name="Traits", value=line.replace("bakw", ""), inline=False)
-        embed.set_thumbnail(url=character_data[7])
-        embed.set_image(url=f"https://aceship.github.io/AN-EN-Tags/img/characters/{character_data[0]}_1.png")
+        embed.set_thumbnail(url=character_data.profession)
+        embed.set_image(url=f"https://aceship.github.io/AN-EN-Tags/img/characters/{character_data.character_id}_1.png")
         embed.set_footer(text=f"Requested by {message.author.name}")
         return embed
 
