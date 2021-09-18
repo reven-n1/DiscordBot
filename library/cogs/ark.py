@@ -1,3 +1,4 @@
+from discord import channel
 from library.my_Exceptions.validator import NonOwnedCharacter, NonExistentCharacter
 from library.data.json_data import ark_cooldown, embed_color
 from discord.ext.commands.core import guild_only, is_nsfw
@@ -18,26 +19,25 @@ class Commands(Cog):
 
 
     @command(name="myark", aliases=["моидевочки","майарк"])
-    async def myark(self, ctx):
+    async def myark(self, ctx, char_name:str=""):
         """
         This command sends ark collection to private messages.\n
         If collection empty -> returns 'Empty collection'
         """
-        try:
-            char_name = ctx.message.content.split()[1]
-
-        except:
-            char_name=""
-
         if not isinstance(ctx.channel, discord.channel.DMChannel):
             await ctx.message.delete()
+
         ark_collection = Amia.get_ark_collection(ctx.message.author.id)
+
+        # TODO: rewrite if->True part
+
         if char_name == "":
-            all_chara_count = Amia.get_ark_count()
+            all_character_count = Amia.get_ark_count()
             user_chara_count = 0
             for characters in ark_collection.values():
                 user_chara_count += len(characters)
-            collection_message = discord.Embed(title=f"{ctx.author.name}'s collection {user_chara_count}/{all_chara_count} ({round((user_chara_count/all_chara_count)*100,2)}%)", color=embed_color)
+            collection_message = discord.Embed(title=f"{ctx.author.name}'s collection {user_chara_count}/{all_character_count} \
+                                              ({round((user_chara_count/all_character_count)*100,2)}%)", color=embed_color)
             for rarity, characters in ark_collection.items():
                 characters_list = ""
                 for character in characters:
@@ -47,6 +47,7 @@ class Commands(Cog):
                 collection_message.add_field(name="Ти бомж", value="иди покрути девочек!")
             collection_message.set_footer(text=f"Используй команду !майарк <имя> чтоб посмотреть на персонажа. Это тоже пока не работает(")
             await ctx.message.author.send(embed=collection_message)
+            
         else:
             try:
                 await ctx.message.author.send(embed=self.ark_embed(Amia.show_character(char_name, ctx.message.author.id), ctx.message))
@@ -55,7 +56,7 @@ class Commands(Cog):
                 await ctx.message.author.send("***Лох, у тебя нет такой дивочки***")
             
             except NonExistentCharacter:
-                await ctx.message.author.send("***Лох, неправильно написал имя дивочки***")
+                await ctx.message.author.send("***Лошара, даже имя своей вайфу не запомнил((***")
 
             
     @guild_only()
@@ -73,7 +74,7 @@ class Commands(Cog):
                 new_char = next(barter)
                 
                 while new_char:
-                    await self.ark_embed(new_char, ctx.message)
+                    await ctx.message.channel.send(embed=self.ark_embed(new_char, ctx.message))
                     new_char = next(barter)
             except StopIteration:
                 pass

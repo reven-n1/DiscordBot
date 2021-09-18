@@ -96,20 +96,25 @@ class Ark_bot:
 
         Args:
             barter_list (list): list that contains quantity and character stars
-            author_id ([type]): requestor id
+            author_id (int): requestor id
 
         Yields:
             str: random character
         """
         for operators in barter_list:
             for _ in range(0, operators[1]):
-                choice_list = self.return_choice_list(operators[0])
-                random_choice = choice(list(choice_list.values()))
-                self.add_ark_to_db(author_id, random_choice[1], random_choice[9])
-                yield random_choice
+                character = self.return_new_character(operators[0])
+                self.add_ark_to_db(author_id, character.name, character.rarity)
+                yield character
 
 
     def get_ark_count(self):
+        """
+        Returns counter of all possible characters
+
+        Returns:
+            int: count of all possible characters
+        """
         count = 0
         json_data = loads(open("library/config/char_table.json", "rb").read())
         for line in json_data.values():
@@ -174,41 +179,52 @@ class Ark_bot:
 
     
     def parse_character_json(self, character_id, character_data):
-            rarity = int(character_data["rarity"]) + 1
-            profession = ""
-            if character_data["profession"] == "CASTER":
-                profession = "https://aceship.github.io/AN-EN-Tags/img/classes/class_caster.png"
-            elif character_data["profession"] == "SNIPER":
-                profession = "https://aceship.github.io/AN-EN-Tags/img/classes/class_sniper.png"
-            elif character_data["profession"] == "WARRIOR":
-                profession = "https://aceship.github.io/AN-EN-Tags/img/classes/class_guard.png"
-            elif character_data["profession"] == "PIONEER":
-                profession = "https://aceship.github.io/AN-EN-Tags/img/classes/class_vanguard.png"
-            elif character_data["profession"] == "SUPPORT":
-                profession = "https://aceship.github.io/AN-EN-Tags/img/classes/class_supporter.png"
-            elif character_data["profession"] == "MEDIC":
-                profession = "https://aceship.github.io/AN-EN-Tags/img/classes/class_medic.png"
-            elif character_data["profession"] == "SPECIAL":
-                profession = "https://aceship.github.io/AN-EN-Tags/img/classes/class_specialist.png"
-            elif character_data["profession"] == "TANK":
-                profession = "https://aceship.github.io/AN-EN-Tags/img/classes/class_defender.png"
-            name = character_data["name"].replace(" ", "_").replace("'", "")
-            description_first_part = character_data["itemUsage"]
-            description_sec_part = character_data["itemDesc"]
-            position = character_data["position"]
-            tags = ", ".join(character_data["tagList"])
-            traits = character_data["description"]
-            if rarity == 6:
-                stars = self.stars_6
-            else:
-                stars = self.stars_0_5
+        """
+        Creates namedtuple that contains character description
+
+        Args:
+            character_id (int): character id
+            character_data (dict): full data about character
+
+        Returns:
+            namedtuple: list with character description
+        """
+
+        rarity = int(character_data["rarity"]) + 1
+        profession = ""
+        if character_data["profession"] == "CASTER":
+            profession = "https://aceship.github.io/AN-EN-Tags/img/classes/class_caster.png"
+        elif character_data["profession"] == "SNIPER":
+            profession = "https://aceship.github.io/AN-EN-Tags/img/classes/class_sniper.png"
+        elif character_data["profession"] == "WARRIOR":
+            profession = "https://aceship.github.io/AN-EN-Tags/img/classes/class_guard.png"
+        elif character_data["profession"] == "PIONEER":
+            profession = "https://aceship.github.io/AN-EN-Tags/img/classes/class_vanguard.png"
+        elif character_data["profession"] == "SUPPORT":
+            profession = "https://aceship.github.io/AN-EN-Tags/img/classes/class_supporter.png"
+        elif character_data["profession"] == "MEDIC":
+            profession = "https://aceship.github.io/AN-EN-Tags/img/classes/class_medic.png"
+        elif character_data["profession"] == "SPECIAL":
+            profession = "https://aceship.github.io/AN-EN-Tags/img/classes/class_specialist.png"
+        elif character_data["profession"] == "TANK":
+            profession = "https://aceship.github.io/AN-EN-Tags/img/classes/class_defender.png"
+        name = character_data["name"].replace(" ", "_").replace("'", "")
+        description_first_part = character_data["itemUsage"]
+        description_sec_part = character_data["itemDesc"]
+        position = character_data["position"]
+        tags = ", ".join(character_data["tagList"])
+        traits = character_data["description"]
+        if rarity == 6:
+            stars = self.stars_6
+        else:
+            stars = self.stars_0_5
             
-            character_data_tuple = namedtuple('character', 'character_id name description_first_part description_sec_part position tags \
-                    traits profession stars rarity')
-            character = character_data_tuple(character_id, name, description_first_part, description_sec_part, position, tags, \
-                    traits, profession, stars, rarity)
+        character_data_tuple = namedtuple('character', 'character_id name description_first_part description_sec_part position tags \
+                traits profession stars rarity')
+        character = character_data_tuple(character_id, name, description_first_part, description_sec_part, position, tags, \
+                traits, profession, stars, rarity)
             
-            return character
+        return character
     
 
     @staticmethod
@@ -253,11 +269,34 @@ class Ark_bot:
 
     
     def show_character(self, character_name, requestor_id):
+        """
+        Interlayer between validator function and show func 
+
+        Args:
+            character_name (str): character name
+            requestor_id ([type]): message author id
+
+        Returns:
+            namedtuple: list with character description
+        """
         return self.show_character_validator(character_name, requestor_id)  # Извлекаем JSON
 
     
-
     def show_character_validator(self, character_name, requestor_id):
+        """
+        Validates input data and either raise exceptions or returns character data
+
+        Args:
+            character_name (str): character name
+            requestor_id ([type]): message author id
+
+        Raises:
+            NonExistentCharacter: raises when there is an error in the character name
+            NonOwnedCharacter: raises when you don't have this character
+
+        Returns:
+            namedtuple: list with character description
+        """
         character_json = open("library/config/char_table.json", "rb")
         characters_data = loads(character_json.read())  # Извлекаем JSON
 
@@ -273,8 +312,8 @@ class Ark_bot:
 
         if not is_find:
             raise NonExistentCharacter
-        
-        
+
+
         cursor.execute(
             f"SELECT operator_name FROM users_ark_collection WHERE user_id == '{requestor_id}'")
         res = cursor.fetchall()
