@@ -125,38 +125,45 @@ class Ark_bot:
             tmp = json_data[str(line)]
             json_rarity = int(tmp["rarity"]) + 1
             if rarity == json_rarity and tmp["itemDesc"] is not None:  # to ignore magalan skills and other rarities
-                profession = ""
-                if tmp["profession"] == "CASTER":
-                    profession = "https://aceship.github.io/AN-EN-Tags/img/classes/class_caster.png"
-                elif tmp["profession"] == "SNIPER":
-                    profession = "https://aceship.github.io/AN-EN-Tags/img/classes/class_sniper.png"
-                elif tmp["profession"] == "WARRIOR":
-                    profession = "https://aceship.github.io/AN-EN-Tags/img/classes/class_guard.png"
-                elif tmp["profession"] == "PIONEER":
-                    profession = "https://aceship.github.io/AN-EN-Tags/img/classes/class_vanguard.png"
-                elif tmp["profession"] == "SUPPORT":
-                    profession = "https://aceship.github.io/AN-EN-Tags/img/classes/class_supporter.png"
-                elif tmp["profession"] == "MEDIC":
-                    profession = "https://aceship.github.io/AN-EN-Tags/img/classes/class_medic.png"
-                elif tmp["profession"] == "SPECIAL":
-                    profession = "https://aceship.github.io/AN-EN-Tags/img/classes/class_specialist.png"
-                elif tmp["profession"] == "TANK":
-                    profession = "https://aceship.github.io/AN-EN-Tags/img/classes/class_defender.png"
-                character_id = line
-                name = tmp["name"].replace(" ", "_").replace("'", "")
-                description_first_part = tmp["itemUsage"]
-                description_sec_part = tmp["itemDesc"]
-                position = tmp["position"]
-                tags = ", ".join(tmp["tagList"])
-                traits = tmp["description"]
-                if json_rarity == 6:
-                    stars = self.stars_6
-                else:
-                    stars = self.stars_0_5
-                choice_list[name] = character_id, name, description_first_part, description_sec_part, position, tags, \
-                                    traits, profession, stars, json_rarity
+                character = self.parse_character_json(line, tmp)
+                choice_list[character[1]] = character
 
         return choice_list
+
+
+    def parse_character_json(self, character_id, character):
+            json_rarity = int(character["rarity"]) + 1
+            profession = ""
+            if character["profession"] == "CASTER":
+                profession = "https://aceship.github.io/AN-EN-Tags/img/classes/class_caster.png"
+            elif character["profession"] == "SNIPER":
+                profession = "https://aceship.github.io/AN-EN-Tags/img/classes/class_sniper.png"
+            elif character["profession"] == "WARRIOR":
+                profession = "https://aceship.github.io/AN-EN-Tags/img/classes/class_guard.png"
+            elif character["profession"] == "PIONEER":
+                profession = "https://aceship.github.io/AN-EN-Tags/img/classes/class_vanguard.png"
+            elif character["profession"] == "SUPPORT":
+                profession = "https://aceship.github.io/AN-EN-Tags/img/classes/class_supporter.png"
+            elif character["profession"] == "MEDIC":
+                profession = "https://aceship.github.io/AN-EN-Tags/img/classes/class_medic.png"
+            elif character["profession"] == "SPECIAL":
+                profession = "https://aceship.github.io/AN-EN-Tags/img/classes/class_specialist.png"
+            elif character["profession"] == "TANK":
+                profession = "https://aceship.github.io/AN-EN-Tags/img/classes/class_defender.png"
+            character_id = character_id
+            name = character["name"].replace(" ", "_").replace("'", "")
+            description_first_part = character["itemUsage"]
+            description_sec_part = character["itemDesc"]
+            position = character["position"]
+            tags = ", ".join(character["tagList"])
+            traits = character["description"]
+            if json_rarity == 6:
+                stars = self.stars_6
+            else:
+                stars = self.stars_0_5
+            return [character_id, name, description_first_part, description_sec_part, position, tags, \
+                    traits, profession, stars, json_rarity]
+
 
     def get_ark_count(self):
         count = 0
@@ -184,7 +191,7 @@ class Ark_bot:
             return 3
 
 
-    def get_ark(self, author_id):
+    def roll_random_character(self, author_id):
         """
         Calls function that adds character to db
 
@@ -192,12 +199,29 @@ class Ark_bot:
             author_id (message.author.id): requestor id
 
         Returns:
-            list: list of characters
+            list: random character data
         """
         choice_list = self.return_choice_list(self.get_ark_rarity())
         rand_item_from_list = choice(list(choice_list.values()))
         self.add_ark_to_db(author_id, rand_item_from_list[1], rand_item_from_list[9])
         return rand_item_from_list
+    
+    def get_character_data(self, character_name : str):
+        """
+        Get character data from DB by it's name
+
+        Args:
+            character_name: character name to look for
+
+        Returns:
+            list: random character data
+        """
+        character_json = open("library/config/char_table.json", "rb")
+        json_data = loads(character_json.read())
+        for char_data in json_data.values():
+            if char_data["name"].lower() == character_name.lower():
+                return char_data
+        raise KeyError("Selected character not found in list")
 
 
     @staticmethod

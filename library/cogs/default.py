@@ -70,7 +70,7 @@ class Commands(Cog):
         greet fellow commanders
         can mention whom to greet
         """
-        fimages = [
+        fimages = [#TODO: move this to some file or so
             'https://cdn.discordapp.com/attachments/565648501048868949/695677855543066726/HufFEF.jpg',
             'https://avvesione.files.wordpress.com/2015/03/kantai_collection-12-fubuki-destroyer-salute-happy-smile-tears-sunset.jpg',
             'https://i.imgur.com/6OYJZKM.jpg',

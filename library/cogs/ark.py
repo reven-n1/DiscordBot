@@ -1,4 +1,3 @@
-from discord.errors import HTTPException
 from library.data.json_data import ark_cooldown, embed_color
 from discord.ext.commands.core import guild_only, is_nsfw
 from discord.ext.commands.cooldowns import BucketType
@@ -18,7 +17,7 @@ class Commands(Cog):
 
 
     @command(name="myark", aliases=["моидевочки","майарк"])
-    async def myark(self, ctx):
+    async def myark(self, ctx, *input):
         """
         This command sends ark collection to private messages.\n
         If collection empty -> returns 'Empty collection'
@@ -26,21 +25,30 @@ class Commands(Cog):
         if not isinstance(ctx.channel, discord.channel.DMChannel):
             await ctx.message.delete()
         ark_collection = Amia.get_ark_collection(ctx.message.author.id)
-        all_chara_count = Amia.get_ark_count()
-        user_chara_count = 0
-        for characters in ark_collection.values():
-            user_chara_count += len(characters)
-        collection_message = discord.Embed(title=f"{ctx.author.name}'s collection {user_chara_count}/{all_chara_count} ({round((user_chara_count/all_chara_count)*100,2)}%)", color=embed_color)
-        for rarity,characters in ark_collection.items():
-            characters_list = ""
-            for character in characters:
-                characters_list += f"{character[1]} x {character[2]}\n"
-            collection_message.add_field(name=":star:"*rarity if rarity<6 else ":star2:"*rarity, value=characters_list, inline=False)
-        if len(ark_collection) == 0:
-            collection_message.add_field(name="Ти бомж", value="иди покрути девочек!")
-        collection_message.set_footer(text=f"Используй команду !майарк <имя> чтоб посмотреть на персонажа. Это тоже пока не работает(")
-        await ctx.message.author.send(embed=collection_message)
-
+        if len(input) == 0:
+            all_chara_count = Amia.get_ark_count()
+            user_chara_count = 0
+            for characters in ark_collection.values():
+                user_chara_count += len(characters)
+            collection_message = discord.Embed(title=f"{ctx.author.name}'s collection {user_chara_count}/{all_chara_count} ({round((user_chara_count/all_chara_count)*100,2)}%)", color=embed_color)
+            for rarity, characters in ark_collection.items():
+                characters_list = ""
+                for character in characters:
+                    characters_list += f"{character[1]} x {character[2]}\n"
+                collection_message.add_field(name=":star:"*rarity if rarity<6 else ":star2:"*rarity, value=characters_list, inline=False)
+            if len(ark_collection) == 0:
+                collection_message.add_field(name="Ти бомж", value="иди покрути девочек!")
+            collection_message.set_footer(text=f"Используй команду !майарк <имя> чтоб посмотреть на персонажа. Это тоже пока не работает(")
+            await ctx.message.author.send(embed=collection_message)
+        else:
+            pass
+            # character_name = " ".join(input)
+            # for chars in ark_collection.values():
+            #     for char in chars:
+            #         if char[1] == character_name:
+            #             embed = self.ark_embed(Amia.parse_character_json("",Amia.get_character_data(character_name)), ctx.message)
+            #             break
+            # await ctx.message.channel.send(embed=embed)
 
     @guild_only()
     @command(name="barter", aliases=["обмен"])
@@ -73,12 +81,11 @@ class Commands(Cog):
         Return a random arknigts character (from char_table.json)
         """
         await ctx.message.delete()
-        character_data = Amia.get_ark(ctx.message.author.id)
-        await self.ark_embed(character_data, ctx.message)
-
+        character_data = Amia.roll_random_character(ctx.message.author.id)
+        await ctx.message.channel.send(embed=self.ark_embed(character_data, ctx.message))
 
     @staticmethod
-    async def ark_embed(character_data, message):
+    def ark_embed(character_data, message):
         """
         Generates embed form recieved ark data
 
@@ -97,7 +104,7 @@ class Commands(Cog):
         embed.set_thumbnail(url=character_data[7])
         embed.set_image(url=f"https://aceship.github.io/AN-EN-Tags/img/characters/{character_data[0]}_1.png")
         embed.set_footer(text=f"Requested by {message.author.name}")
-        await message.channel.send(embed=embed)
+        return embed
 
 
 def setup(bot):

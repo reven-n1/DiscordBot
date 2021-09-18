@@ -13,7 +13,7 @@
         },
         
         "ark": {
-            "ark_cooldown": "60",
+            "ark_cooldown": "14400",
             "chance": {
                 "six_star": "2",
                 "five_star": "10",
