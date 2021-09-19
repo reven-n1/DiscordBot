@@ -36,7 +36,7 @@ class Commands(Cog):
             user_chara_count = 0
             for characters in ark_collection.values():
                 user_chara_count += len(characters)
-            collection_message = discord.Embed(title=f"{ctx.author.name}'s collection {user_chara_count}/{all_character_count} \
+            collection_message = discord.Embed(title=f"{ctx.author.display_name}'s collection {user_chara_count}/{all_character_count} \
                                               ({round((user_chara_count/all_character_count)*100,2)}%)", color=embed_color)
             for rarity, characters in ark_collection.items():
                 characters_list = ""
@@ -115,7 +115,7 @@ class Commands(Cog):
         embed.add_field(name="Traits", value=line.replace("bakw", ""), inline=False)
         embed.set_thumbnail(url=character_data.profession)
         embed.set_image(url=f"https://aceship.github.io/AN-EN-Tags/img/characters/{character_data.character_id}_1.png")
-        embed.set_footer(text=f"Requested by {message.author.name}")
+        embed.set_footer(text=f"Requested by {message.author.display_name}")
         return embed
 
 

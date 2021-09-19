@@ -55,9 +55,9 @@ class Commands(Cog):
         sends simple picture of saluting girl. can mention people
         """
         if len(ctx.message.mentions) > 0:
-            title = f"**{ctx.author.name}** заплатил увожение за {ctx.message.mentions[0].name}"
+            title = f"**{ctx.author.display_name}** заплатил увожение за {ctx.message.mentions[0].display_name}"
         else:
-            title=f"**{ctx.author.name}** заплатил увожение. o7"
+            title=f"**{ctx.author.display_name}** заплатил увожение. o7"
         emb = discord.Embed(title=title, color=self.embed_color)
         emb.set_image(url="https://pbs.twimg.com/media/D-5sUKNXYAA5K9l.jpg")
         await ctx.message.channel.send(embed=emb)
@@ -145,9 +145,9 @@ class Commands(Cog):
             'https://pm1.narvii.com/6869/05a87302bae47119e5149830d85b745bddfe8031r1-504-724v2_uhq.jpg',
         ]
         if len(ctx.message.mentions) > 0:
-            title = f"**{ctx.author.name}** приветствует {ctx.message.mentions[0].name}. o7"
+            title = f"**{ctx.author.display_name}** приветствует {ctx.message.mentions[0].display_name}. o7"
         else:
-            title=f"**{ctx.author.name}** приветствует вас командиры. o7"
+            title=f"**{ctx.author.display_name}** приветствует вас командиры. o7"
         emb = discord.Embed(title=title, color=self.embed_color)
         emb.set_image(url=choice(fimages))
         await ctx.message.channel.send(embed=emb)  
@@ -157,10 +157,10 @@ class Commands(Cog):
     @cooldown(1, misc_cooldown, BucketType.user)
     async def avatar(self, ctx, *input):
         if len(input) > 0:
-            title = f"Аватар {ctx.message.mentions[0].name}"
+            title = f"Аватар {ctx.message.mentions[0].display_name}"
             url = ctx.message.mentions[0].avatar_url
         else:
-            title = f"Аватар {ctx.message.author.name}"
+            title = f"Аватар {ctx.message.author.display_name}"
             url = ctx.message.author.avatar_url
         emb = discord.Embed(title=title, color=self.embed_color)
         emb.set_image(url=url)
@@ -188,7 +188,7 @@ class Commands(Cog):
         embed.set_thumbnail(
             url="https://aceship.github.io/AN-EN-Tags/img/factions/logo_rhodes.png")
         embed.set_image(url="https://aceship.github.io/AN-EN-Tags/img/characters/char_002_amiya_epoque%234.png")
-        embed.set_footer(text=f"Requested by {ctx.message.author.name}")
+        embed.set_footer(text=f"Requested by {ctx.message.author.display_name}")
         await ctx.send(embed=embed, delete_after=30)
 
 

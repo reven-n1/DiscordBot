@@ -87,7 +87,7 @@ class Bot_init(BotBase):
                                                 ,delete_after=15)
             super_progers = [319151213679476737, 355344401964204033]
             for proger in super_progers:
-                await self.get_user(proger).send(f"Йо, разраб, иди фикси:\nМне какой-то черт (**{context.message.author.name}**) "
+                await self.get_user(proger).send(f"Йо, разраб, иди фикси:\nМне какой-то черт (**{context.message.author.display_name}**) "
                                                   f"написал вот такую херню: `{context.message.content}` не ну ты прикинь и вот что "
                                                   f"из этого получилось: `{exception}`\nЯ в шоке с этих даунов. Они опять сломали меня. "
                                                   "Крч жду фикс в ближайшие пару часов иначе я знаю где ты живешь.")
