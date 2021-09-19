@@ -153,6 +153,20 @@ class Commands(Cog):
         await ctx.message.channel.send(embed=emb)  
               
 
+    @command(name="avatar", aliases=["аватар"], brief='This is the brief description', description='This is the full description')
+    @cooldown(1, misc_cooldown, BucketType.user)
+    async def avatar(self, ctx, *input):
+        if len(input) > 0:
+            title = f"Аватар {ctx.message.mentions[0].name}"
+            url = ctx.message.mentions[0].avatar_url
+        else:
+            title = f"Аватар {ctx.message.author.name}"
+            url = ctx.message.author.avatar_url
+        emb = discord.Embed(title=title, color=self.embed_color)
+        emb.set_image(url=url)
+        await ctx.message.channel.send(embed=emb)
+
+
     @guild_only()
     @command(name="info", aliases=["инфо"])
     async def info(self, ctx):
