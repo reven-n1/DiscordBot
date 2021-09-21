@@ -3,6 +3,7 @@ NSFWChannelRequired, NoPrivateMessage
 from discord import Activity, ActivityType, Game, Streaming, Intents
 from discord.ext.commands import Bot as BotBase, CommandNotFound
 from library.bots.Default_bot import Default_bot
+from library.data.db.database import Database
 from library.data.json_data import cog_list
 from library.bot_token import token
 from random import randint, choice
@@ -96,6 +97,7 @@ class Bot_init(BotBase):
 
 bot = Bot_init()
 Amia = Default_bot()
+db = Database()
 
 
 @tasks.loop(minutes=1.0)

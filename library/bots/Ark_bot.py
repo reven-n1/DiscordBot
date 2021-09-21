@@ -3,16 +3,14 @@ from library.data.json_data import six_star_chance, five_star_chance, \
 four_star_chance, three_star_chance
 from random import choice, randrange
 from collections import namedtuple
-from os.path import abspath
+from library.__init__ import db
 from json import loads
-import sqlite3
-    
-db = sqlite3.connect(abspath("library/data/Bot_DB.db"))
-cursor = db.cursor()
 
 
 class Ark_bot:
     def __init__(self):
+
+        self.db = db
 
         self.six_star_chance = six_star_chance
         self.five_star_chance = five_star_chance
@@ -32,11 +30,10 @@ class Ark_bot:
 
         Returns:
             list: requestor characters collection 
-        """
-        cursor.execute(f"""SELECT rarity, operator_name, operator_count FROM users_ark_collection
-                           WHERE user_id == '{collection_owner_id}'""")
-                           
-        requestor_collection = sorted(cursor.fetchall())
+        """                   
+        requestor_collection = sorted(self.db.extract(
+            f"""SELECT rarity, operator_name, operator_count FROM users_ark_collection
+                WHERE user_id == '{collection_owner_id}'"""))
 
         out_list = {}
         if requestor_collection is None:
@@ -49,9 +46,7 @@ class Ark_bot:
         return out_list
 
 
-
-    @staticmethod
-    def get_barter_list(author_id):
+    def get_barter_list(self, author_id):
         """
         Creates list of characters for barter
 
@@ -61,10 +56,8 @@ class Ark_bot:
         Returns:
             list: list that contains quantity and character stars
         """
-        cursor.execute(f"""SELECT rarity, operator_count, operator_name FROM users_ark_collection WHERE user_id == '{author_id}'
-                           AND operator_count >= 6 """)
-
-        res = sorted(cursor.fetchall())
+        res = sorted(self.db.extract(f"""SELECT rarity, operator_count, operator_name FROM users_ark_collection 
+                                         WHERE user_id == '{author_id}' AND operator_count >= 6 """))
 
         barter_list = []
         for rarity, count, _ in res:
@@ -78,14 +71,13 @@ class Ark_bot:
                 
                 barter_list.append([rarity + 1, new_char_quantity])
 
-                cursor.execute(f"""UPDATE users_ark_collection SET operator_count = 
+                self.db.alter(f"""UPDATE users_ark_collection SET operator_count = 
                                 CASE 
                                     WHEN operator_count % 5 != 0  THEN operator_count % 5 
                                     WHEN operator_count  % 5 == 0 THEN 5
                                     ELSE operator_count
                                 END
                                 WHERE rarity < 6 AND operator_count > 5 AND user_id ='{author_id}'""")
-        db.commit()
 
         return barter_list
 
@@ -227,8 +219,7 @@ class Ark_bot:
         return character
     
 
-    @staticmethod
-    def add_ark_to_db(author_id, character_name, character_rarity):
+    def add_ark_to_db(self, author_id, character_name, character_rarity):
         """
         Adds record to db
 
@@ -237,17 +228,14 @@ class Ark_bot:
             character_name (str): received character name
             character_rarity (int): received chaaracter rarity
         """
-        cursor.execute(
-            f"SELECT operator_count FROM users_ark_collection WHERE user_id == '{author_id}' "
-            f"AND operator_name == '{character_name}'")
-        res = cursor.fetchone()
-        if res is None:
-            cursor.execute(f"INSERT INTO users_ark_collection  VALUES (?,?,?,?)",
-                           (f"{author_id}", character_name, character_rarity, 1))
+        res = self.db.extract(f"""SELECT operator_count FROM users_ark_collection WHERE user_id == '{author_id}'
+                                  AND operator_name == '{character_name}'""")
+
+        if res == []:
+            self.db.alter(f"INSERT INTO users_ark_collection (user_id, operator_name, rarity, operator_count) VALUES ('{author_id}', '{character_name}', '{character_rarity}', '1')")
         else:
-            cursor.execute(f"UPDATE users_ark_collection SET operator_count = '{res[0] + 1}'"
-                           f"WHERE user_id ='{author_id}'AND operator_name == '{character_name}'")
-        db.commit()
+            self.db.alter(f"""UPDATE users_ark_collection SET operator_count = '{res[0] + 1}'
+                              WHERE user_id ='{author_id}'AND operator_name == '{character_name}'""")
     
 
     def get_character_data(self, character_name : str):
@@ -313,10 +301,7 @@ class Ark_bot:
         if not is_find:
             raise NonExistentCharacter
 
-
-        cursor.execute(
-            f"SELECT operator_name FROM users_ark_collection WHERE user_id == '{requestor_id}'")
-        res = cursor.fetchall()
+        res = self.db.extract(f"SELECT operator_name FROM users_ark_collection WHERE user_id == '{requestor_id}'")
 
         is_find = False
 

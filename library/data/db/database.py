@@ -9,7 +9,7 @@ class Database(object):
         self.__create_tables()
 
 
-    def __create_tables(self):
+    def __create_tables(self) -> None:
         self.__cursor.execute("""
         CREATE TABLE IF NOT EXISTS 
         users_ark_collection(user_id TEXT,
@@ -23,6 +23,8 @@ class Database(object):
         users_roll_counter(user_id TEXT,
                            roll_count INTEGERS) 
                             """)
+
+        self.__db_connection.commit()
     
     
     def alter(self, request:str) -> None:
@@ -30,13 +32,13 @@ class Database(object):
         self.__commit()
 
     
-    def exstract(self, request:str) -> list:
+    def extract(self, request:str) -> list:
         self.__cursor.execute(request)
         return self.__cursor.fetchall()
 
 
     def __commit(self) -> None:
-        self.__cursor.commit()
+        self.__db_connection.commit()
 
     
     def __repr__(self) -> str:
