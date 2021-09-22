@@ -45,7 +45,7 @@ class Commands(Cog):
                 collection_message.add_field(name=":star:"*rarity if rarity<6 else ":star2:"*rarity, value=characters_list, inline=False)
             if len(ark_collection) == 0:
                 collection_message.add_field(name="Ти бомж", value="иди покрути девочек!")
-            collection_message.set_footer(text=f"Используй команду !майарк <имя> чтоб посмотреть на персонажа. Это тоже пока не работает(")
+            collection_message.set_footer(text=f"Используй команду !майарк <имя> чтоб посмотреть на персонажа.")
             await ctx.message.author.send(embed=collection_message)
             
         else:
