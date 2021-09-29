@@ -233,7 +233,7 @@ class Ark_bot:
         if res == []:
             self.__db.alter(f"INSERT INTO users_ark_collection (user_id, operator_name, rarity, operator_count) VALUES ('{author_id}', '{character_name}', '{character_rarity}', '1')")
         else:
-            self.__db.alter(f"""UPDATE users_ark_collection SET operator_count = '{res[0] + 1}'
+            self.__db.alter(f"""UPDATE users_ark_collection SET operator_count = '{res[0][0] + 1}'
                               WHERE user_id ='{author_id}'AND operator_name == '{character_name}'""")
     
 
