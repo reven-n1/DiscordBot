@@ -1,7 +1,7 @@
 from library.__init__ import bot
 
 def main():
-    version = 1.3
+    version = 1.4
     bot.run(version)
 
 

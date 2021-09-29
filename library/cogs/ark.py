@@ -1,4 +1,3 @@
-from discord import channel
 from library.my_Exceptions.validator import NonOwnedCharacter, NonExistentCharacter
 from library.data.json_data import ark_cooldown, embed_color
 from discord.ext.commands.core import guild_only, is_nsfw
@@ -10,12 +9,10 @@ from re import sub
 import discord
 
 
-Amia = Ark_bot()
-
-
 class Commands(Cog):
     def __init__(self, bot):
         self.bot = bot
+        self.Amia = Ark_bot()
 
 
     @command(name="myark", aliases=["моидевочки","майарк"])
@@ -27,12 +24,12 @@ class Commands(Cog):
         if not isinstance(ctx.channel, discord.channel.DMChannel):
             await ctx.message.delete()
 
-        ark_collection = Amia.get_ark_collection(ctx.message.author.id)
+        ark_collection = self.Amia.get_ark_collection(ctx.message.author.id)
 
         # TODO: rewrite if->True part
 
         if char_name == "":
-            all_character_count = Amia.get_ark_count()
+            all_character_count = self.Amia.get_ark_count()
             user_chara_count = 0
             for characters in ark_collection.values():
                 user_chara_count += len(characters)
@@ -50,7 +47,7 @@ class Commands(Cog):
             
         else:
             try:
-                await ctx.message.author.send(embed=self.ark_embed(Amia.show_character(char_name, ctx.message.author.id), ctx.message))
+                await ctx.message.author.send(embed=self.ark_embed(self.Amia.show_character(char_name, ctx.message.author.id), ctx.message))
 
             except NonOwnedCharacter:
                 await ctx.message.author.send("***Лох, у тебя нет такой дивочки***")
@@ -67,9 +64,9 @@ class Commands(Cog):
         if possible else returns 'Нет операторов на обмен'
         """
         await ctx.message.delete()
-        barter_list = Amia.get_barter_list(ctx.message.author.id)
+        barter_list = self.Amia.get_barter_list(ctx.message.author.id)
         if barter_list:
-            barter = Amia.ark_barter(barter_list, ctx.message.author.id)
+            barter = self.Amia.ark_barter(barter_list, ctx.message.author.id)
             try:
                 new_char = next(barter)
                 
@@ -91,7 +88,7 @@ class Commands(Cog):
         Return a random arknigts character (from char_table.json)
         """
         await ctx.message.delete()
-        character_data = Amia.roll_random_character(ctx.message.author.id)
+        character_data = self.Amia.roll_random_character(ctx.message.author.id)
         await ctx.message.channel.send(embed=self.ark_embed(character_data, ctx.message))
 
 

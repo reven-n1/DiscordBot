@@ -1,7 +1,7 @@
 class Default_bot:
     def __init__(self):
         self.name = "Amia(bot)"
-        self.delete_quantity = 100       
+        self.__delete_quantity = 100       
        
 
     def get_info(self):
@@ -23,7 +23,7 @@ class Default_bot:
         Returns:
             int: quantity
         """
-        return self.delete_quantity
+        return self.__delete_quantity
 
 
       

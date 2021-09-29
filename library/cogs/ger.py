@@ -7,12 +7,10 @@ from discord.ext.commands import Cog
 from random import choice
 
 
-Fun_bot = Fun_bot()
-
-
 class Commands(Cog):
     def __init__(self, bot):
         self.bot = bot
+        self.ger_bot = Fun_bot()
 
     @is_nsfw()
     @guild_only()
@@ -26,7 +24,7 @@ class Commands(Cog):
         random_user = choice(ctx.message.guild.members)
         while random_user == ctx.message.author:
             random_user = choice(ctx.message.guild.members)
-        ger_message = Fun_bot.ger_function(ctx.message.author, random_user)
+        ger_message = self.ger_bot.ger_function(ctx.message.author, random_user)
         await ctx.send(ger_message)
 
 

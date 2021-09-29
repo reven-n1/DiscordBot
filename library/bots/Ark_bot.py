@@ -10,18 +10,18 @@ from json import loads
 class Ark_bot:
     def __init__(self):
 
-        self.db = db
+        self.__db = db
 
-        self.six_star_chance = six_star_chance
-        self.five_star_chance = five_star_chance
-        self.four_star_chance = four_star_chance
-        self.three_star_chance = three_star_chance
+        self.__six_star_chance = six_star_chance
+        self.__five_star_chance = five_star_chance
+        self.__four_star_chance = four_star_chance
+        self.__three_star_chance = three_star_chance
         
-        self.stars_0_5 = "<:star:801095671720968203>"
-        self.stars_6 = "<:star2:801105195958140928>"
+        self.__stars_0_5 = "<:star:801095671720968203>"
+        self.__stars_6 = "<:star2:801105195958140928>"
 
 
-    def get_ark_collection(self, collection_owner_id):
+    def get_ark_collection(self, collection_owner_id:int) -> dict:
         """
         This function returns all ark collection
 
@@ -29,9 +29,9 @@ class Ark_bot:
             collection_owner_id (message.autthor.id): requestor id
 
         Returns:
-            list: requestor characters collection 
+            dict: requestor characters collection 
         """                   
-        requestor_collection = sorted(self.db.extract(
+        requestor_collection = sorted(self.__db.extract(
             f"""SELECT rarity, operator_name, operator_count FROM users_ark_collection
                 WHERE user_id == '{collection_owner_id}'"""))
 
@@ -46,7 +46,7 @@ class Ark_bot:
         return out_list
 
 
-    def get_barter_list(self, author_id):
+    def get_barter_list(self, author_id:int) -> list:
         """
         Creates list of characters for barter
 
@@ -56,7 +56,7 @@ class Ark_bot:
         Returns:
             list: list that contains quantity and character stars
         """
-        res = sorted(self.db.extract(f"""SELECT rarity, operator_count, operator_name FROM users_ark_collection 
+        res = sorted(self.__db.extract(f"""SELECT rarity, operator_count, operator_name FROM users_ark_collection 
                                          WHERE user_id == '{author_id}' AND operator_count >= 6 """))
 
         barter_list = []
@@ -71,7 +71,7 @@ class Ark_bot:
                 
                 barter_list.append([rarity + 1, new_char_quantity])
 
-                self.db.alter(f"""UPDATE users_ark_collection SET operator_count = 
+                self.__db.alter(f"""UPDATE users_ark_collection SET operator_count = 
                                 CASE 
                                     WHEN operator_count % 5 != 0  THEN operator_count % 5 
                                     WHEN operator_count  % 5 == 0 THEN 5
@@ -82,7 +82,7 @@ class Ark_bot:
         return barter_list
 
 
-    def ark_barter(self, barter_list, author_id):
+    def ark_barter(self, barter_list:list, author_id:int) -> tuple:
         """
         Exchanges characters and calls function to add them to db
 
@@ -95,12 +95,12 @@ class Ark_bot:
         """
         for operators in barter_list:
             for _ in range(0, operators[1]):
-                character = self.return_new_character(operators[0])
-                self.add_ark_to_db(author_id, character.name, character.rarity)
+                character = self.__return_new_character(operators[0])
+                self.__add_ark_to_db(author_id, character.name, character.rarity)
                 yield character
 
 
-    def get_ark_count(self):
+    def get_ark_count(self) -> int:
         """
         Returns counter of all possible characters
 
@@ -115,7 +115,7 @@ class Ark_bot:
         return count
     
 
-    def roll_random_character(self, author_id):
+    def roll_random_character(self, author_id:int) -> tuple:
         """
         Calls function that adds character to db
 
@@ -125,27 +125,27 @@ class Ark_bot:
         Returns:
             list: random character data
         """
-        new_character = self.return_new_character(self.get_ark_rarity())
-        self.add_ark_to_db(author_id, new_character.name, new_character.rarity)
+        new_character = self.__return_new_character(self.__get_ark_rarity())
+        self.__add_ark_to_db(author_id, new_character.name, new_character.rarity)
         return new_character
 
     
-    def get_ark_rarity(self):
+    def __get_ark_rarity(self) -> int:
         """
         Returns random character rarity
         """
         rarity = randrange(0, 100000)
-        if rarity <= self.six_star_chance * 1000:
+        if rarity <= self.__six_star_chance * 1000:
             return 6
-        elif rarity <= self.five_star_chance * 1000:
+        elif rarity <= self.__five_star_chance * 1000:
             return 5
-        elif rarity <= self.four_star_chance * 1000:
+        elif rarity <= self.__four_star_chance * 1000:
             return 4
-        elif rarity <= self.three_star_chance * 1000:
+        elif rarity <= self.__three_star_chance * 1000:
             return 3
     
 
-    def return_new_character(self, rarity):
+    def __return_new_character(self, rarity:int) -> tuple:
         """
         Creates list of characters
 
@@ -167,10 +167,10 @@ class Ark_bot:
 
         random_character = choice(choice_list)
 
-        return self.parse_character_json(random_character, characters_data[str(random_character)])
+        return self.__parse_character_json(random_character, characters_data[str(random_character)])
 
     
-    def parse_character_json(self, character_id, character_data):
+    def __parse_character_json(self, character_id:str, character_data:dict) -> tuple:
         """
         Creates namedtuple that contains character description
 
@@ -181,7 +181,6 @@ class Ark_bot:
         Returns:
             namedtuple: list with character description
         """
-
         rarity = int(character_data["rarity"]) + 1
         profession = ""
         if character_data["profession"] == "CASTER":
@@ -207,9 +206,9 @@ class Ark_bot:
         tags = ", ".join(character_data["tagList"])
         traits = character_data["description"]
         if rarity == 6:
-            stars = self.stars_6
+            stars = self.__stars_6
         else:
-            stars = self.stars_0_5
+            stars = self.__stars_0_5
             
         character_data_tuple = namedtuple('character', 'character_id name description_first_part description_sec_part position tags \
                 traits profession stars rarity')
@@ -219,7 +218,7 @@ class Ark_bot:
         return character
     
 
-    def add_ark_to_db(self, author_id, character_name, character_rarity):
+    def __add_ark_to_db(self, author_id:int, character_name:str, character_rarity:int) -> None:
         """
         Adds record to db
 
@@ -228,35 +227,17 @@ class Ark_bot:
             character_name (str): received character name
             character_rarity (int): received chaaracter rarity
         """
-        res = self.db.extract(f"""SELECT operator_count FROM users_ark_collection WHERE user_id == '{author_id}'
+        res = self.__db.extract(f"""SELECT operator_count FROM users_ark_collection WHERE user_id == '{author_id}'
                                   AND operator_name == '{character_name}'""")
 
         if res == []:
-            self.db.alter(f"INSERT INTO users_ark_collection (user_id, operator_name, rarity, operator_count) VALUES ('{author_id}', '{character_name}', '{character_rarity}', '1')")
+            self.__db.alter(f"INSERT INTO users_ark_collection (user_id, operator_name, rarity, operator_count) VALUES ('{author_id}', '{character_name}', '{character_rarity}', '1')")
         else:
-            self.db.alter(f"""UPDATE users_ark_collection SET operator_count = '{res[0] + 1}'
+            self.__db.alter(f"""UPDATE users_ark_collection SET operator_count = '{res[0] + 1}'
                               WHERE user_id ='{author_id}'AND operator_name == '{character_name}'""")
     
 
-    def get_character_data(self, character_name : str):
-        """
-        Get character data from DB by it's name
-
-        Args:
-            character_name: character name to look for
-
-        Returns:
-            list: random character data
-        """
-        character_json = open("library/config/char_table.json", "rb")
-        json_data = loads(character_json.read())
-        for char_data in json_data.values():
-            if char_data["name"].lower() == character_name.lower():
-                return char_data
-        raise KeyError("Selected character not found in list")
-
-    
-    def show_character(self, character_name, requestor_id):
+    def show_character(self, character_name:str, requestor_id:int) -> tuple:
         """
         Interlayer between validator function and show func 
 
@@ -267,10 +248,10 @@ class Ark_bot:
         Returns:
             namedtuple: list with character description
         """
-        return self.show_character_validator(character_name, requestor_id)  # Извлекаем JSON
+        return self.__show_character_validator(character_name, requestor_id)  # Извлекаем JSON
 
     
-    def show_character_validator(self, character_name, requestor_id):
+    def __show_character_validator(self, character_name:str, requestor_id:int) -> tuple:
         """
         Validates input data and either raise exceptions or returns character data
 
@@ -301,7 +282,7 @@ class Ark_bot:
         if not is_find:
             raise NonExistentCharacter
 
-        res = self.db.extract(f"SELECT operator_name FROM users_ark_collection WHERE user_id == '{requestor_id}'")
+        res = self.__db.extract(f"SELECT operator_name FROM users_ark_collection WHERE user_id == '{requestor_id}'")
 
         is_find = False
 
@@ -313,7 +294,4 @@ class Ark_bot:
         if not is_find:
             raise NonOwnedCharacter
         
-        return self.parse_character_json(character_id, characters_data[character_id])
-
-
-    
+        return self.__parse_character_json(character_id, characters_data[character_id])    
