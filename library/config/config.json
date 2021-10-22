@@ -26,13 +26,19 @@
 
         "bot_statuses":
         {
-            "game_statuses": ["жизнь", "Detroit: Become Human", "Warface"],
-            "music_statuses": ["music_status1", "music_status2", "music_status3"],
-            "stream_statuses": ["stream_status1", "stream_status2", "stream_status3"],
-            "watching_statuses": ["listen_status1", "listen_status2", "listen_status3"]
+            "gaming_status": ["жизнь", "Detroit: Become Human", "Warface"],
+            "listening_status": ["music_status1", "music_status2", "music_status3"],
+            "streaming_status": ["stream_status1", "stream_status2", "stream_status3"],
+            "watching_status": ["listen_status1", "listen_status2", "listen_status3"]
         }, 
 
-        "embed_color":"ff9900"
+        "embed_color":"ff9900",
+
+        "delete_after": 15,
+
+        "delete_delay": 5,
+
+        "prefix": "!"
     },
 
     "isDefault": "True"

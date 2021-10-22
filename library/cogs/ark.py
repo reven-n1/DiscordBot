@@ -1,10 +1,10 @@
 from library.my_Exceptions.validator import NonOwnedCharacter, NonExistentCharacter
-from library.data.json_data import ark_cooldown, embed_color
 from discord.ext.commands.core import guild_only, is_nsfw
 from discord.ext.commands.cooldowns import BucketType
 from discord.ext.commands import command, cooldown
 from library.bots.Ark_bot import Ark_bot
 from discord.ext.commands import Cog
+from library.__init__ import data
 from re import sub
 import discord
 
@@ -34,7 +34,7 @@ class Commands(Cog):
             for characters in ark_collection.values():
                 user_chara_count += len(characters)
             collection_message = discord.Embed(title=f"{ctx.author.display_name}'s collection {user_chara_count}/{all_character_count} \
-                                              ({round((user_chara_count/all_character_count)*100,2)}%)", color=embed_color)
+                                              ({round((user_chara_count/all_character_count)*100,2)}%)", color=data.get_embed_color)
             for rarity, characters in ark_collection.items():
                 characters_list = ""
                 for character in characters:
@@ -81,7 +81,7 @@ class Commands(Cog):
 
     @is_nsfw()
     @guild_only()
-    @cooldown(1, ark_cooldown, BucketType.user)
+    @cooldown(1, data.get_ark_cooldown, BucketType.user)
     @command(name="ark", aliases=["арк"])
     async def ark(self, ctx):      
         """
@@ -101,7 +101,7 @@ class Commands(Cog):
             character_data (list): random character data from char_table.json
             message (discord.message): message
         """
-        embed = discord.Embed(color=embed_color, title=character_data.name,
+        embed = discord.Embed(color=data.get_embed_color, title=character_data.name,
                               description=str(character_data.stars) * character_data.rarity,
                               url=f"https://aceship.github.io/AN-EN-Tags/akhrchars.html?opname={character_data.name}")
         embed.add_field(name="Description", value=f"{character_data.description_first_part}\n{character_data.description_sec_part}", \

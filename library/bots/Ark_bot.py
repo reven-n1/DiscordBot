@@ -1,8 +1,7 @@
 from library.my_Exceptions.validator import NonOwnedCharacter, NonExistentCharacter
-from library.data.json_data import six_star_chance, five_star_chance, \
-four_star_chance, three_star_chance
 from random import choice, randrange
 from collections import namedtuple
+from library.__init__ import data
 from library.__init__ import db
 from json import loads
 
@@ -12,10 +11,8 @@ class Ark_bot:
 
         self.__db = db
 
-        self.__six_star_chance = six_star_chance
-        self.__five_star_chance = five_star_chance
-        self.__four_star_chance = four_star_chance
-        self.__three_star_chance = three_star_chance
+        self.__six_star_chance, self.__five_star_chance, \
+        self.__four_star_chance, self.__three_star_chance = data.get_ark_chances
         
         self.__stars_0_5 = "<:star:801095671720968203>"
         self.__stars_6 = "<:star2:801105195958140928>"
@@ -182,23 +179,7 @@ class Ark_bot:
             namedtuple: list with character description
         """
         rarity = int(character_data["rarity"]) + 1
-        profession = ""
-        if character_data["profession"] == "CASTER":
-            profession = "https://aceship.github.io/AN-EN-Tags/img/classes/class_caster.png"
-        elif character_data["profession"] == "SNIPER":
-            profession = "https://aceship.github.io/AN-EN-Tags/img/classes/class_sniper.png"
-        elif character_data["profession"] == "WARRIOR":
-            profession = "https://aceship.github.io/AN-EN-Tags/img/classes/class_guard.png"
-        elif character_data["profession"] == "PIONEER":
-            profession = "https://aceship.github.io/AN-EN-Tags/img/classes/class_vanguard.png"
-        elif character_data["profession"] == "SUPPORT":
-            profession = "https://aceship.github.io/AN-EN-Tags/img/classes/class_supporter.png"
-        elif character_data["profession"] == "MEDIC":
-            profession = "https://aceship.github.io/AN-EN-Tags/img/classes/class_medic.png"
-        elif character_data["profession"] == "SPECIAL":
-            profession = "https://aceship.github.io/AN-EN-Tags/img/classes/class_specialist.png"
-        elif character_data["profession"] == "TANK":
-            profession = "https://aceship.github.io/AN-EN-Tags/img/classes/class_defender.png"
+        profession = data.get_ark_profession(character_data["profession"])
         name = character_data["name"].replace(" ", "_").replace("'", "")
         description_first_part = character_data["itemUsage"]
         description_sec_part = character_data["itemDesc"]

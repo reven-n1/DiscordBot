@@ -1,4 +1,3 @@
-from discord.ext.commands.core import guild_only
 from discord.ext.commands import command
 from discord.errors import Forbidden
 from discord.ext.commands import Cog
