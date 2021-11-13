@@ -48,7 +48,7 @@ class Commands(Cog):
                 aliases = command.aliases
                 aliases.insert(0,command.name)
                 emb.add_field(name="/".join(aliases), value=f"`{command.help}`", inline=False)
-            emb.set_footer(text=f"Спасибо за вашу преданость, принимаем донаты на лечение")
+            emb.set_footer(text=f"Чтобы узнать подробнее о команде введите: !help <команда>")
 
         elif len(input) == 1:
 

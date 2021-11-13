@@ -94,9 +94,9 @@ class Bot_init(BotBase):
             print(exception)
 
 
-bot = Bot_init()
-Amia = Default_bot()
 db = Database()
+bot = Bot_init()
+Amia = Default_bot(db)
 data = dataHandler()
 
 

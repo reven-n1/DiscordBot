@@ -35,7 +35,7 @@ class Commands(Cog):
         await ctx.message.delete()
         await ctx.send(f"{choice(('Hello', 'Hi', 'Hey', 'Hiya'))} {ctx.author.mention}!")
 
-    @command(name="say", aliases=["скажи"], brief='This is the brief description', description='This is the full description')
+    @command(name="say", aliases=["скажи"], brief='Говорить устами бота', description='Говорить устами бота')
     @guild_only()
     @has_permissions(administrator=True)
     async def say(self, ctx, *input):
@@ -48,7 +48,7 @@ class Commands(Cog):
         await ctx.message.delete()
 
     @guild_only()
-    @command(name="f", aliases=["ф"], brief='This is the brief description', description='This is the full description')
+    @command(name="f", aliases=["ф"], brief='Отдать честь за почивших героев', description='Отдать честь за почивших героев')
     @cooldown(1, misc_cooldown, BucketType.user)
     async def pressf(self, ctx, *input):
         """
@@ -64,7 +64,7 @@ class Commands(Cog):
         await ctx.message.channel.send(embed=emb)
         
     @guild_only()
-    @command(name="o7", aliases=["07","о7"], brief='This is the brief description', description='This is the full description')
+    @command(name="o7", aliases=["07","о7"], brief='Поприветсвовать командиров', description='Поприветсвовать командиров, а можно и конкретного')
     @cooldown(1, misc_cooldown, BucketType.user)
     async def o7(self, ctx, *input):
         """
@@ -80,7 +80,7 @@ class Commands(Cog):
         await ctx.message.channel.send(embed=emb)  
               
 
-    @command(name="avatar", aliases=["аватар"], brief='This is the brief description', description='This is the full description')
+    @command(name="avatar", aliases=["аватар"], brief='Показывает аватар пользователя', description='Показывает твой аватар. С помощью упоминания можно посмотреть аватар другого пользователя')
     @cooldown(1, misc_cooldown, BucketType.user)
     async def avatar(self, ctx, *input):
         if len(input) > 0:
@@ -109,8 +109,13 @@ class Commands(Cog):
         for command in self.bot.walk_commands():
             commands.append(command.name)
 
-        embed.add_field(name="Commands", value="\n".join(commands), inline=False)
-  
+        ark_stat = Amia.get_ark_stats()
+        ger_stat = Amia.get_ger_stats()
+        embed.add_field(name="Статистика арков", value=f"Арков выкручено за все время: {ark_stat.total}\nВсего собрано персонажей: {ark_stat.total_chars}", inline=False)
+        embed.add_field(name="Статистика пуков", value=f"""Пуков за все время: {ger_stat.total}
+        Из них самообсеров: {ger_stat.total_self}
+        Попаданий по ботам: {ger_stat.total_bot}
+        Попаданий по мне:disappointed_relieved: : {ger_stat.total_me}""", inline=False)
         
         embed.set_thumbnail(
             url="https://aceship.github.io/AN-EN-Tags/img/factions/logo_rhodes.png")

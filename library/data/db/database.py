@@ -24,6 +24,11 @@ class Database(object):
                            roll_count INTEGERS) 
                             """)
 
+        self.__cursor.execute("""
+        CREATE TABLE IF NOT EXISTS 
+        statistic(parameter_name TEXT PRIMARY KEY,
+                           value REAL) 
+                            """)
         self.__db_connection.commit()
     
     
@@ -36,6 +41,10 @@ class Database(object):
         self.__cursor.execute(request)
         return self.__cursor.fetchall()
 
+    def statistic_increment(self, parameter_name:str):
+        self.alter(f"""insert or replace into statistic(parameter_name, value) 
+        values ('{parameter_name}', ifnull((select value from statistic where parameter_name='{parameter_name}'),0)+1)
+        """)
 
     def __commit(self) -> None:
         self.__db_connection.commit()

@@ -1,18 +1,34 @@
+from collections import namedtuple
+
 class Default_bot:
-    def __init__(self):
+    def __init__(self, db):
         self.name = "Amia(bot)"
         self.__delete_quantity = 100       
+        self.__db = db
        
+    def __exec_stmts(self, stmts:list):
+        results = []
+        for stmt in stmts:
+            result = self.__db.extract(stmt)
+            result = int(result[0][0]) if result else 0
+            results.append(result)
+        return results
 
-    def get_info(self):
-        """
-        Returns info list
-        """
-        info_list = []
-        for command_name, command_desc in self.bot_info["commands"].values():
-            info_list.append(f"{command_name} - {command_desc}")
+    def get_ark_stats(self):
+        ark_stat = namedtuple('ark_stat', ['total', 'total_chars'])
+        return ark_stat._make(self.__exec_stmts([
+            "select value from statistic where parameter_name='ark'",
+            "select count(*) from users_ark_collection"
+        ]))
 
-        return info_list
+    def get_ger_stats(self):
+        ger_stat = namedtuple('ger_stat', ['total', 'total_self', 'total_bot', 'total_me'])
+        return ger_stat._make(self.__exec_stmts([
+            "select value from statistic where parameter_name='ger'",
+            "select value from statistic where parameter_name='self_ger'",
+            "select value from statistic where parameter_name='ger_bot'",
+            "select value from statistic where parameter_name='ger_me'",
+        ]))
 
 
     @property
