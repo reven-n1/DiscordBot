@@ -2,7 +2,7 @@ from discord.ext.commands import command, has_permissions, cooldown, guild_only
 from discord.ext.commands.cooldowns import BucketType
 from library.data.presf_images import fimages
 from discord.ext.commands import Cog
-from library.__init__ import Amia
+from library import Amia, bot
 from random import choice
 from json import load
 import discord
@@ -27,7 +27,8 @@ class Commands(Cog):
      
 
 
-    @command(name="hello", aliases=["hi","привет"])
+    @command(name="hello", aliases=["hi","привет"],
+    brief='Привет, братик', description='Привет, братик')
     async def hello(self, ctx):
         """
         Congratulations command
@@ -35,7 +36,8 @@ class Commands(Cog):
         await ctx.message.delete()
         await ctx.send(f"{choice(('Hello', 'Hi', 'Hey', 'Hiya'))} {ctx.author.mention}!")
 
-    @command(name="say", aliases=["скажи"], brief='Говорить устами бота', description='Говорить устами бота')
+    @command(name="say", aliases=["скажи"], 
+    brief='Говорить устами бота', description='Говорить устами бота')
     @guild_only()
     @has_permissions(administrator=True)
     async def say(self, ctx, *input):
@@ -48,7 +50,8 @@ class Commands(Cog):
         await ctx.message.delete()
 
     @guild_only()
-    @command(name="f", aliases=["ф"], brief='Отдать честь за почивших героев', description='Отдать честь за почивших героев')
+    @command(name="f", aliases=["ф"], 
+    brief='Отдать честь за почивших героев', description='Отдать честь за почивших героев. Можно упоминанием указать кого чтим.')
     @cooldown(1, misc_cooldown, BucketType.user)
     async def pressf(self, ctx, *input):
         """
@@ -64,7 +67,8 @@ class Commands(Cog):
         await ctx.message.channel.send(embed=emb)
         
     @guild_only()
-    @command(name="o7", aliases=["07","о7"], brief='Поприветсвовать командиров', description='Поприветсвовать командиров, а можно и конкретного')
+    @command(name="o7", aliases=["07","о7"], 
+    brief='Поприветсвовать командиров', description='Поприветсвовать командиров, а можно и кого-то конкретного')
     @cooldown(1, misc_cooldown, BucketType.user)
     async def o7(self, ctx, *input):
         """
@@ -80,7 +84,9 @@ class Commands(Cog):
         await ctx.message.channel.send(embed=emb)  
               
 
-    @command(name="avatar", aliases=["аватар"], brief='Показывает аватар пользователя', description='Показывает твой аватар. С помощью упоминания можно посмотреть аватар другого пользователя')
+    @command(name="avatar", aliases=["аватар"], 
+    brief='Показывает аватар пользователя', 
+    description='Показывает твой аватар. С помощью упоминания можно посмотреть аватар другого пользователя')
     @cooldown(1, misc_cooldown, BucketType.user)
     async def avatar(self, ctx, *input):
         if len(input) > 0:
@@ -95,7 +101,8 @@ class Commands(Cog):
 
 
     @guild_only()
-    @command(name="info", aliases=["инфо"])
+    @command(name="info", aliases=["инфо"],
+    brief='Информация и статистика бота', description='Информация и статистика бота')
     async def info(self, ctx):
         """
         This command shows bot info
@@ -103,20 +110,16 @@ class Commands(Cog):
         await ctx.message.delete()
         embed = discord.Embed(color=self.embed_color, title=Amia.name,
                               url=f"https://www.youtube.com/watch?v=X5ULmETDiXI")
-        embed.add_field(name="Description", value="Тупая деффка еще и бот", inline=False)
-        
-        commands = []
-        for command in self.bot.walk_commands():
-            commands.append(command.name)
-
+        embed.add_field(name="Описание", value="Тупая деффка еще и бот", inline=False)
+        embed.add_field(name="Версия", value=bot.VERSION, inline=False)
         ark_stat = Amia.get_ark_stats()
         ger_stat = Amia.get_ger_stats()
         embed.add_field(name="Статистика арков", value=f"Арков выкручено за все время: {ark_stat.total}\nВсего собрано персонажей: {ark_stat.total_chars}", inline=False)
+        embed.add_field(name="Больше всего 6* собрано", value=f"<@{ark_stat.best_dolboeb}> с количеством аж {ark_stat.dolboeb_count} шестизведочных персонажей. Поздравляем Вас и вручаем вам самый ценный подарок: **наше увожение**", inline=False)
         embed.add_field(name="Статистика пуков", value=f"""Пуков за все время: {ger_stat.total}
         Из них самообсеров: {ger_stat.total_self}
         Попаданий по ботам: {ger_stat.total_bot}
         Попаданий по мне:disappointed_relieved: : {ger_stat.total_me}""", inline=False)
-        
         embed.set_thumbnail(
             url="https://aceship.github.io/AN-EN-Tags/img/factions/logo_rhodes.png")
         embed.set_image(url="https://aceship.github.io/AN-EN-Tags/img/characters/char_002_amiya_epoque%234.png")

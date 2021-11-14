@@ -2,6 +2,7 @@ from discord.ext.commands import command
 from discord.errors import Forbidden
 from discord.ext.commands import Cog
 from json import load
+from library import data
 import discord
 
 
@@ -47,7 +48,7 @@ class Commands(Cog):
             for command in self.bot.walk_commands():
                 aliases = command.aliases
                 aliases.insert(0,command.name)
-                emb.add_field(name="/".join(aliases), value=f"`{command.help}`", inline=False)
+                emb.add_field(name="/".join(aliases), value=f"`{command.brief}`", inline=False)
             emb.set_footer(text=f"Чтобы узнать подробнее о команде введите: !help <команда>")
 
         elif len(input) == 1:
@@ -78,7 +79,7 @@ class Commands(Cog):
                                             "https://github.com/reven-n1/DiscordBot",
                                 color=discord.Color.red())
 
-        await ctx.message.channel.send(embed=emb)#channel
+        await ctx.message.channel.send(embed=emb, delete_after=data.get_del_after)#channel
 
 
 def setup(bot):

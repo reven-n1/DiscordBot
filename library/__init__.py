@@ -8,9 +8,9 @@ from library.data.db.database import Database
 from library.bot_token import token
 from datetime import timedelta
 from discord.ext import tasks
-from random import randint
 from logging import error
 from math import ceil
+import feedparser
 import traceback
 import logging
 
@@ -102,22 +102,5 @@ data = dataHandler()
 
 @tasks.loop(minutes=1.0)
 async def status_setter():
-    statuses = [gaming_status, listening_status, streaming_status, watching_status]
-    random_status = randint(0, 3)
-    await statuses[random_status](data.get_bot_status(statuses[random_status].__name__))
-
-
-async def streaming_status(status):
-    await bot.change_presence(activity=Streaming(name=status, url="https://www.twitch.tv/recrent"))
-
-
-async def gaming_status(status):
-    await bot.change_presence(activity=Game(status))
-
-
-async def watching_status(status):
-    await bot.change_presence(activity=Activity(type=ActivityType.watching, name=status))
-
-
-async def listening_status(status):
-    await bot.change_presence(activity=Activity(type=ActivityType.listening, name=status))
+    feed = feedparser.parse('https://myanimelist.net/rss.php?type=rwe&u=wladbelsky')
+    await bot.change_presence(activity=Activity(type=ActivityType.watching, name=feed['entries'][0]['title']))

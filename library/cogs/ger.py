@@ -3,7 +3,7 @@ from discord.ext.commands.cooldowns import BucketType
 from discord.ext.commands import command, cooldown
 from library.bots.Fun_bot import Fun_bot
 from discord.ext.commands import Cog
-from library.__init__ import data
+from library import data
 from random import choice
 
 
@@ -15,7 +15,8 @@ class Commands(Cog):
     @is_nsfw()
     @guild_only()
     @cooldown(1, data.get_ger_cooldown, BucketType.user)
-    @command(name="ger", aliases=["пук"])
+    @command(name="ger", aliases=["пук"],
+    brief='Пукает в рандома, или в себя)', description='Пукает в рандома, или в себя)')
     async def ger(self, ctx):
         """
         This funny function farts on random server member or whoever called it

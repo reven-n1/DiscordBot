@@ -15,10 +15,12 @@ class Default_bot:
         return results
 
     def get_ark_stats(self):
-        ark_stat = namedtuple('ark_stat', ['total', 'total_chars'])
+        ark_stat = namedtuple('ark_stat', ['total', 'total_chars', 'best_dolboeb', 'dolboeb_count'])
         return ark_stat._make(self.__exec_stmts([
             "select value from statistic where parameter_name='ark'",
-            "select count(*) from users_ark_collection"
+            "select count(*) from users_ark_collection",
+            "select user_id from users_ark_collection where rarity=6 group by user_id order by sum(operator_count) desc limit 1",
+            "select sum(operator_count) from users_ark_collection where rarity=6 group by user_id order by sum(operator_count) desc limit 1"
         ]))
 
     def get_ger_stats(self):

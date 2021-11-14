@@ -1,8 +1,8 @@
 from library.my_Exceptions.validator import NonOwnedCharacter, NonExistentCharacter
 from random import choice, randrange
 from collections import namedtuple
-from library.__init__ import data
-from library.__init__ import db
+from library import data
+from library import db
 from json import loads
 
 

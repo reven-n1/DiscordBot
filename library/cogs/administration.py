@@ -2,7 +2,7 @@ from discord.ext.commands import command, has_permissions
 from discord.errors import HTTPException, NotFound
 from discord.ext.commands.core import guild_only
 from discord.ext.commands import Cog
-from library.__init__ import Amia
+from library import Amia
 import discord.member
 
 
@@ -10,7 +10,8 @@ class Commands(Cog):
     def __init__(self, bot):
         self.bot = bot
 
-    @command(name="ban", aliases=["бан"])
+    @command(name="ban", aliases=["бан"], brief='Забанить говножуя', 
+    description='Забанить челика на серве, только для админов, ну ну а ты что думал.')
     @guild_only()
     @has_permissions(ban_members=True)
     async def ban(self, ctx, member: discord.Member, reason=None):
@@ -24,9 +25,11 @@ class Commands(Cog):
 
         await ctx.message.delete()
         await member.ban(reason=reason)
-        await ctx.message.channel.send(f"{member} is banned", delete_after=15)
+        await ctx.message.channel.send(f"{member} забанен", delete_after=15)
 
-    @command(name="kick", aliases=["кик"])
+
+    @command(name="kick", aliases=["кик"],
+    brief='Кикнуть лоха', description='Кикнуть челика с сервера, только для админов, ну ну а ты что думал.')
     @guild_only()
     @has_permissions(kick_members=True)
     async def kick(self, ctx, member: discord.Member, reason=None):
@@ -40,10 +43,11 @@ class Commands(Cog):
 
         await ctx.message.delete()
         await member.kick(reason=reason)
-        await ctx.message.channel.send(f"{member} is kicked", delete_after=15)
+        await ctx.message.channel.send(f"{member} кикнут, нах.", delete_after=15)
 
 
-    @command(name="unban", aliases=["разбан"])
+    @command(name="unban", aliases=["разбан"],
+    brief='Разбанить невиновного', description='Разбанить невиновного, что он тебе плохого сделал, бака?')
     @guild_only()
     @has_permissions(administrator=True)
     async def unban(self, ctx, user:discord.User):
@@ -53,12 +57,13 @@ class Commands(Cog):
         await ctx.message.delete()
         try:
             await ctx.guild.unban(user)
-            await ctx.message.channel.send(f"{user} - unbanned")
+            await ctx.message.channel.send(f"{user} - разбанен")
         except NotFound:
-            await ctx.message.channel.send("***User isn't banned or he isn't not a guild member***", delete_after=10) 
+            await ctx.message.channel.send("***А он и так не забанен, ти шо. Проверь имя, мб опечатался, дурашка.***", delete_after=10) 
 
 
-    @command(name="ban_list", aliases=["бан_лист"])
+    @command(name="ban_list", aliases=["бан_лист"],
+    brief='Вывести всех забаненых лошков', description='Вывести всех забаненых лошков')
     @guild_only()
     @has_permissions(ban_members=True)
     async def ban_list(self, ctx):
@@ -73,10 +78,11 @@ class Commands(Cog):
         try:
             await ctx.message.channel.send(*banned_list, delete_after=60)
         except HTTPException:
-            await ctx.message.channel.send("***Ban list is empty***", delete_after=10) 
+            await ctx.message.channel.send("***Никто не забанен, амнистия!***", delete_after=10) 
 
 
-    @command(name="give_role", aliases=["повысить"])
+    @command(name="give_role", aliases=["повысить"],
+    brief='Выдать роль', description='Выдать роль')
     @guild_only()
     @has_permissions(administrator=True)
     async def give_role(self, ctx, member:discord.Member, role:discord.Role):
@@ -92,7 +98,8 @@ class Commands(Cog):
         await member.add_roles(role)
     
 
-    @command(name="remove_role", aliases=["понизить"])
+    @command(name="remove_role", aliases=["понизить"],
+    brief='Убрать роль', description='Убрать роль с человека, потому что ты его ненавидишь')
     @guild_only()
     @has_permissions(administrator=True)
     async def remove_role(self, ctx, member:discord.Member, role:discord.Role):
@@ -108,7 +115,8 @@ class Commands(Cog):
         await member.remove_roles(role)
 
 
-    @command(name="clear", aliases=["очистить"])
+    @command(name="clear", aliases=["очистить"],
+    brief='Удаляет N последних сообщений в этом канале', description='Удаляет N последних сообщений в этом канале.')
     @guild_only()
     async def clear(self, ctx):
         """

@@ -1,2 +1,3 @@
-discord==1.0.1
+discord==1.7.3
+feedparser
 
