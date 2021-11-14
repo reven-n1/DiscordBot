@@ -76,7 +76,7 @@ class Commands(Cog):
 
     @is_nsfw()
     @guild_only()
-    @cooldown(1, data.get_ark_cooldown, BucketType.user)
+    @cooldown(1, data.get_ark_cooldown, BucketType.guild)
     @command(name="ark", aliases=["арк"],
     brief='Твоя любимая команда', 
     description='Кидает рандомную девочку (но это не точно, там и трапики есть, ня) и сохраняет её, чтобы ты потом мог ее посмотреть при помощи команды myark, ну или обменять если ты её не любишь(')

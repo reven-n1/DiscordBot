@@ -14,7 +14,7 @@ class Commands(Cog):
 
     @is_nsfw()
     @guild_only()
-    @cooldown(1, data.get_ger_cooldown, BucketType.user)
+    @cooldown(1, data.get_ger_cooldown, BucketType.guild)
     @command(name="ger", aliases=["пук"],
     brief='Пукает в рандома, или в себя)', description='Пукает в рандома, или в себя)')
     async def ger(self, ctx):

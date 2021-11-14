@@ -1,4 +1,5 @@
-from discord.ext.commands import command
+from discord.ext.commands.cooldowns import BucketType
+from discord.ext.commands import command, cooldown
 from discord.errors import Forbidden
 from discord.ext.commands import Cog
 from json import load
@@ -37,8 +38,8 @@ class Commands(Cog):
                 exit("'config.json' is damaged!")
 
 
-
-    @command()
+    @cooldown(20, data.get_ark_cooldown, BucketType.guild)
+    @command(brief='Показать помощь, ня', description='Показать помощь, ня')
     async def help(self, ctx, *input):
         await ctx.message.delete()
         if not input:

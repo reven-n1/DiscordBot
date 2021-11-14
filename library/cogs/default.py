@@ -52,7 +52,7 @@ class Commands(Cog):
     @guild_only()
     @command(name="f", aliases=["ф"], 
     brief='Отдать честь за почивших героев', description='Отдать честь за почивших героев. Можно упоминанием указать кого чтим.')
-    @cooldown(1, misc_cooldown, BucketType.user)
+    @cooldown(1, misc_cooldown, BucketType.guild)
     async def pressf(self, ctx, *input):
         """
         press f for fallen heroes.
@@ -69,7 +69,7 @@ class Commands(Cog):
     @guild_only()
     @command(name="o7", aliases=["07","о7"], 
     brief='Поприветсвовать командиров', description='Поприветсвовать командиров, а можно и кого-то конкретного')
-    @cooldown(1, misc_cooldown, BucketType.user)
+    @cooldown(1, misc_cooldown, BucketType.guild)
     async def o7(self, ctx, *input):
         """
         greet fellow commanders
