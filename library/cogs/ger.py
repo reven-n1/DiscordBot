@@ -3,7 +3,7 @@ from discord.ext.commands.cooldowns import BucketType
 from discord.ext.commands import command, cooldown
 from library.bots.Fun_bot import Fun_bot
 from discord.ext.commands import Cog
-from library import data
+from library import data, user_guild_cooldown
 from random import choice
 
 
@@ -14,7 +14,7 @@ class Commands(Cog):
 
     @is_nsfw()
     @guild_only()
-    @cooldown(1, data.get_ger_cooldown, BucketType.guild)
+    @cooldown(1, data.get_ger_cooldown, user_guild_cooldown)
     @command(name="ger", aliases=["пук"],
     brief='Пукает в рандома, или в себя)', description='Пукает в рандома, или в себя)')
     async def ger(self, ctx):

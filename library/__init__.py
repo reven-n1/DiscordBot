@@ -42,7 +42,7 @@ class Bot_init(BotBase):
     @staticmethod
     async def on_connect():
         print(" bot connected")
-        
+
 
     async def on_ready(self):
         print(" ***bot ready***")
@@ -99,6 +99,15 @@ bot = Bot_init()
 Amia = Default_bot(db)
 data = dataHandler()
 
+def user_guild_cooldown(msg):
+    guild_id = msg.guild.id
+    user_id = msg.author.id
+    return hash(str(guild_id)+str(user_id))
+
+def user_channel_cooldown(msg):
+    channel_id = msg.channel.id
+    user_id = msg.author.id
+    return hash(str(channel_id)+str(user_id))
 
 @tasks.loop(minutes=1.0)
 async def status_setter():

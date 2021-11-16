@@ -1,11 +1,9 @@
-from discord.ext.commands.cooldowns import BucketType
 from discord.ext.commands import command, cooldown
 from discord.errors import Forbidden
 from discord.ext.commands import Cog
 from json import load
-from library import data
+from library import data, user_channel_cooldown
 import discord
-
 
 async def send_embed(ctx, embed):
     """
@@ -38,7 +36,7 @@ class Commands(Cog):
                 exit("'config.json' is damaged!")
 
 
-    @cooldown(20, data.get_ark_cooldown, BucketType.guild)
+    @cooldown(10, data.get_chat_misc_cooldown_sec, user_channel_cooldown)
     @command(brief='Показать помощь, ня', description='Показать помощь, ня')
     async def help(self, ctx, *input):
         await ctx.message.delete()
@@ -81,7 +79,7 @@ class Commands(Cog):
                                             "https://github.com/reven-n1/DiscordBot",
                                 color=discord.Color.red())
 
-        await ctx.message.channel.send(embed=emb, delete_after=data.get_del_after)#channel
+        await ctx.message.channel.send(embed=emb, delete_after=120)#TODO заменить на загрузку из файла
 
 
 def setup(bot):

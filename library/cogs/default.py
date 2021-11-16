@@ -1,19 +1,10 @@
 from discord.ext.commands import command, has_permissions, cooldown, guild_only
-from discord.ext.commands.cooldowns import BucketType
 from library.data.presf_images import fimages
 from discord.ext.commands import Cog
-from library import Amia, bot
+from library import Amia, bot, data, user_guild_cooldown
 from random import choice
 from json import load
 import discord
-
-with open("library/config/config.json","rb") as json_config_file:
-    data = load(json_config_file)
-    try:
-        misc_cooldown = int(data["default_settings"]["chat_misc_cooldown"])
-    except KeyError:
-        exit("'config.json' is damaged!") 
-
 
 class Commands(Cog):
     def __init__(self, bot):
@@ -37,7 +28,7 @@ class Commands(Cog):
         await ctx.send(f"{choice(('Hello', 'Hi', 'Hey', 'Hiya'))} {ctx.author.mention}!")
 
     @command(name="say", aliases=["скажи"], 
-    brief='Говорить устами бота', description='Говорить устами бота')
+    brief='Я скажу все что ты хочешь, братик.', description='Я скажу все что ты хочешь, братик. Разве что тебе админом нужно быть)')
     @guild_only()
     @has_permissions(administrator=True)
     async def say(self, ctx, *input):
@@ -52,7 +43,7 @@ class Commands(Cog):
     @guild_only()
     @command(name="f", aliases=["ф"], 
     brief='Отдать честь за почивших героев', description='Отдать честь за почивших героев. Можно упоминанием указать кого чтим.')
-    @cooldown(1, misc_cooldown, BucketType.guild)
+    @cooldown(1, data.get_chat_misc_cooldown_sec, user_guild_cooldown)
     async def pressf(self, ctx, *input):
         """
         press f for fallen heroes.
@@ -69,7 +60,7 @@ class Commands(Cog):
     @guild_only()
     @command(name="o7", aliases=["07","о7"], 
     brief='Поприветсвовать командиров', description='Поприветсвовать командиров, а можно и кого-то конкретного')
-    @cooldown(1, misc_cooldown, BucketType.guild)
+    @cooldown(1, data.get_chat_misc_cooldown_sec, user_guild_cooldown)
     async def o7(self, ctx, *input):
         """
         greet fellow commanders
@@ -87,7 +78,7 @@ class Commands(Cog):
     @command(name="avatar", aliases=["аватар"], 
     brief='Показывает аватар пользователя', 
     description='Показывает твой аватар. С помощью упоминания можно посмотреть аватар другого пользователя')
-    @cooldown(1, misc_cooldown, BucketType.user)
+    @cooldown(1, data.get_chat_misc_cooldown_sec, user_guild_cooldown)
     async def avatar(self, ctx, *input):
         if len(input) > 0:
             title = f"Аватар {ctx.message.mentions[0].display_name}"
@@ -124,7 +115,7 @@ class Commands(Cog):
             url="https://aceship.github.io/AN-EN-Tags/img/factions/logo_rhodes.png")
         embed.set_image(url="https://aceship.github.io/AN-EN-Tags/img/characters/char_002_amiya_epoque%234.png")
         embed.set_footer(text=f"Requested by {ctx.message.author.display_name}")
-        await ctx.send(embed=embed, delete_after=30)
+        await ctx.send(embed=embed, delete_after=120)
 
 
 def setup(bot):

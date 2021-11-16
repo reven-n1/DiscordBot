@@ -58,6 +58,8 @@ class dataHandler():
                 # delete mess delay / delete after
                 self.__delete_delay = self.__data["delete_delay"]
                 self.__delete_after = self.__data["delete_after"]
+                self.__chat_misc_cooldown = int(self.__data["chat_misc_cooldown"])
+                self.__chat_misc_cooldown_sec = self.__chat_misc_cooldown/10
 
                 # command prefix
                 self.__prefix = self.__data["prefix"]
@@ -132,6 +134,13 @@ class dataHandler():
     def get_prefix(self):
         return self.__prefix
 
+    @property
+    def get_chat_misc_cooldown(self):
+        return self.__chat_misc_cooldown
+
+    @property
+    def get_chat_misc_cooldown_sec(self):
+        return self.__chat_misc_cooldown_sec
 
     def __repr__(self) -> str:
         return f"{self.__class__.__name__} class - responsible for loading data and it issuance"

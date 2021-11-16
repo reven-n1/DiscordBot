@@ -1,3 +1,4 @@
+from discord import channel
 from library.my_Exceptions.validator import NonOwnedCharacter, NonExistentCharacter
 from discord.ext.commands.core import guild_only, is_nsfw
 from discord.ext.commands.cooldowns import BucketType
@@ -5,6 +6,7 @@ from discord.ext.commands import command, cooldown
 from library.bots.Ark_bot import Ark_bot
 from discord.ext.commands import Cog
 from library import data
+from library import user_guild_cooldown
 from re import sub
 import discord
 
@@ -76,7 +78,7 @@ class Commands(Cog):
 
     @is_nsfw()
     @guild_only()
-    @cooldown(1, data.get_ark_cooldown, BucketType.guild)
+    @cooldown(1, data.get_ark_cooldown, user_guild_cooldown)
     @command(name="ark", aliases=["арк"],
     brief='Твоя любимая команда', 
     description='Кидает рандомную девочку (но это не точно, там и трапики есть, ня) и сохраняет её, чтобы ты потом мог ее посмотреть при помощи команды myark, ну или обменять если ты её не любишь(')
