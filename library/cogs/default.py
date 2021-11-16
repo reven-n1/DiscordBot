@@ -1,5 +1,5 @@
 from discord.ext.commands import command, has_permissions, cooldown, guild_only
-from library.data.presf_images import fimages
+from library.data.pressf_images import fimages
 from discord.ext.commands import Cog
 from library import Amia, bot, data, user_guild_cooldown
 from random import choice
