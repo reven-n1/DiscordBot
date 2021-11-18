@@ -1,8 +1,8 @@
 from library.my_Exceptions.validator import NonOwnedCharacter, NonExistentCharacter
 from random import choice, randrange
 from collections import namedtuple
-from library.__init__ import data
-from library.__init__ import db
+from library import data
+from library import db
 from json import loads
 
 
@@ -216,6 +216,7 @@ class Ark_bot:
         else:
             self.__db.alter(f"""UPDATE users_ark_collection SET operator_count = '{res[0][0] + 1}'
                               WHERE user_id ='{author_id}'AND operator_name == '{character_name}'""")
+        self.__db.statistic_increment('ark')
     
 
     def show_character(self, character_name:str, requestor_id:int) -> tuple:

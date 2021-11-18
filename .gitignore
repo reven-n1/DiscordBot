@@ -1,7 +1,9 @@
+lavalink/
 bot_token.py
 test.py
 TODO.py
 Bot_DB.db
+.vscode/
 # Byte-compiled / optimized / DLL files
 __pycache__/
 *.py[cod]

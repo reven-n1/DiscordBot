@@ -1,9 +1,9 @@
-from discord.ext.commands import command
+from discord.ext.commands import command, cooldown
 from discord.errors import Forbidden
 from discord.ext.commands import Cog
 from json import load
+from library import data, user_channel_cooldown
 import discord
-
 
 async def send_embed(ctx, embed):
     """
@@ -36,28 +36,29 @@ class Commands(Cog):
                 exit("'config.json' is damaged!")
 
 
-
-    @command()
+    @cooldown(10, data.get_chat_misc_cooldown_sec, user_channel_cooldown)
+    @command(brief='Показать помощь, ня', description='Показать помощь, ня')
     async def help(self, ctx, *input):
+        await ctx.message.delete()
         if not input:
 
             # starting to build embed
             emb = discord.Embed(title="Помощь, угу...", color=self.embed_color)
             emb.set_thumbnail(url="https://media.discordapp.net/attachments/595920342141370381/596022380628017173/O7_12.png")
             for command in self.bot.walk_commands():
-                aliases = command.aliases
+                aliases = command.aliases[:]
                 aliases.insert(0,command.name)
-                emb.add_field(name="/".join(aliases), value=f"`{command.help}`", inline=False)
-            emb.set_footer(text=f"Спасибо за вашу преданость, принимаем донаты на лечение")
+                emb.add_field(name="/".join(aliases), value=f"`{command.brief}`", inline=False)
+            emb.set_footer(text=f"Чтобы узнать подробнее о команде введите: !help <команда>")
 
         elif len(input) == 1:
 
             for command in self.bot.walk_commands():
-                aliases = command.aliases
+                aliases = command.aliases[:]
                 aliases.insert(0,command.name)
                 if input[0].lower() in aliases:
 
-                    emb = discord.Embed(title=f'{command.name} - помощч', description=f"`{command.description}`",
+                    emb = discord.Embed(title=f'{"/".join(aliases)} - помощч', description=f"`{command.description}`",
                                         color=discord.Color.green())#TODO color from cfg
                     break
             else:
@@ -78,7 +79,7 @@ class Commands(Cog):
                                             "https://github.com/reven-n1/DiscordBot",
                                 color=discord.Color.red())
 
-        await ctx.message.channel.send(embed=emb)#channel
+        await ctx.message.channel.send(embed=emb, delete_after=120)#TODO заменить на загрузку из файла
 
 
 def setup(bot):

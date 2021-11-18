@@ -1,4 +1,5 @@
-discord==1.0.1
 wavelink==0.9.10
 watchdog==2.1.5
 discord.py[voice]
+discord==1.7.3
+feedparser
