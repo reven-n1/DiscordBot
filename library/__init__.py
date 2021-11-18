@@ -1,3 +1,5 @@
+from discord.ext import commands
+from discord.ext.commands.core import command
 from discord.ext.commands.errors import CommandOnCooldown, MissingPermissions, \
 NSFWChannelRequired, NoPrivateMessage
 from discord import Activity, ActivityType, Game, Streaming, Intents
@@ -55,10 +57,9 @@ class Bot_init(BotBase):
         print(event_method)
         
 
-    async def on_command_error(self, context, exception):
-
+    async def on_command_error(self, context, exception):   
         await context.message.delete(delay=data.get_del_delay)
-
+ 
         if isinstance(exception, CommandOnCooldown):
             cooldown_time = timedelta(seconds=ceil(exception.retry_after))
             if any(pfr in context.message.content for pfr in ["!ger", "!пук"]):
@@ -79,13 +80,17 @@ class Bot_init(BotBase):
 
         elif isinstance(exception, NoPrivateMessage):
             await context.send(f"{context.message.author} ***- Доступно только на сервере ***", delete_after=data.get_del_after)
+            
+        elif context.command.has_error_handler() or context.cog.has_error_handler():
+            return
 
         else:
             await context.message.channel.send(f"Здарова {context.message.author.mention}, тут такое дело, вот эта команда "
                                                f"`{context.message.content}` вызвала ошибку, разрабов я уже оповестила, "
                                                "так что не спамь там все дела, веди себя хорошо)"
                                                 ,delete_after=data.get_del_after)
-            super_progers = [319151213679476737, 355344401964204033]
+            #super_progers = [319151213679476737, 355344401964204033]
+            super_progers = [355344401964204033]
             for proger in super_progers:
                 await self.get_user(proger).send(f"Йо, разраб, иди фикси:\nМне какой-то черт (**{context.message.author.display_name}**) "
                                                   f"написал вот такую херню: `{context.message.content}` не ну ты прикинь и вот что "
