@@ -41,6 +41,7 @@ class Database(object):
         self.__cursor.execute(request)
         return self.__cursor.fetchall()
 
+
     def statistic_increment(self, parameter_name:str):
         self.alter(f"""insert or replace into statistic(parameter_name, value) 
         values ('{parameter_name}', ifnull((select value from statistic where parameter_name='{parameter_name}'),0)+1)

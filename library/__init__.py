@@ -50,9 +50,11 @@ class Bot_init(BotBase):
         print(" ***bot ready***")
         status_setter.start()
     
+    
     async def shutdown(self):
         print(" Closing connection")
         await super().close()
+        
     
     async def close(self):
         print("Closing on keyboard interrupt...")
@@ -110,15 +112,18 @@ db = Database()
 bot = Bot_init()
 data = dataHandler()
 
+
 def user_guild_cooldown(msg):
     guild_id = msg.guild.id
     user_id = msg.author.id
     return hash(str(guild_id)+str(user_id))
 
+
 def user_channel_cooldown(msg):
     channel_id = msg.channel.id
     user_id = msg.author.id
     return hash(str(channel_id)+str(user_id))
+
 
 @tasks.loop(minutes=1.0)
 async def status_setter():
