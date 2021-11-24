@@ -1,14 +1,21 @@
 from discord.ext.commands import command, has_permissions, cooldown, guild_only
+from library import bot, data, user_guild_cooldown
 from library.data.pressf_images import fimages
 from discord.ext.commands import Cog
-from library import Amia, bot, data, user_guild_cooldown
+from collections import namedtuple
 from random import choice
+from library import db
 from json import load
 import discord
+
 
 class Commands(Cog):
     def __init__(self, bot):
         self.bot = bot
+        self.name = "Amia(bot)"
+        self.__delete_quantity = 100       
+        self.__db = db
+        
         with open("library/config/config.json","rb") as json_config_file:
             data = load(json_config_file)
             try:
@@ -16,7 +23,8 @@ class Commands(Cog):
             except KeyError:
                 exit("'config.json' is damaged!")
      
-
+     
+    # cog commands------------------------------------------------------------------------------------------------------------------------
 
     @command(name="hello", aliases=["hi","привет"],
     brief='Привет, братик', description='Привет, братик')
@@ -99,12 +107,12 @@ class Commands(Cog):
         This command shows bot info
         """
         await ctx.message.delete()
-        embed = discord.Embed(color=self.embed_color, title=Amia.name,
+        embed = discord.Embed(color=self.embed_color, title=self.name,
                               url=f"https://www.youtube.com/watch?v=X5ULmETDiXI")
         embed.add_field(name="Описание", value="Тупая деффка еще и бот", inline=False)
         embed.add_field(name="Версия", value=bot.VERSION, inline=False)
-        ark_stat = Amia.get_ark_stats()
-        ger_stat = Amia.get_ger_stats()
+        ark_stat = self.get_ark_stats()
+        ger_stat = self.get_ger_stats()
         embed.add_field(name="Статистика арков", value=f"Арков выкручено за все время: {ark_stat.total}\nВсего собрано персонажей: {ark_stat.total_chars}", inline=False)
         embed.add_field(name="Больше всего 6* собрано", value=f"<@{ark_stat.best_dolboeb}> с количеством аж {ark_stat.dolboeb_count} шестизведочных персонажей. Поздравляем Вас и вручаем вам самый ценный подарок: **наше увожение**", inline=False)
         embed.add_field(name="Статистика пуков", value=f"""Пуков за все время: {ger_stat.total}
@@ -116,6 +124,46 @@ class Commands(Cog):
         embed.set_image(url="https://aceship.github.io/AN-EN-Tags/img/characters/char_002_amiya_epoque%234.png")
         embed.set_footer(text=f"Requested by {ctx.message.author.display_name}")
         await ctx.send(embed=embed, delete_after=120)
+    
+    
+    # functions----------------------------------------------------------------------------------------------------------------------------
+    
+    def __exec_stmts(self, stmts:list):
+        results = []
+        for stmt in stmts:
+            result = self.__db.extract(stmt)
+            result = int(result[0][0]) if result else 0
+            results.append(result)
+        return results
+
+    def get_ark_stats(self):
+        ark_stat = namedtuple('ark_stat', ['total', 'total_chars', 'best_dolboeb', 'dolboeb_count'])
+        return ark_stat._make(self.__exec_stmts([
+            "select value from statistic where parameter_name='ark'",
+            "select count(*) from users_ark_collection",
+            "select user_id from users_ark_collection where rarity=6 group by user_id order by sum(operator_count) desc limit 1",
+            "select sum(operator_count) from users_ark_collection where rarity=6 group by user_id order by sum(operator_count) desc limit 1"
+        ]))
+
+    def get_ger_stats(self):
+        ger_stat = namedtuple('ger_stat', ['total', 'total_self', 'total_bot', 'total_me'])
+        return ger_stat._make(self.__exec_stmts([
+            "select value from statistic where parameter_name='ger'",
+            "select value from statistic where parameter_name='self_ger'",
+            "select value from statistic where parameter_name='ger_bot'",
+            "select value from statistic where parameter_name='ger_me'",
+        ]))
+
+
+    @property
+    async def server_delete_quantity(self):
+        """
+        Default message delete quantity getter 
+
+        Returns:
+            int: quantity
+        """
+        return self.__delete_quantity
 
 
 def setup(bot):

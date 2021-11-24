@@ -1,5 +1,8 @@
-lavalink/
+Lavalink.jar
+changeWatcher
 bot_token.py
+lavalink/logs/
+
 test.py
 TODO.py
 Bot_DB.db

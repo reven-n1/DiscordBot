@@ -1,10 +1,7 @@
-from discord.ext import commands
-from discord.ext.commands.core import command
 from discord.ext.commands.errors import CommandOnCooldown, MissingPermissions, \
 NSFWChannelRequired, NoPrivateMessage
 from discord import Activity, ActivityType, Game, Streaming, Intents
 from discord.ext.commands import Bot as BotBase, CommandNotFound
-from library.bots.Default_bot import Default_bot
 from library.data.dataLoader import dataHandler
 from library.data.db.database import Database
 from library.bot_token import token
@@ -22,7 +19,10 @@ class Bot_init(BotBase):
         self.Prefix = "!"
         self.TOKEN = token
         self.VERSION = None
-        super().__init__(command_prefix=self.Prefix, intents=Intents().all())
+        super().__init__(command_prefix=self.Prefix,
+                         case_insensitive = True,
+                         intents=Intents().all(),
+                        )
 
 
     def setup(self):
@@ -41,14 +41,22 @@ class Bot_init(BotBase):
         super().run(self.TOKEN, reconnect=True)
 
 
-    @staticmethod
-    async def on_connect():
+    async def on_connect(self):
         print(" bot connected")
+        print(f" latensy:{round(self.latency*1000, 1)} ms")
 
 
     async def on_ready(self):
         print(" ***bot ready***")
         status_setter.start()
+    
+    async def shutdown(self):
+        print(" Closing connection")
+        await super().close()
+    
+    async def close(self):
+        print("Closing on keyboard interrupt...")
+        await self.shutdown()
 
        
     async def on_error(self, event_method, *args, **kwargs):
@@ -89,8 +97,7 @@ class Bot_init(BotBase):
                                                f"`{context.message.content}` вызвала ошибку, разрабов я уже оповестила, "
                                                "так что не спамь там все дела, веди себя хорошо)"
                                                 ,delete_after=data.get_del_after)
-            #super_progers = [319151213679476737, 355344401964204033]
-            super_progers = [355344401964204033]
+            super_progers = [319151213679476737, 355344401964204033]
             for proger in super_progers:
                 await self.get_user(proger).send(f"Йо, разраб, иди фикси:\nМне какой-то черт (**{context.message.author.display_name}**) "
                                                   f"написал вот такую херню: `{context.message.content}` не ну ты прикинь и вот что "
@@ -101,7 +108,6 @@ class Bot_init(BotBase):
 
 db = Database()
 bot = Bot_init()
-Amia = Default_bot(db)
 data = dataHandler()
 
 def user_guild_cooldown(msg):
