@@ -1,7 +1,10 @@
 Lavalink.jar
 changeWatcher
 bot_token.py
-lavalink/logs/
+library/lavalink/logs/
+
+
+
 
 test.py
 TODO.py
