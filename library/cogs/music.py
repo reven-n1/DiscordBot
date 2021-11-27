@@ -344,7 +344,7 @@ class Music(commands.Cog, wavelink.WavelinkMixin):
         
 
     @commands.command(name="next", aliases=["skip"],
-    brief='Остановить проигрывание', description='Остановить проигрывание и запустить выигрывание')
+    brief='Запустить следующий трек', description='Запустить следующий трек')
     async def next_command(self, ctx):
         player = self.get_player(ctx)
 
