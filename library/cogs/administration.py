@@ -6,7 +6,9 @@ from library import Amia
 import discord.member
 
 
-class Commands(Cog):
+class Admin(Cog):
+    qualified_name = 'Admin'
+    description = 'Администраторские команды, кек'
     def __init__(self, bot):
         self.bot = bot
 

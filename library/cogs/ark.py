@@ -12,7 +12,9 @@ from re import sub
 import discord
 
 
-class Commands(Cog):
+class Ark(Cog):
+    qualified_name = 'Ark'
+    description = 'Рулетка с дефками'
     def __init__(self, bot):
         self.bot = bot       
         self.__db = db
@@ -391,4 +393,4 @@ def setup(bot):
     """
     Adds cogs
     """
-    bot.add_cog(Commands(bot))
+    bot.add_cog(Ark(bot))

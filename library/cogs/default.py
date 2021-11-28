@@ -9,7 +9,10 @@ from json import load
 import discord
 
 
-class Commands(Cog):
+class Default(Cog):
+    qualified_name = 'Default'
+    description = 'Стандартные команды'
+    
     def __init__(self, bot):
         self.bot = bot
         self.name = "Amia(bot)"
@@ -170,4 +173,4 @@ def setup(bot):
     """
     Adds cogs
     """
-    bot.add_cog(Commands(bot))
+    bot.add_cog(Default(bot))

@@ -9,7 +9,9 @@ from library import data
 import discord
 
 
-class Commands(Cog):
+class Ger(Cog):
+    qualified_name = 'Ger'
+    description = 'Туалетный юмор'
     def __init__(self, bot):
         self.bot = bot
         self.__ger_self_chance = data.get_self_ger_chanse
@@ -68,4 +70,4 @@ def setup(bot):
     """
     Adds cogs
     """
-    bot.add_cog(Commands(bot))    
+    bot.add_cog(Ger(bot))    

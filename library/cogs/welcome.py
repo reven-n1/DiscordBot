@@ -1,7 +1,10 @@
 from discord.ext.commands import Cog
 
 
-class Commands(Cog):
+class Welcome(Cog):
+    qualified_name = 'Welcome'
+    description = 'Даже не команды'
+
     def __init__(self, bot):
         self.bot = bot
 
@@ -26,4 +29,4 @@ def setup(bot):
     """
     Adds cogs
     """
-    bot.add_cog(Commands(bot))
+    bot.add_cog(Welcome(bot))

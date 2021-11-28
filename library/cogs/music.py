@@ -199,6 +199,8 @@ class Player(wavelink.Player):
 
 
 class Music(commands.Cog, wavelink.WavelinkMixin):
+    qualified_name = 'Music'
+    description = 'Играет музыку'
     def __init__(self, bot):
         self.bot = bot
         self.wavelink = wavelink.Client(bot=bot)
