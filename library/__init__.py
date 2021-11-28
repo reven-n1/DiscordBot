@@ -127,5 +127,8 @@ def user_channel_cooldown(msg):
 
 @tasks.loop(minutes=1.0)
 async def status_setter():
-    feed = feedparser.parse('https://myanimelist.net/rss.php?type=rwe&u=wladbelsky')
-    await bot.change_presence(activity=Activity(type=ActivityType.watching, name=feed['entries'][0]['title']))
+    try:
+        feed = feedparser.parse('https://myanimelist.net/rss.php?type=rwe&u=wladbelsky')
+        await bot.change_presence(activity=Activity(type=ActivityType.watching, name=feed['entries'][0]['title']))
+    except IndexError as ie:
+        print(ie)
