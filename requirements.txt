@@ -1,5 +1,5 @@
 feedparser
-aiohttp==3.6.0
+aiohttp==3.7.0
 PyNaCl
 wheel
 aiodns
@@ -9,3 +9,5 @@ orjson
 nextcord
 nextcord[voice]
 nextcord-ext-lava
+discord-py-interactions
+https://github.com/wladbelsky/Nextlink/archive/refs/heads/master.zip

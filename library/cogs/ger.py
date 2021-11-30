@@ -31,7 +31,6 @@ class Ger(Cog):
         """
         This funny function farts on random server member or whoever called it
         """
-        await ctx.message.delete()
         random_user = choice(ctx.message.guild.members)
         while random_user == ctx.message.author:
             random_user = choice(ctx.message.guild.members)

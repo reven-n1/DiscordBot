@@ -36,8 +36,6 @@ class Ark(Cog):
         This command sends ark collection to private messages.\n
         If collection empty -> returns 'Empty collection'
         """
-        if not isinstance(ctx.channel, nextcord.channel.DMChannel):
-            await ctx.message.delete()
 
         ark_collection = self.get_ark_collection(ctx.message.author.id)
 
@@ -71,7 +69,6 @@ class Ark(Cog):
         Serves to exchange 5 characters for 1 rank higher\n
         if possible else returns 'Нет операторов на обмен'
         """
-        await ctx.message.delete()
         barter_list = self.get_barter_list(ctx.message.author.id)
         if barter_list:
             barter = self.ark_barter(barter_list, ctx.message.author.id)
@@ -97,7 +94,6 @@ class Ark(Cog):
         """
         Return a random arknigts character (from char_table.json)
         """
-        await ctx.message.delete()
         character_data = self.roll_random_character(ctx.message.author.id)
         await ctx.message.channel.send(embed=self.ark_embed(character_data, ctx.message))
 

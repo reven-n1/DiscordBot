@@ -178,7 +178,6 @@ class Player(nextlink.Player):
             reaction, _ = await self.bot.wait_for("reaction_add", timeout=60.0, check=_check)
         except asyncio.TimeoutError:
             await msg.delete()
-            await ctx.message.delete()
         else:
             await msg.delete()
             return tracks[OPTIONS[reaction.emoji]]
@@ -200,7 +199,7 @@ class Player(nextlink.Player):
         await self.play(self.queue.current_track)
 
 
-class Music(commands.Cog, nextlink.WavelinkMixin):
+class Music(commands.Cog, nextlink.NextlinkMixin):
     qualified_name = 'Music'
     description = 'Играет музыку'
     def __init__(self, bot):
@@ -216,13 +215,13 @@ class Music(commands.Cog, nextlink.WavelinkMixin):
                 await self.get_player(member.guild).teardown()
                 
 
-    @nextlink.WavelinkMixin.listener()
+    @nextlink.NextlinkMixin.listener()
     async def on_node_ready(self, node):
         print(f" Nextlink node `{node.identifier}` ready.")
 
-    @nextlink.WavelinkMixin.listener("on_track_stuck")
-    @nextlink.WavelinkMixin.listener("on_track_end")
-    @nextlink.WavelinkMixin.listener("on_track_exception")
+    @nextlink.NextlinkMixin.listener("on_track_stuck")
+    @nextlink.NextlinkMixin.listener("on_track_end")
+    @nextlink.NextlinkMixin.listener("on_track_exception")
     async def on_player_stop(self, node, payload):
         if payload.player.queue.repeat_mode == RepeatMode.ONE:
             await payload.player.repeat_track()
@@ -288,7 +287,6 @@ class Music(commands.Cog, nextlink.WavelinkMixin):
         await player.teardown()
         await ctx.send("Ну все, пока.")
         
-
     @commands.command(name="play", aliases=["p"],
     brief='Поиск музыки', description='Поиск твоей любимой музыки в интернете. Будем вместе слушать ^.^')
     async def play_command(self, ctx, *, query: t.Optional[str]):

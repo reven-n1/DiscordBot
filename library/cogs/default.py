@@ -1,5 +1,6 @@
 from nextcord.ext.commands import command, has_permissions, cooldown, guild_only
 from library import bot, data, user_guild_cooldown
+from discord_slash.utils.manage_components import wait_for_component
 from library.data.pressf_images import fimages
 from nextcord.ext.commands import Cog
 from collections import namedtuple
@@ -7,7 +8,7 @@ from random import choice
 from library import db
 from json import load
 import nextcord
-
+from discord_slash import cog_ext, SlashContext
 
 class Default(Cog):
     qualified_name = 'Default'
@@ -29,13 +30,38 @@ class Default(Cog):
      
     # cog commands------------------------------------------------------------------------------------------------------------------------
 
-    @command(name="hello", aliases=["hi","привет"],
+    @cog_ext.cog_slash(name="ping", )
+    async def ping(self, ctx: SlashContext):
+        from discord_slash.utils.manage_components import create_button, create_actionrow
+        from discord_slash.model import ButtonStyle
+
+        buttons = [
+            create_button(style=ButtonStyle.green, label="A green button", custom_id='greeeny'),
+            create_button(style=ButtonStyle.blue, label="A blue button", custom_id='useless')
+        ]
+        action_row = create_actionrow(*buttons)
+
+        await ctx.send(content="Pong!",components=[action_row])
+        button_ctx = await wait_for_component(bot, components=action_row)
+        # await button_ctx.edit_origin(content="You pressed a button!")
+        # await button_ctx.reply('U win')
+        await button_ctx.edit_origin(content='U lose', components=None)
+    
+
+    @command(name="ping", aliases=["пинг"],
+    brief='Понг. Проверяет пинг до дискорда.', description='Понг. Проверяет пинг до дискорда.')
+    async def ping(self, ctx):
+        """
+        Checks ping
+        """
+        await ctx.send(f"Pong: `{round(self.bot.latency*1000, 1)}` ms")
+
+    @command(name="hello", aliases=["hi", "привет"],
     brief='Привет, братик', description='Привет, братик')
     async def hello(self, ctx):
         """
         Congratulations command
         """
-        await ctx.message.delete()
         await ctx.send(f"{choice(('Hello', 'Hi', 'Hey', 'Hiya'))} {ctx.author.mention}!")
 
     @command(name="say", aliases=["скажи"], 
@@ -49,7 +75,6 @@ class Default(Cog):
         """
         #TODO: send pm or msg to channel via arguments
         await ctx.message.channel.send(" ".join(input))
-        await ctx.message.delete()
 
     @guild_only()
     @command(name="f", aliases=["ф"], 
@@ -109,7 +134,6 @@ class Default(Cog):
         """
         This command shows bot info
         """
-        await ctx.message.delete()
         embed = nextcord.Embed(color=self.embed_color, title=self.name,
                               url=f"https://www.youtube.com/watch?v=X5ULmETDiXI")
         embed.add_field(name="Описание", value="Тупая деффка еще и бот", inline=False)

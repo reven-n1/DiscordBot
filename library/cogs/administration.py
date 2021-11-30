@@ -25,7 +25,6 @@ class Admin(Cog):
         except IndexError:
             pass
 
-        await ctx.message.delete()
         await member.ban(reason=reason)
         await ctx.message.channel.send(f"{member} забанен", delete_after=15)
 
@@ -43,7 +42,6 @@ class Admin(Cog):
         except IndexError:
             pass
 
-        await ctx.message.delete()
         await member.kick(reason=reason)
         await ctx.message.channel.send(f"{member} кикнут, нах.", delete_after=15)
 
@@ -56,7 +54,6 @@ class Admin(Cog):
         """
         Unban command
         """
-        await ctx.message.delete()
         try:
             await ctx.guild.unban(user)
             await ctx.message.channel.send(f"{user} - разбанен")
@@ -72,7 +69,6 @@ class Admin(Cog):
         """
         Returns ban_list
         """
-        await ctx.message.delete()
         banned_list = list()
         for _ in await ctx.guild.bans():
             banned_list.append(f"{_.user.name} - {_.user.id} ")
@@ -96,7 +92,6 @@ class Admin(Cog):
             member (nextcord.Member): target member
             role (nextcord.Role): chosen role
         """
-        await ctx.message.delete()
         await member.add_roles(role)
     
 
@@ -113,7 +108,6 @@ class Admin(Cog):
             member (nextcord.Member): target member
             role (nextcord.Role): role to remove
         """
-        await ctx.message.delete()
         await member.remove_roles(role)
 
 
@@ -124,7 +118,6 @@ class Admin(Cog):
         """
         Clears channel from messages(takes quantity to delete)(in default 1000)
         """
-        await ctx.message.delete()
         message_text = ctx.message.content.split()
         if len(message_text) == 2 and message_text[1].isdigit():
             await ctx.message.channel.purge(limit=int(ctx.message.content.split()[1]))

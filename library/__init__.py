@@ -2,6 +2,7 @@ from nextcord.ext.commands.errors import CommandOnCooldown, MissingPermissions, 
 NSFWChannelRequired, NoPrivateMessage
 from nextcord import Activity, ActivityType, Game, Streaming, Intents
 from nextcord.ext.commands import Bot as BotBase, CommandNotFound
+from discord_slash import SlashCommand, SlashContext
 from library.data.dataLoader import dataHandler
 from library.data.db.database import Database
 from library.bot_token import token
@@ -68,7 +69,10 @@ class Bot_init(BotBase):
         
 
     async def on_command_error(self, context, exception):   
-        await context.message.delete(delay=data.get_del_delay)
+        try:
+            await context.message.delete(delay=data.get_del_delay)
+        except:
+            pass
  
         if isinstance(exception, CommandOnCooldown):
             cooldown_time = timedelta(seconds=ceil(exception.retry_after))
@@ -111,6 +115,7 @@ class Bot_init(BotBase):
 db = Database()
 bot = Bot_init()
 data = dataHandler()
+slash = SlashCommand(bot, sync_commands=True)
 
 
 def user_guild_cooldown(msg):
