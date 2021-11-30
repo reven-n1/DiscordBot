@@ -1,15 +1,15 @@
 from library.my_Exceptions.validator import NonOwnedCharacter, NonExistentCharacter
-from discord.ext.commands.core import guild_only, is_nsfw
-from discord.ext.commands import command, cooldown
+from nextcord.ext.commands.core import guild_only, is_nsfw
+from nextcord.ext.commands import command, cooldown
 from library import user_guild_cooldown
-from discord.ext.commands import Cog
+from nextcord.ext.commands import Cog
 from random import choice, randrange
 from collections import namedtuple
 from library import data
 from library import db
 from json import loads
 from re import sub
-import discord
+import nextcord
 
 
 class Ark(Cog):
@@ -36,7 +36,7 @@ class Ark(Cog):
         This command sends ark collection to private messages.\n
         If collection empty -> returns 'Empty collection'
         """
-        if not isinstance(ctx.channel, discord.channel.DMChannel):
+        if not isinstance(ctx.channel, nextcord.channel.DMChannel):
             await ctx.message.delete()
 
         ark_collection = self.get_ark_collection(ctx.message.author.id)
@@ -44,7 +44,7 @@ class Ark(Cog):
         if char_name == "":
             all_character_count = self.get_ark_count()
             user_chara_count = sum([len(characters) for characters in ark_collection.values()])
-            collection_message = discord.Embed(title=f"{ctx.author.display_name}'s collection {user_chara_count}/{all_character_count} \
+            collection_message = nextcord.Embed(title=f"{ctx.author.display_name}'s collection {user_chara_count}/{all_character_count} \
                                               ({round((user_chara_count/all_character_count)*100,2)}%)", color=data.get_embed_color)
             for rarity, characters in ark_collection.items():
                 characters_list = "\n".join([f"{character[1]} x {character[2]}" for character in characters])
@@ -109,9 +109,9 @@ class Ark(Cog):
 
         Args:
             character_data (list): random character data from char_table.json
-            message (discord.message): message
+            message (nextcord.message): message
         """
-        embed = discord.Embed(color=data.get_embed_color, title=character_data.name,
+        embed = nextcord.Embed(color=data.get_embed_color, title=character_data.name,
                               description=str(character_data.stars) * character_data.rarity,
                               url=f"https://aceship.github.io/AN-EN-Tags/akhrchars.html?opname={character_data.name}")
         embed.add_field(name="Description", value=f"{character_data.description_first_part}\n{character_data.description_sec_part}", \

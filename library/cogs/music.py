@@ -1,10 +1,12 @@
+# TODO: почнить эту херню
+
 from library.my_Exceptions.music_exceptions import *
-from discord.ext import commands
+from nextcord.ext import commands
 from enum import Enum
 import datetime as dt
 import typing as t
-import wavelink
-import discord
+import nextlink
+import nextcord
 import asyncio
 import re
 
@@ -103,7 +105,7 @@ class Queue:
         self.position = 0
 
 
-class Player(wavelink.Player):
+class Player(nextlink.Player):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
         self.queue = Queue()
@@ -131,7 +133,7 @@ class Player(wavelink.Player):
         if not tracks:
             raise NoTracksFound
 
-        if isinstance(tracks, wavelink.TrackPlaylist):
+        if isinstance(tracks, nextlink.TrackPlaylist):
             self.queue.add(*tracks.tracks)
         elif len(tracks) == 1:
             self.queue.add(tracks[0])
@@ -153,7 +155,7 @@ class Player(wavelink.Player):
                 and r.message.id == msg.id
             )
 
-        embed = discord.Embed(
+        embed = nextcord.Embed(
             title="Выбери песню",
             description=(
                 "\n".join(
@@ -198,12 +200,12 @@ class Player(wavelink.Player):
         await self.play(self.queue.current_track)
 
 
-class Music(commands.Cog, wavelink.WavelinkMixin):
+class Music(commands.Cog, nextlink.WavelinkMixin):
     qualified_name = 'Music'
     description = 'Играет музыку'
     def __init__(self, bot):
         self.bot = bot
-        self.wavelink = wavelink.Client(bot=bot)
+        self.nextlink = nextlink.Client(bot=bot)
         self.bot.loop.create_task(self.start_nodes())
         
 
@@ -214,13 +216,13 @@ class Music(commands.Cog, wavelink.WavelinkMixin):
                 await self.get_player(member.guild).teardown()
                 
 
-    @wavelink.WavelinkMixin.listener()
+    @nextlink.WavelinkMixin.listener()
     async def on_node_ready(self, node):
-        print(f" Wavelink node `{node.identifier}` ready.")
+        print(f" Nextlink node `{node.identifier}` ready.")
 
-    @wavelink.WavelinkMixin.listener("on_track_stuck")
-    @wavelink.WavelinkMixin.listener("on_track_end")
-    @wavelink.WavelinkMixin.listener("on_track_exception")
+    @nextlink.WavelinkMixin.listener("on_track_stuck")
+    @nextlink.WavelinkMixin.listener("on_track_end")
+    @nextlink.WavelinkMixin.listener("on_track_exception")
     async def on_player_stop(self, node, payload):
         if payload.player.queue.repeat_mode == RepeatMode.ONE:
             await payload.player.repeat_track()
@@ -229,7 +231,7 @@ class Music(commands.Cog, wavelink.WavelinkMixin):
             
 
     async def cog_check(self, ctx):
-        if isinstance(ctx.channel, discord.DMChannel):
+        if isinstance(ctx.channel, nextcord.DMChannel):
             await ctx.send("Музыка доступна только на сервере")
             return False
 
@@ -251,21 +253,21 @@ class Music(commands.Cog, wavelink.WavelinkMixin):
         }
 
         for node in nodes.values():
-            await self.wavelink.initiate_node(**node)
+            await self.nextlink.initiate_node(**node)
             
 
     def get_player(self, obj):
         if isinstance(obj, commands.Context):
-            return self.wavelink.get_player(obj.guild.id, cls=Player, context=obj)
-        elif isinstance(obj, discord.Guild):
-            return self.wavelink.get_player(obj.id, cls=Player)
+            return self.nextlink.get_player(obj.guild.id, cls=Player, context=obj)
+        elif isinstance(obj, nextcord.Guild):
+            return self.nextlink.get_player(obj.id, cls=Player)
         
         
     # cog commands ------------------------------------------------------------------------- 
 
     @commands.command(name="connect", aliases=["join"],
     brief='Присоединиться к голосовому каналу', description='Присоединиться к голосовому каналу')
-    async def connect_command(self, ctx, *, channel: t.Optional[discord.VoiceChannel]):
+    async def connect_command(self, ctx, *, channel: t.Optional[nextcord.VoiceChannel]):
         player = self.get_player(ctx)
         channel = await player.connect(ctx, channel)
         await ctx.send(f"Присоединилась к вашей гейпати в {channel.name}.")
@@ -307,7 +309,7 @@ class Music(commands.Cog, wavelink.WavelinkMixin):
             if not re.match(URL_REGEX, query):
                 query = f"ytsearch:{query}"
 
-            await player.add_tracks(ctx, await self.wavelink.get_tracks(query))
+            await player.add_tracks(ctx, await self.nextlink.get_tracks(query))
             
 
     @play_command.error
@@ -406,7 +408,7 @@ class Music(commands.Cog, wavelink.WavelinkMixin):
         if player.queue.is_empty:
             raise QueueIsEmpty
 
-        embed = discord.Embed(
+        embed = nextcord.Embed(
             title="Очередь",
             description=f"Показываю тебе до {show} следующих треков",
             colour=ctx.author.colour,
@@ -448,7 +450,7 @@ class Music(commands.Cog, wavelink.WavelinkMixin):
         if not player.is_playing:
             raise PlayerIsAlreadyPaused
 
-        embed = discord.Embed(
+        embed = nextcord.Embed(
             title="Сейчас играет",
             colour=ctx.author.colour,
             timestamp=dt.datetime.utcnow(),

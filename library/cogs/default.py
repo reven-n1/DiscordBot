@@ -1,12 +1,12 @@
-from discord.ext.commands import command, has_permissions, cooldown, guild_only
+from nextcord.ext.commands import command, has_permissions, cooldown, guild_only
 from library import bot, data, user_guild_cooldown
 from library.data.pressf_images import fimages
-from discord.ext.commands import Cog
+from nextcord.ext.commands import Cog
 from collections import namedtuple
 from random import choice
 from library import db
 from json import load
-import discord
+import nextcord
 
 
 class Default(Cog):
@@ -64,7 +64,7 @@ class Default(Cog):
             title = f"**{ctx.author.display_name}** заплатил увожение за {ctx.message.mentions[0].display_name}"
         else:
             title=f"**{ctx.author.display_name}** заплатил увожение. o7"
-        emb = discord.Embed(title=title, color=self.embed_color)
+        emb = nextcord.Embed(title=title, color=self.embed_color)
         emb.set_image(url="https://pbs.twimg.com/media/D-5sUKNXYAA5K9l.jpg")
         await ctx.message.channel.send(embed=emb)
         
@@ -81,7 +81,7 @@ class Default(Cog):
             title = f"**{ctx.author.display_name}** приветствует {ctx.message.mentions[0].display_name}. o7"
         else:
             title=f"**{ctx.author.display_name}** приветствует вас командиры. o7"
-        emb = discord.Embed(title=title, color=self.embed_color)
+        emb = nextcord.Embed(title=title, color=self.embed_color)
         emb.set_image(url=choice(fimages))
         await ctx.message.channel.send(embed=emb)  
               
@@ -97,7 +97,7 @@ class Default(Cog):
         else:
             title = f"Аватар {ctx.message.author.display_name}"
             url = ctx.message.author.avatar_url
-        emb = discord.Embed(title=title, color=self.embed_color)
+        emb = nextcord.Embed(title=title, color=self.embed_color)
         emb.set_image(url=url)
         await ctx.message.channel.send(embed=emb)
 
@@ -110,7 +110,7 @@ class Default(Cog):
         This command shows bot info
         """
         await ctx.message.delete()
-        embed = discord.Embed(color=self.embed_color, title=self.name,
+        embed = nextcord.Embed(color=self.embed_color, title=self.name,
                               url=f"https://www.youtube.com/watch?v=X5ULmETDiXI")
         embed.add_field(name="Описание", value="Тупая деффка еще и бот", inline=False)
         embed.add_field(name="Версия", value=bot.VERSION, inline=False)

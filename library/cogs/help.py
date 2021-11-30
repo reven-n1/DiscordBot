@@ -1,9 +1,9 @@
-from discord.ext.commands import command, cooldown
-from discord.errors import Forbidden
-from discord.ext.commands import Cog
+from nextcord.ext.commands import command, cooldown
+from nextcord.errors import Forbidden
+from nextcord.ext.commands import Cog
 from json import load
 from library import data, user_channel_cooldown
-import discord
+import nextcord
 
 async def send_embed(ctx, embed):
     """
@@ -44,7 +44,7 @@ class Help(Cog):
         #TODO: уменьшить кол-во if, aka пофиксить логику, йоу
         await ctx.message.delete()
             # starting to build embed
-        emb = discord.Embed(title="Помощь, угу...", color=self.embed_color)
+        emb = nextcord.Embed(title="Помощь, угу...", color=self.embed_color)
         emb.set_thumbnail(url="https://media.discordapp.net/attachments/595920342141370381/596022380628017173/O7_12.png")
         if len(input) == 0:
             for cog in self.bot.cogs.values():
@@ -58,10 +58,10 @@ class Help(Cog):
                     selected_cog = cog
                     break
             else:
-                emb = discord.Embed(title="Ты совсем бака?:anger: ",
+                emb = nextcord.Embed(title="Ты совсем бака?:anger: ",
                     description=f"Они-чан, только не туда! Я никогда не слышала о `{input[0]}`. Не думаю что такая группа существует."
                     "Спроси у меня справочку если забыл что я умею.",
-                    color=discord.Color.orange())
+                    color=nextcord.Color.orange())
             if selected_cog:
                 for command in selected_cog.walk_commands():
                     aliases = command.aliases[:]
@@ -76,36 +76,36 @@ class Help(Cog):
                     selected_cog = cog
                     break
             else:
-                emb = discord.Embed(title="Ты совсем бака?:anger: ",
+                emb = nextcord.Embed(title="Ты совсем бака?:anger: ",
                     description=f"Они-чан, только не туда! Я никогда не слышала о `{input[0]}`. Не думаю что такая группа существует."
                     "Спроси у меня справочку если забыл что я умею.",
-                    color=discord.Color.orange())
+                    color=nextcord.Color.orange())
             if selected_cog:
                 for command in selected_cog.walk_commands():
                     aliases = command.aliases[:]
                     aliases.insert(0,command.name)
                     if input[1].lower() in aliases:
 
-                        emb = discord.Embed(title=f'{"/".join(aliases)} - помощч', description=f"`{command.description}`",
-                                            color=discord.Color.green())#TODO color from cfg
+                        emb = nextcord.Embed(title=f'{"/".join(aliases)} - помощч', description=f"`{command.description}`",
+                                            color=nextcord.Color.green())#TODO color from cfg
                         break
                 else:
-                    emb = discord.Embed(title="Ты совсем бака?:anger: ",
+                    emb = nextcord.Embed(title="Ты совсем бака?:anger: ",
                                         description=f"Братик, ты дурашка? Я никогда не слышала о `{input[1]}`. Не думаю что такая команда существует."
                                         "Спроси у меня справочку если забыл команды. Сестренка всегда здесь, сестренка всегда с тобой.:heartpulse: ",
-                                        color=discord.Color.orange())
+                                        color=nextcord.Color.orange())
 
         elif len(input) > 2:
-            emb = discord.Embed(title="Нет, семпай, не так сильно",
+            emb = nextcord.Embed(title="Нет, семпай, не так сильно",
                                 description="Слишком много аргументов, братик:sweat_drops:",
-                                color=discord.Color.orange())
+                                color=nextcord.Color.orange())
 
         else:
-            emb = discord.Embed(title="Неожиданно.",
+            emb = nextcord.Embed(title="Неожиданно.",
                                 description="Я не знаю как ты увидел это сообщение, но ты победил.\n"
                                             "Напиши разработчикам в ЛС и на GitHub чтобы мы вместе отметили твою удачу\n"
                                             "https://github.com/reven-n1/DiscordBot",
-                                color=discord.Color.red())
+                                color=nextcord.Color.red())
 
         await ctx.message.channel.send(embed=emb, delete_after=120)#TODO заменить на загрузку из файла
 

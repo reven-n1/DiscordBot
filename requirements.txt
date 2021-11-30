@@ -1,4 +1,11 @@
-wavelink==0.9.10
-discord.py[voice]
-discord==1.7.3
 feedparser
+aiohttp==3.6.0
+PyNaCl
+wheel
+aiodns
+Brotli
+cchardet
+orjson
+nextcord
+nextcord[voice]
+nextcord-ext-lava

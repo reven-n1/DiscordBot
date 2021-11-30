@@ -1,12 +1,12 @@
-from discord.ext.commands.core import is_nsfw, guild_only
-from discord.ext.commands import command, cooldown
+from nextcord.ext.commands.core import is_nsfw, guild_only
+from nextcord.ext.commands import command, cooldown
 from library import data, user_guild_cooldown
-from discord.ext.commands import Cog
+from nextcord.ext.commands import Cog
 from random import randint, choice
 from library import db, bot
 from random import choice
 from library import data
-import discord
+import nextcord
 
 
 class Ger(Cog):
@@ -41,7 +41,7 @@ class Ger(Cog):
     
     # functions ----------------------------------------------------------------------------------------------
 
-    def ger_function(self, message_author:discord.member.Member, random_member:discord.member.Member) -> str:
+    def ger_function(self, message_author:nextcord.member.Member, random_member:nextcord.member.Member) -> str:
         """
         Farts on random server member or whoever called it
 

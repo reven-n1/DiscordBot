@@ -1,12 +1,12 @@
-from discord.ext.commands.errors import CommandOnCooldown, MissingPermissions, \
+from nextcord.ext.commands.errors import CommandOnCooldown, MissingPermissions, \
 NSFWChannelRequired, NoPrivateMessage
-from discord import Activity, ActivityType, Game, Streaming, Intents
-from discord.ext.commands import Bot as BotBase, CommandNotFound
+from nextcord import Activity, ActivityType, Game, Streaming, Intents
+from nextcord.ext.commands import Bot as BotBase, CommandNotFound
 from library.data.dataLoader import dataHandler
 from library.data.db.database import Database
 from library.bot_token import token
 from datetime import timedelta
-from discord.ext import tasks
+from nextcord.ext import tasks
 from logging import error
 from math import ceil
 import feedparser
