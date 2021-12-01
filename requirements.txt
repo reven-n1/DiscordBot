@@ -1,5 +1,5 @@
 feedparser
-aiohttp==3.7.0
+aiohttp==3.8.1
 PyNaCl
 wheel
 aiodns

@@ -168,7 +168,7 @@ class Player(nextlink.Player):
         )
         embed.set_author(name="Результаты поиска")
         embed.set_footer(
-            text=f"Запросил {ctx.author.display_name}", icon_url=ctx.author.avatar_url)
+            text=f"Запросил {ctx.author.display_name}", icon_url=ctx.author.avatar.url)
 
         msg = await ctx.send(embed=embed)
         for emoji in list(OPTIONS.keys())[:min(len(tracks), len(OPTIONS))]:
@@ -414,7 +414,7 @@ class Music(commands.Cog, nextlink.NextlinkMixin):
         )
         # embed.set_author(name="Результаты")
         embed.set_footer(
-            text=f"Запросил {ctx.author.display_name}", icon_url=ctx.author.avatar_url)
+            text=f"Запросил {ctx.author.display_name}", icon_url=ctx.author.avatar.url)
         embed.add_field(
             name="Сейчас играет",
             value=getattr(player.queue.current_track, "title",
@@ -455,7 +455,7 @@ class Music(commands.Cog, nextlink.NextlinkMixin):
         )
         # embed.set_author(name="Playback Information")
         embed.set_footer(
-            text=f"Запросил {ctx.author.display_name}", icon_url=ctx.author.avatar_url)
+            text=f"Запросил {ctx.author.display_name}", icon_url=ctx.author.avatar.url)
         embed.add_field(name="Название трека",
                         value=player.queue.current_track.title, inline=False)
         embed.add_field(

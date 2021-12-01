@@ -1,6 +1,6 @@
 from nextcord.ext.commands import command, has_permissions, cooldown, guild_only
 from library import bot, data, user_guild_cooldown
-from discord_slash.utils.manage_components import wait_for_component
+# from discord_slash.utils.manage_components import wait_for_component
 from library.data.pressf_images import fimages
 from nextcord.ext.commands import Cog
 from collections import namedtuple
@@ -8,7 +8,7 @@ from random import choice
 from library import db
 from json import load
 import nextcord
-from discord_slash import cog_ext, SlashContext
+# from discord_slash import cog_ext, SlashContext
 
 class Default(Cog):
     qualified_name = 'Default'
@@ -30,22 +30,22 @@ class Default(Cog):
      
     # cog commands------------------------------------------------------------------------------------------------------------------------
 
-    @cog_ext.cog_slash(name="ping", )
-    async def ping(self, ctx: SlashContext):
-        from discord_slash.utils.manage_components import create_button, create_actionrow
-        from discord_slash.model import ButtonStyle
+    # @cog_ext.cog_slash(name="ping", )
+    # async def ping(self, ctx: SlashContext):
+    #     from discord_slash.utils.manage_components import create_button, create_actionrow
+    #     from discord_slash.model import ButtonStyle
 
-        buttons = [
-            create_button(style=ButtonStyle.green, label="A green button", custom_id='greeeny'),
-            create_button(style=ButtonStyle.blue, label="A blue button", custom_id='useless')
-        ]
-        action_row = create_actionrow(*buttons)
+    #     buttons = [
+    #         create_button(style=ButtonStyle.green, label="A green button", custom_id='greeeny'),
+    #         create_button(style=ButtonStyle.blue, label="A blue button", custom_id='useless')
+    #     ]
+    #     action_row = create_actionrow(*buttons)
 
-        await ctx.send(content="Pong!",components=[action_row])
-        button_ctx = await wait_for_component(bot, components=action_row)
-        # await button_ctx.edit_origin(content="You pressed a button!")
-        # await button_ctx.reply('U win')
-        await button_ctx.edit_origin(content='U lose', components=None)
+    #     await ctx.send(content="Pong!",components=[action_row])
+    #     button_ctx = await wait_for_component(bot, components=action_row)
+    #     # await button_ctx.edit_origin(content="You pressed a button!")
+    #     # await button_ctx.reply('U win')
+    #     await button_ctx.edit_origin(content='U lose', components=None)
     
 
     @command(name="ping", aliases=["пинг"],
@@ -118,10 +118,10 @@ class Default(Cog):
     async def avatar(self, ctx, *input):
         if len(input) > 0:
             title = f"Аватар {ctx.message.mentions[0].display_name}"
-            url = ctx.message.mentions[0].avatar_url
+            url = ctx.message.mentions[0].avatar.url
         else:
             title = f"Аватар {ctx.message.author.display_name}"
-            url = ctx.message.author.avatar_url
+            url = ctx.message.author.avatar.url
         emb = nextcord.Embed(title=title, color=self.embed_color)
         emb.set_image(url=url)
         await ctx.message.channel.send(embed=emb)
