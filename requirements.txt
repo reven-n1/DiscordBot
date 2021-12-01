@@ -6,8 +6,6 @@ aiodns
 Brotli
 cchardet
 orjson
-nextcord
 nextcord[voice]
-nextcord-ext-lava
-discord-py-interactions
+# discord-py-interactions
 https://github.com/wladbelsky/Nextlink/archive/refs/heads/master.zip

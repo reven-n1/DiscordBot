@@ -2,7 +2,7 @@ from nextcord.ext.commands.errors import CommandOnCooldown, MissingPermissions, 
 NSFWChannelRequired, NoPrivateMessage
 from nextcord import Activity, ActivityType, Game, Streaming, Intents
 from nextcord.ext.commands import Bot as BotBase, CommandNotFound
-from discord_slash import SlashCommand, SlashContext
+# from discord_slash import SlashCommand, SlashContext
 from library.data.dataLoader import dataHandler
 from library.data.db.database import Database
 from library.bot_token import token
@@ -30,7 +30,6 @@ class Bot_init(BotBase):
         bot.remove_command('help')
         for _ in data.get_cog_list:
             self.load_extension(f"library.cogs.{_}")
-
         print("setup complete")
 
 
@@ -115,7 +114,7 @@ class Bot_init(BotBase):
 db = Database()
 bot = Bot_init()
 data = dataHandler()
-slash = SlashCommand(bot, sync_commands=True)
+# slash = SlashCommand(bot, sync_commands=True)
 
 
 def user_guild_cooldown(msg):
