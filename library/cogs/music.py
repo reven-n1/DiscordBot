@@ -393,20 +393,17 @@ class Music(commands.Cog, nextlink.NextlinkMixin):
     async def next_command(self, ctx):
         player = self.get_player(ctx)
 
-        if not player.queue.upcoming:
-            raise NoMoreTracks
-
         await player.stop()
-        await ctx.send("Играем дальше")
+        if not player.queue.upcoming:
+            await ctx.send("Ну вот и все")
+        else:
+            await ctx.send("Играем дальше")
         
 
     @next_command.error
     async def next_command_error(self, ctx, exc):
         if isinstance(exc, QueueIsEmpty):
             await ctx.send("Очередь и так пустая, куда дальше?")
-        elif isinstance(exc, NoMoreTracks):
-            await self.get_player(ctx).player.stop()
-            await ctx.send("Ну вот и все")
             
 
     @commands.command(name="previous",
