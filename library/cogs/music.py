@@ -140,13 +140,6 @@ class Player(nextlink.Player):
             
 
     async def choose_track(self, ctx, tracks):
-        # def _check(r, u):
-        #     return (
-        #         r.emoji in OPTIONS.keys()
-        #         and u == ctx.author
-        #         and r.message.id == msg.id
-        #     )
-
         embed = nextcord.Embed(
             title="Выбери песню",
             description=(
@@ -412,7 +405,7 @@ class Music(commands.Cog, nextlink.NextlinkMixin):
         if isinstance(exc, QueueIsEmpty):
             await ctx.send("Очередь и так пустая, куда дальше?")
         elif isinstance(exc, NoMoreTracks):
-            await self.get_player().player.stop()
+            await self.get_player(ctx).player.stop()
             await ctx.send("Ну вот и все")
             
 
