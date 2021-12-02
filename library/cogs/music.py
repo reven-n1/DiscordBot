@@ -1,4 +1,5 @@
 from library.my_Exceptions.music_exceptions import *
+from library.data.dataLoader import dataHandler
 from nextcord.ext import commands
 from enum import Enum
 import datetime as dt
@@ -11,15 +12,7 @@ import re
 
 
 URL_REGEX = r"(?i)\b((?:https?://|www\d{0,3}[.]|[a-z0-9.\-]+[.][a-z]{2,4}/)(?:[^\s()<>]+|\(([^\s()<>]+|(\([^\s()<>]+\)))*\))+(?:\(([^\s()<>]+|(\([^\s()<>]+\)))*\)|[^\s`!()\[\]{};:'\".,<>?«»“”‘’]))"
-
-OPTIONS = {
-    "1️⃣": 0,
-    "2⃣": 1,
-    "3⃣": 2,
-    "4⃣": 3,
-    "5⃣": 4,
-}
-
+options = dataHandler()
 
 class RepeatMode(Enum):
     NONE = 0
@@ -136,23 +129,23 @@ class Player(nextlink.Player):
             self.queue.add(*tracks.tracks)
         elif len(tracks) == 1:
             self.queue.add(tracks[0])
-            await ctx.send(f"Добавила {tracks[0].title} в очередь, сладенький.")
+            await ctx.reply(f"Добавила {tracks[0].title} в очередь, сладенький.")
         else:
             if (track := await self.choose_track(ctx, tracks)) is not None:
                 self.queue.add(track)
-                await ctx.send(f"Добавила {track.title} в очередь, сладенький.")
+                await ctx.reply(f"Добавила {track.title} в очередь, сладенький.")
 
         if not self.is_playing and not self.queue.is_empty:
             await self.start_playback()
             
 
     async def choose_track(self, ctx, tracks):
-        def _check(r, u):
-            return (
-                r.emoji in OPTIONS.keys()
-                and u == ctx.author
-                and r.message.id == msg.id
-            )
+        # def _check(r, u):
+        #     return (
+        #         r.emoji in OPTIONS.keys()
+        #         and u == ctx.author
+        #         and r.message.id == msg.id
+        #     )
 
         embed = nextcord.Embed(
             title="Выбери песню",
@@ -162,24 +155,21 @@ class Player(nextlink.Player):
                     for i, t in enumerate(tracks[:5])
                 )
             ),
-            colour=ctx.author.colour,
+            colour=options.get_embed_color,
             timestamp=dt.datetime.utcnow()
         )
         embed.set_author(name="Результаты поиска")
         embed.set_footer(
             text=f"Запросил {ctx.author.display_name}", icon_url=ctx.author.avatar.url)
 
-        msg = await ctx.send(embed=embed)
-        for emoji in list(OPTIONS.keys())[:min(len(tracks), len(OPTIONS))]:
-            await msg.add_reaction(emoji)
-
-        try:
-            reaction, _ = await self.bot.wait_for("reaction_add", timeout=60.0, check=_check)
-        except asyncio.TimeoutError:
-            await msg.delete()
+        song_selector = Player.SongSelector(ctx.author.id, timeout=60)
+        msg = await ctx.send(embed=embed, view=song_selector)
+        choice = await song_selector.get_choice()
+        await msg.delete()
+        if choice >= 0:
+            return tracks[choice]
         else:
-            await msg.delete()
-            return tracks[OPTIONS[reaction.emoji]]
+            await ctx.delete()
         
 
     async def start_playback(self):
@@ -196,6 +186,44 @@ class Player(nextlink.Player):
 
     async def repeat_track(self):
         await self.play(self.queue.current_track)
+    
+    class SongSelector(nextcord.ui.View):
+        class CallBackButton(nextcord.ui.Button):
+
+            def __init__(self, user_id: int, style, label, custom_id, emoji = None):
+                self.user_id = user_id
+                super().__init__(style=style, label=label, custom_id=custom_id, emoji=emoji)
+            async def callback(self, interaction: nextcord.Interaction):
+                assert self.view is not None
+                if interaction.user.id == self.user_id:
+                    view: Player.SongSelector = self.view
+                    view._choice = int(self.custom_id)
+                    view._event.set()
+                else:
+                    await interaction.response.send_message(
+                        "Эээй, ты не тот за кого себя выдаешь. Это запрос другого человека, найди себе свой!",
+                        delete_after=options.get_del_after, ephemeral=True
+                    )
+                await super().callback(interaction)
+
+        _choice = -1
+        _event = asyncio.Event()
+
+        def __init__(self, requested_user_id: int, timeout=60, count=5):
+            super().__init__(timeout=timeout)
+            self._event.clear()
+            for i in range(count):
+                self.add_item(Player.SongSelector.CallBackButton(requested_user_id, label=str(i+1), 
+                style=nextcord.ButtonStyle.blurple, custom_id=str(i)))
+
+        async def on_timeout(self):
+            self._event.set()
+            return await super().on_timeout()
+
+        async def get_choice(self) -> int:
+            await self._event.wait()
+            self.stop()
+            return int(self._choice)
 
 
 class Music(commands.Cog, nextlink.NextlinkMixin):
@@ -384,7 +412,8 @@ class Music(commands.Cog, nextlink.NextlinkMixin):
         if isinstance(exc, QueueIsEmpty):
             await ctx.send("Очередь и так пустая, куда дальше?")
         elif isinstance(exc, NoMoreTracks):
-            await ctx.send("Это последний трек, братик")
+            await self.get_player().player.stop()
+            await ctx.send("Ну вот и все")
             
 
     @commands.command(name="previous",

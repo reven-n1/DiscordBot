@@ -135,7 +135,7 @@ class Default(Cog):
         This command shows bot info
         """
         embed = nextcord.Embed(color=self.embed_color, title=self.name,
-                              url=f"https://www.youtube.com/watch?v=X5ULmETDiXI")
+                              url="https://discord.com/oauth2/authorize?client_id=885800080169398292&scope=bot&permissions=3401792")
         embed.add_field(name="Описание", value="Тупая деффка еще и бот", inline=False)
         embed.add_field(name="Версия", value=bot.VERSION, inline=False)
         ark_stat = self.get_ark_stats()
