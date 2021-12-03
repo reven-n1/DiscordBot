@@ -194,8 +194,8 @@ class Player(nextlink.Player):
                     view._event.set()
                 else:
                     await interaction.response.send_message(
-                        "Эээй, ты не тот за кого себя выдаешь. Это запрос другого человека, найди себе свой!",
-                        delete_after=options.get_del_after, ephemeral=True
+                        "Эээй, ты не тот за кого себя выдаешь. Это запрос другого человека, найди себе свой!", 
+                        ephemeral=True
                     )
                 await super().callback(interaction)
 

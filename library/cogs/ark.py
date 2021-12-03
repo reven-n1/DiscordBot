@@ -58,6 +58,7 @@ class Ark(Cog):
                 await ctx.message.author.send("***Лох, у тебя нет такой дивочки***")
             except NonExistentCharacter:
                 await ctx.message.author.send("***Лошара, даже имя своей вайфу не запомнил((***")
+        await ctx.message.delete()
 
             
     @guild_only()
@@ -82,6 +83,7 @@ class Ark(Cog):
                 pass
         else:
             await ctx.send("***Нет операторов на обмен***", delete_after=15)
+            await ctx.message.delete()
 
 
     @is_nsfw()
