@@ -5,6 +5,8 @@ from json import load
 from library import data, user_channel_cooldown
 import nextcord
 
+from library.data.dataLoader import dataHandler
+
 async def send_embed(ctx, embed):
     """
     Function that handles the sending of embeds
@@ -30,12 +32,8 @@ class Help(Cog):
     description = 'Помощь помощь помощь'
     def __init__(self, bot):
         self.bot = bot
-        with open("library/config/config.json","rb") as json_config_file:
-            data = load(json_config_file)
-            try:
-                self.embed_color = int(data["default_settings"]["embed_color"],16)
-            except KeyError:
-                exit("'config.json' is damaged!")
+        self.options = dataHandler()
+        self.embed_color = self.options.get_embed_color
 
 
     @cooldown(10, data.get_chat_misc_cooldown_sec, user_channel_cooldown)
@@ -106,7 +104,11 @@ class Help(Cog):
                                             "https://github.com/reven-n1/DiscordBot",
                                 color=nextcord.Color.red())
 
-        await ctx.message.channel.send(embed=emb, delete_after=120)#TODO заменить на загрузку из файла
+        await ctx.message.channel.send(embed=emb, delete_after=self.options.get_chat_misc_cooldown_sec)#TODO заменить на загрузку из файла
+        try:
+            await ctx.message.delete(delay=self.options.get_chat_misc_cooldown_sec)
+        except Exception as e:
+            print(e)
 
 
 def setup(bot):

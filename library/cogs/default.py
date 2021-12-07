@@ -4,6 +4,7 @@ from library import bot, data, user_guild_cooldown
 from library.data.pressf_images import fimages
 from nextcord.ext.commands import Cog
 from collections import namedtuple
+from library.data.dataLoader import dataHandler
 from random import choice
 from library import db
 from json import load
@@ -19,13 +20,8 @@ class Default(Cog):
         self.name = "Amia(bot)"
         self.__delete_quantity = 100       
         self.__db = db
-        
-        with open("library/config/config.json","rb") as json_config_file:
-            data = load(json_config_file)
-            try:
-                self.embed_color = int(data["default_settings"]["embed_color"],16)
-            except KeyError:
-                exit("'config.json' is damaged!")
+        self.options = dataHandler()
+        self.embed_color = self.options.get_embed_color
      
      
     # cog commands------------------------------------------------------------------------------------------------------------------------
@@ -64,6 +60,11 @@ class Default(Cog):
         """
         await ctx.send(f"{choice(('Hello', 'Hi', 'Hey', 'Hiya'))} {ctx.author.mention}!")
 
+    @command(name="ping", aliases=["пинг"],
+    brief='Замеряет задержку в развитии', description='Замеряет задержку в развитии, твоем)')
+    async def ping(self, ctx):
+        await ctx.reply(f"Pong! {round(self.bot.latency*1000, 1)} ms")
+
     @command(name="say", aliases=["скажи"], 
     brief='Я скажу все что ты хочешь, братик.', description='Я скажу все что ты хочешь, братик. Разве что тебе админом нужно быть)')
     @guild_only()
@@ -74,6 +75,10 @@ class Default(Cog):
         
         """
         #TODO: send pm or msg to channel via arguments
+        try:
+            await ctx.message.delete()
+        except Exception as e:
+            print(e)
         await ctx.message.channel.send(" ".join(input))
 
     @guild_only()
@@ -150,7 +155,11 @@ class Default(Cog):
             url="https://aceship.github.io/AN-EN-Tags/img/factions/logo_rhodes.png")
         embed.set_image(url="https://aceship.github.io/AN-EN-Tags/img/characters/char_002_amiya_epoque%234.png")
         embed.set_footer(text=f"Requested by {ctx.message.author.display_name}")
-        await ctx.send(embed=embed, delete_after=120)
+        await ctx.send(embed=embed, delete_after=self.options.get_chat_misc_cooldown_sec)
+        try:
+            await ctx.message.delete(delay=self.options.get_chat_misc_cooldown_sec)
+        except Exception as e:
+            print(e)
     
     
     # functions----------------------------------------------------------------------------------------------------------------------------

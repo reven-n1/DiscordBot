@@ -83,7 +83,7 @@ class Ark(Cog):
                 pass
         else:
             await ctx.send("***Нет операторов на обмен***", delete_after=15)
-            await ctx.message.delete()
+            await ctx.message.delete(delay=15)
 
 
     @is_nsfw()
