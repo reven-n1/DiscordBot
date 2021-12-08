@@ -101,7 +101,34 @@ class Player(nextlink.Player):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
         self.queue = Queue()
+        timeout = dataHandler().get_chat_misc_cooldown_sec
+        self.selfDestructor = Player.SelfDestruct(timeout, self.disconnect)
+
+    class SelfDestruct:
+        _stop = False
+        def __init__(self, timeout: int, callback: callable, start=False):
+            self.timeout = timeout
+            self.callback:callable = callback
+            if start:
+                self.start()
         
+        def start(self):
+            self._stop = False
+            self.task = asyncio.create_task(self._run())
+
+        async def _run(self):
+            for _ in range(self.timeout):
+                await asyncio.sleep(1)
+                if self._stop:
+                    break
+            if not self._stop:
+                if asyncio.iscoroutinefunction(self.callback):
+                    await self.callback()
+                else:
+                    self.callback()
+
+        def cancel(self):
+            self._stop = True
 
     async def connect(self, ctx, channel=None):
         if self.is_connected:
@@ -111,15 +138,14 @@ class Player(nextlink.Player):
             raise NoVoiceChannel
 
         await super().connect(channel.id)
+        self.selfDestructor.start()
         return channel
-    
 
     async def teardown(self):
         try:
             await self.destroy()
         except KeyError:
             pass
-        
 
     async def add_tracks(self, ctx, tracks):
         if not tracks:
@@ -137,7 +163,6 @@ class Player(nextlink.Player):
 
         if not self.is_playing and not self.queue.is_empty:
             await self.start_playback()
-            
 
     async def choose_track(self, ctx, tracks):
         embed = nextcord.Embed(
@@ -163,23 +188,30 @@ class Player(nextlink.Player):
             return tracks[choice]
         else:
             await ctx.delete()
-        
 
     async def start_playback(self):
         await self.play(self.queue.current_track)
-        
 
     async def advance(self):
         try:
-            if (track := self.queue.get_next_track()) is not None:
+            if (track := self.queue.get_next_track()):
                 await self.play(track)
+            else:
+                self.selfDestructor.start()
         except QueueIsEmpty:
             pass
-        
 
     async def repeat_track(self):
         await self.play(self.queue.current_track)
-    
+
+    async def stop(self):
+        self.selfDestructor.start()
+        return await super().stop()
+
+    async def play(self, track, *, replace: bool = True, start: int = 0, end: int = 0):
+        self.selfDestructor.cancel()
+        return await super().play(track, replace=replace, start=start, end=end)
+
     class SongSelector(nextcord.ui.View):
         class CallBackButton(nextcord.ui.Button):
 
