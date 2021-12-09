@@ -328,7 +328,7 @@ class Reactions(Cog):
     description='Кидает обычную хентай картину', 
      pass_context=True)
     async def nsfw_waifu(self, ctx):
-        embed = self.get_reaction_embed('cringe', '', nsfw=True)
+        embed = self.get_reaction_embed('waifu', '', nsfw=True)
         embed.set_footer(
             text=f"{ctx.author.display_name} смотрит хентай!", icon_url=ctx.author.avatar.url)
         await ctx.send(embed=embed)
