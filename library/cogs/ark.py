@@ -60,7 +60,7 @@ class Ark(Cog):
                 await ctx.message.author.send("***Лошара, даже имя своей вайфу не запомнил((***")
         await ctx.message.delete()
 
-            
+    @is_nsfw()
     @guild_only()
     @command(name="barter", aliases=["обмен"],
     brief='Обменять много хуевых персов на мало пиздатых', 

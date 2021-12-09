@@ -60,11 +60,20 @@ class Help(Cog):
                     "Спроси у меня справочку если забыл что я умею.",
                     color=nextcord.Color.orange())
             if selected_cog:
-                for command in selected_cog.walk_commands():
-                    aliases = command.aliases[:]
-                    aliases.insert(0,command.name)
-                    emb.add_field(name="/".join(aliases), value=f"`{command.brief}`", inline=False)
-                emb.set_footer(text=f"Чтобы узнать подробнее о команде введите: !help <команда>")
+                if len(selected_cog.get_commands()) <= 25:
+                    for command in selected_cog.walk_commands():
+                        aliases = command.aliases[:]
+                        aliases.insert(0,command.qualified_name)
+                        emb.add_field(name="/".join(aliases), value=f"`{command.brief}`", inline=False)
+                    emb.set_footer(text=f"Чтобы узнать подробнее о команде введите: !help <команда>")
+                else:
+                    cmd_string = ""
+                    for command in selected_cog.walk_commands():
+                        aliases = command.aliases[:]
+                        aliases.insert(0,command.qualified_name)
+                        cmd_string += f"**{'/'.join(aliases)}**\n`{command.brief}`\n\n"
+                    emb.add_field(name="Комманды красиво не поместились, ебашим так", value=cmd_string, inline=False)
+                    emb.set_footer(text=f"Чтобы узнать подробнее о команде введите: !help <команда>")
 
         elif len(input) == 2:
             selected_cog = None
