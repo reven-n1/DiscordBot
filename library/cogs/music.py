@@ -104,35 +104,28 @@ class Player(nextlink.Player):
         super().__init__(*args, **kwargs)
         self.queue = Queue()
         timeout = int(dataHandler().get_chat_misc_cooldown_sec)
-        self.selfDestructor = Player.SelfDestruct(timeout, self.disconnect)
+        self.selfDestructor = Player.SelfDestruct(timeout, self)
 
     class SelfDestruct:
-        _stop = False
+        parent: nextlink.Player = None
         task: asyncio.Task = None
-        def __init__(self, timeout: int, callback: callable, start=False):
+        def __init__(self, timeout: int, parent, start=False):
             self.timeout = timeout
-            self.callback:callable = callback
+            self.parent = parent
             if start:
                 self.start()
         
         def start(self):
-            self._stop = False
             if not self.task or self.task.done():
                 self.task = asyncio.create_task(self._run())
 
         async def _run(self):
             for _ in range(self.timeout):
                 await asyncio.sleep(1)
-                if self._stop:
+                if self.parent.is_playing:
                     break
-            if not self._stop:
-                if asyncio.iscoroutinefunction(self.callback):
-                    await self.callback()
-                else:
-                    self.callback()
-
-        def cancel(self):
-            self._stop = True
+            if not self.parent.is_playing:
+                await self.parent.disconnect()
 
     async def connect(self, ctx, channel=None):
         if self.is_connected:
@@ -213,7 +206,6 @@ class Player(nextlink.Player):
         return await super().stop()
 
     async def play(self, track, *, replace: bool = True, start: int = 0, end: int = 0):
-        self.selfDestructor.cancel()
         return await super().play(track, replace=replace, start=start, end=end)
 
     class SongSelector(nextcord.ui.View):
@@ -346,7 +338,7 @@ class PlayerControls(nextcord.ui.View):
         self.player.queue.position -= 2
         await self.player.stop()
         await asyncio.sleep(1)
-        await interaction.response.edit_message(embed=self.generate_player_embed())
+        await interaction.response.edit_message(view=self, embed=self.generate_player_embed())
 
     @nextcord.ui.button(emoji='⏸️', style=nextcord.ButtonStyle.gray)
     async def play_pause(self, button: nextcord.ui.Button, interaction: nextcord.Interaction):
@@ -366,17 +358,17 @@ class PlayerControls(nextcord.ui.View):
         self.player.queue.empty()
         await self.player.stop()
         await asyncio.sleep(1)
-        await interaction.response.edit_message(embed=self.generate_player_embed())
+        await interaction.response.edit_message(view=self, embed=self.generate_player_embed())
 
     @nextcord.ui.button(emoji='⏭️', style=nextcord.ButtonStyle.gray)
     async def next(self, button: nextcord.ui.Button, interaction: nextcord.Interaction):
         await self.player.stop()
         await asyncio.sleep(1)
-        await interaction.response.edit_message(embed=self.generate_player_embed())
+        await interaction.response.edit_message(view=self, embed=self.generate_player_embed())
 
     @nextcord.ui.button(emoji='🔄', style=nextcord.ButtonStyle.gray)
     async def update_button(self, button: nextcord.ui.Button, interaction: nextcord.Interaction):
-        await interaction.response.edit_message(embed=self.generate_player_embed())
+        await interaction.response.edit_message(view=self, embed=self.generate_player_embed())
 
 
 class Music(commands.Cog, nextlink.NextlinkMixin):
@@ -655,7 +647,7 @@ class Music(commands.Cog, nextlink.NextlinkMixin):
         if not player.is_playing:
             raise PlayerIsAlreadyPaused
 
-        if player in self.player_controls:
+        if player in self.player_controls and not self.player_controls[player].is_finished():
             controls : PlayerControls = self.player_controls[player]
             try:
                 await controls._message.delete()
