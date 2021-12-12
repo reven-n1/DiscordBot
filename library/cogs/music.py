@@ -116,7 +116,8 @@ class Player(nextlink.Player):
         
         def start(self):
             self._stop = False
-            self.task = asyncio.create_task(self._run())
+            if not self.task or self.task.done():
+                self.task = asyncio.create_task(self._run())
 
         async def _run(self):
             for _ in range(self.timeout):
@@ -290,7 +291,7 @@ class PlayerControls(nextcord.ui.View):
                 self.stop()
                 break
             try:
-                await self.message.edit(embed=self.generate_player_embed())#, view=self)
+                await self.message.edit(embed=self.generate_player_embed())
             except NotFound as e:
                 self._stop = True
                 break
@@ -344,7 +345,7 @@ class PlayerControls(nextcord.ui.View):
         self.player.queue.position -= 2
         await self.player.stop()
         await asyncio.sleep(1)
-        await interaction.response.edit_message(view=self, embed=self.generate_player_embed())
+        await interaction.response.edit_message(embed=self.generate_player_embed())
 
     @nextcord.ui.button(emoji='⏸️', style=nextcord.ButtonStyle.gray)
     async def play_pause(self, button: nextcord.ui.Button, interaction: nextcord.Interaction):
@@ -364,17 +365,17 @@ class PlayerControls(nextcord.ui.View):
         self.player.queue.empty()
         await self.player.stop()
         await asyncio.sleep(1)
-        await interaction.response.edit_message(view=self, embed=self.generate_player_embed())
+        await interaction.response.edit_message(embed=self.generate_player_embed())
 
     @nextcord.ui.button(emoji='⏭️', style=nextcord.ButtonStyle.gray)
     async def next(self, button: nextcord.ui.Button, interaction: nextcord.Interaction):
         await self.player.stop()
         await asyncio.sleep(1)
-        await interaction.response.edit_message(view=self, embed=self.generate_player_embed())
+        await interaction.response.edit_message(embed=self.generate_player_embed())
 
     @nextcord.ui.button(emoji='🔄', style=nextcord.ButtonStyle.gray)
     async def update_button(self, button: nextcord.ui.Button, interaction: nextcord.Interaction):
-        await interaction.response.edit_message(view=self, embed=self.generate_player_embed())
+        await interaction.response.edit_message(embed=self.generate_player_embed())
 
 
 class Music(commands.Cog, nextlink.NextlinkMixin):
