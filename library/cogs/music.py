@@ -108,6 +108,7 @@ class Player(nextlink.Player):
 
     class SelfDestruct:
         _stop = False
+        task: asyncio.Task = None
         def __init__(self, timeout: int, callback: callable, start=False):
             self.timeout = timeout
             self.callback:callable = callback
