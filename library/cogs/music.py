@@ -258,30 +258,39 @@ class PlayerControls(nextcord.ui.View):
     ctx: Context
     _message: nextcord.Message
     _stop = False
+    _task: asyncio.Task = None
     def __init__(self, player: Player, ctx: Context, update_interval=10):
         super().__init__(timeout=None)
         self.player = player
         self.ctx = ctx
         self.update_interval = update_interval
-        asyncio.create_task(self.update())
+        self.create_update_task()
+
 
     @property
-    def message(self, value: nextcord.Message):
-        if self._stop:
-            asyncio.create_task(self.update())
+    def message(self) -> nextcord.Message:
+        return self._message
+
+    @message.setter
+    def message(self, message: nextcord.Message):
+        self.create_update_task()
+        self._message = message
+
+    def create_update_task(self):
+        if not self._task or self._task.done():
             self._stop = False
-        self._message = value
+            self._task = asyncio.create_task(self.update())
 
     async def update(self):
         await asyncio.sleep(self.update_interval)
-        assert self._message
+        assert self.message
         while not self._stop:
             if not self.player.is_connected:
-                await self._message.delete()
+                await self.message.delete()
                 self.stop()
                 break
             try:
-                await self._message.edit(embed=self.generate_player_embed())#, view=self)
+                await self.message.edit(embed=self.generate_player_embed())#, view=self)
             except NotFound as e:
                 self._stop = True
                 break
@@ -587,7 +596,12 @@ class Music(commands.Cog, nextlink.NextlinkMixin):
         player = self.get_player(ctx)
         player.queue.set_repeat_mode(mode)
         await ctx.send(f"Установила {mode} как режим повтора.")
-        
+    
+    @repeat_command.error
+    async def repeat_command_error(self, ctx, exc):
+        if isinstance(exc, InvalidRepeatMode):
+            await ctx.send("Невалидный режим повтора, иди смотри справку")
+
 
     @commands.command(name="queue", aliases=["q"],
     brief='Показать очередь', description='Показать очередь')
@@ -647,7 +661,7 @@ class Music(commands.Cog, nextlink.NextlinkMixin):
                 print(e)
         else:
             controls = PlayerControls(player, ctx)
-        controls._message = await ctx.send(embed=controls.generate_player_embed(), view=controls)
+        controls.message = await ctx.send(embed=controls.generate_player_embed(), view=controls)
         self.player_controls[player] = controls
         
 
