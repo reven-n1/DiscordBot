@@ -1,5 +1,7 @@
+from nextcord.ext.commands.context import Context
 from library.my_Exceptions.music_exceptions import *
 from library.data.dataLoader import dataHandler
+from nextcord.errors import NotFound
 from nextcord.ext import commands
 from enum import Enum
 import datetime as dt
@@ -101,7 +103,7 @@ class Player(nextlink.Player):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
         self.queue = Queue()
-        timeout = dataHandler().get_chat_misc_cooldown_sec
+        timeout = int(dataHandler().get_chat_misc_cooldown_sec)
         self.selfDestructor = Player.SelfDestruct(timeout, self.disconnect)
 
     class SelfDestruct:
@@ -178,7 +180,7 @@ class Player(nextlink.Player):
         )
         embed.set_author(name="Результаты поиска")
         embed.set_footer(
-            text=f"Запросил {ctx.author.display_name}", icon_url=ctx.author.avatar.url)
+            text=f"Запросил {ctx.author.display_name}", icon_url=ctx.author.avatar.url if ctx.author.avatar else None)
 
         song_selector = Player.SongSelector(ctx.author.id, timeout=60)
         msg = await ctx.send(embed=embed, view=song_selector)
@@ -251,9 +253,125 @@ class Player(nextlink.Player):
             return int(self._choice)
 
 
+class PlayerControls(nextcord.ui.View):
+    player: Player
+    ctx: Context
+    _message: nextcord.Message
+    _stop = False
+    def __init__(self, player: Player, ctx: Context, update_interval=10):
+        super().__init__(timeout=None)
+        self.player = player
+        self.ctx = ctx
+        self.update_interval = update_interval
+        asyncio.create_task(self.update())
+
+    @property
+    def message(self, value: nextcord.Message):
+        if self._stop:
+            asyncio.create_task(self.update())
+            self._stop = False
+        self._message = value
+
+    async def update(self):
+        await asyncio.sleep(self.update_interval)
+        assert self._message
+        while not self._stop:
+            if not self.player.is_connected:
+                await self._message.delete()
+                self.stop()
+                break
+            try:
+                await self._message.edit(embed=self.generate_player_embed())#, view=self)
+            except NotFound as e:
+                self._stop = True
+                break
+            await asyncio.sleep(self.update_interval)
+
+    def stop(self):
+        self._stop = True
+        return super().stop()
+
+    def generate_player_embed(self):
+        play_state_emoji = ''
+        if self.player.is_paused:
+            play_state_emoji = '⏸️'
+        elif self.player.is_playing:
+            play_state_emoji = '▶️'
+        else:
+            play_state_emoji = '⏹️'
+        embed = nextcord.Embed(
+            title=f"{play_state_emoji}Сейчас играет",
+            colour=options.get_embed_color,
+            timestamp=dt.datetime.utcnow(),
+        )
+        embed.set_footer(
+            text=f"Запросил {self.ctx.author.display_name}", icon_url=self.ctx.author.avatar.url if self.ctx.author.avatar else None)
+        embed.add_field(name="Название трека",
+                value=self.player.queue.current_track.title if not self.player.queue.is_empty and self.player.queue.current_track
+                else "Очередь пуста, добавь музыку командой !p"
+                , inline=False)
+        if not self.player.queue.is_empty and self.player.queue.current_track:
+
+            embed.add_field(
+                name="Исполнитель", value=self.player.queue.current_track.author, inline=False)
+
+            position = divmod(self.player.position, 60000)
+            length = divmod(self.player.queue.current_track.length, 60000)
+            percent = round((self.player.position*20)/self.player.queue.current_track.length)
+            embed.add_field(
+                name="Время",
+                value=f"{int(position[0])}:{round(position[1]/1000):02}/{int(length[0])}:{round(length[1]/1000):02}"
+                f"\n[{':blue_square:'*percent}{':black_large_square:'*(20-percent)}]",
+                inline=False
+            )
+        return embed
+
+    @nextcord.ui.button(emoji='⏮️', style=nextcord.ButtonStyle.gray)
+    async def prev(self, button: nextcord.ui.Button, interaction: nextcord.Interaction):
+        if not self.player.queue.history:
+            await interaction.response.send_message('Это первый трек', ephemeral=True)
+            return
+
+        self.player.queue.position -= 2
+        await self.player.stop()
+        await asyncio.sleep(1)
+        await interaction.response.edit_message(view=self, embed=self.generate_player_embed())
+
+    @nextcord.ui.button(emoji='⏸️', style=nextcord.ButtonStyle.gray)
+    async def play_pause(self, button: nextcord.ui.Button, interaction: nextcord.Interaction):
+        if self.player.queue.is_empty:
+            await interaction.response.send_message('В очереди больше ничего нет!', ephemeral=True)
+            return
+        if not self.player.is_paused:
+            button.emoji = '▶️'
+            await self.player.set_pause(True)
+        else:
+            button.emoji = '⏸️'
+            await self.player.set_pause(False)
+        await interaction.response.edit_message(view=self, embed=self.generate_player_embed())
+    
+    @nextcord.ui.button(emoji='⏹️', style=nextcord.ButtonStyle.gray)
+    async def stop_button(self, button: nextcord.ui.Button, interaction: nextcord.Interaction):
+        self.player.queue.empty()
+        await self.player.stop()
+        await asyncio.sleep(1)
+        await interaction.response.edit_message(view=self, embed=self.generate_player_embed())
+
+    @nextcord.ui.button(emoji='⏭️', style=nextcord.ButtonStyle.gray)
+    async def next(self, button: nextcord.ui.Button, interaction: nextcord.Interaction):
+        await self.player.stop()
+        await asyncio.sleep(1)
+        await interaction.response.edit_message(view=self, embed=self.generate_player_embed())
+
+    @nextcord.ui.button(emoji='🔄', style=nextcord.ButtonStyle.gray)
+    async def update_button(self, button: nextcord.ui.Button, interaction: nextcord.Interaction):
+        await interaction.response.edit_message(view=self, embed=self.generate_player_embed())
+
+
 class Music(commands.Cog, nextlink.NextlinkMixin):
     qualified_name = 'Music'
     description = 'Играет музыку'
+    player_controls = {}
     def __init__(self, bot):
         self.bot = bot
         self.nextlink = nextlink.Client(bot=bot)
@@ -487,7 +605,7 @@ class Music(commands.Cog, nextlink.NextlinkMixin):
         )
         # embed.set_author(name="Результаты")
         embed.set_footer(
-            text=f"Запросил {ctx.author.display_name}", icon_url=ctx.author.avatar.url)
+            text=f"Запросил {ctx.author.display_name}", icon_url=ctx.author.avatar.url if ctx.author.avatar else None)
         embed.add_field(
             name="Сейчас играет",
             value=getattr(player.queue.current_track, "title",
@@ -515,34 +633,22 @@ class Music(commands.Cog, nextlink.NextlinkMixin):
     
     @commands.command(name="playing", aliases=["np"],
     brief='Показать что сейчас играет', description='Показать что сейчас играет')
-    async def playing_command(self, ctx):
+    async def playing_command(self, ctx: Context):
         player = self.get_player(ctx)
 
         if not player.is_playing:
             raise PlayerIsAlreadyPaused
 
-        embed = nextcord.Embed(
-            title="Сейчас играет",
-            colour=ctx.author.colour,
-            timestamp=dt.datetime.utcnow(),
-        )
-        # embed.set_author(name="Playback Information")
-        embed.set_footer(
-            text=f"Запросил {ctx.author.display_name}", icon_url=ctx.author.avatar.url)
-        embed.add_field(name="Название трека",
-                        value=player.queue.current_track.title, inline=False)
-        embed.add_field(
-            name="Исполнитель", value=player.queue.current_track.author, inline=False)
-
-        position = divmod(player.position, 60000)
-        length = divmod(player.queue.current_track.length, 60000)
-        embed.add_field(
-            name="Время",
-            value=f"{int(position[0])}:{round(position[1]/1000):02}/{int(length[0])}:{round(length[1]/1000):02}",
-            inline=False
-        )
-
-        await ctx.send(embed=embed)
+        if player in self.player_controls:
+            controls : PlayerControls = self.player_controls[player]
+            try:
+                await controls._message.delete()
+            except NotFound as e:
+                print(e)
+        else:
+            controls = PlayerControls(player, ctx)
+        controls._message = await ctx.send(embed=controls.generate_player_embed(), view=controls)
+        self.player_controls[player] = controls
         
 
     @playing_command.error
@@ -597,5 +703,4 @@ def setup(bot):
     bot.add_cog(Music(bot))
     
 
-# TODO : continue playing from pause
 # TODO : music embed with player buttons(stop, next, prev, pause, cont, etc)
