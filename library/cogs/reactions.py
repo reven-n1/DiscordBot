@@ -1,12 +1,14 @@
 from nextcord.ext.commands import command, cooldown, group
 from nextcord.ext.commands.core import is_nsfw
-from library.data.dataLoader import dataHandler
 from library import user_channel_cooldown
+from json.decoder import JSONDecodeError
 from nextcord.ext.commands import Cog
+from requests.models import HTTPError
 from nextcord import Embed
 from random import choice
 from library import data
 import requests
+import logging
 
 
 class Reactions(Cog):
@@ -18,9 +20,13 @@ class Reactions(Cog):
 
     def get_reaction_embed(self, category: str, phrase: str,nsfw = False):
         response = requests.get(f'https://api.waifu.pics/{"sfw" if not nsfw else "nsfw"}/{category}')
-        img_url = response.json().get('url', None)
+        try:
+            img_url = response.json().get('url', None)
+        except (JSONDecodeError, HTTPError, ConnectionError) as e:
+            logging.error(e)
+            img_url = None
         if not img_url:
-            return
+            return Embed(title='Неудалось подключиться к бд картинками(', color=self.embed_color)
         embed = Embed(title=phrase, color=self.embed_color)        
         embed.set_image(url=img_url)
         return embed

@@ -141,10 +141,5 @@ dmypy.json
 # Pyre type checker
 .pyre/
 
-ffmpeg.exe
-*.webm
-*.m4a
-
-character_table.json
 unittests.py
 Class_uml_diagram.uml

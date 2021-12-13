@@ -113,7 +113,7 @@ class Help(Cog):
                                             "https://github.com/reven-n1/DiscordBot",
                                 color=nextcord.Color.red())
 
-        await ctx.message.channel.send(embed=emb, delete_after=self.options.get_chat_misc_cooldown_sec)#TODO заменить на загрузку из файла
+        await ctx.message.channel.send(embed=emb, delete_after=self.options.get_chat_misc_cooldown_sec)
         try:
             await ctx.message.delete(delay=self.options.get_chat_misc_cooldown_sec)
         except Exception as e:

@@ -628,7 +628,7 @@ class Music(commands.Cog, nextlink.NextlinkMixin):
             )
 
         # TODO: делать ли фичу вот в чем вопрос
-        msg = await ctx.send(embed=embed) 
+        msg = await ctx.send(embed=embed)
         
 
     @queue_command.error
@@ -709,6 +709,3 @@ class Music(commands.Cog, nextlink.NextlinkMixin):
 
 def setup(bot):
     bot.add_cog(Music(bot))
-    
-
-# TODO : music embed with player buttons(stop, next, prev, pause, cont, etc)

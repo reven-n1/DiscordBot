@@ -10,8 +10,11 @@ class dataHandler():
         if not path.isfile(__path_to_json):
                     exit("'config.json' not found!")
 
-        if not path.isfile("library/config/char_table.json"):
-                    exit("'char_table.json' not found!")
+        if not path.isfile("library/config/character_table.json"):
+                    exit("'character_table.json' not found!")
+        
+        if not path.isfile("library/config/skin_table.json"):
+                    exit("'skin_table.json' not found!")
 
 
         with open(__path_to_json,"rb") as json_config_file:  
@@ -65,68 +68,51 @@ class dataHandler():
                 self.__prefix = self.__data["prefix"]
 
             except KeyError:
-                exit("'config.json' is damaged!")
-    
-    
-    @property
-    def get_available_channels(self):
-        return self.__bot_channels
-    
+                exit("'config.json' is damaged!")  
 
     @property
     def get_self_ger_chanse(self):
         return self.__ger_self_chance
 
-
     @property
     def get_ger_phrases(self):
         return self.__ger_phrases
-
     
     @property
     def get_ger_self_phrases(self):
         return self.__ger_self_phrases
 
-
     @property
     def get_ger_cooldown(self):
         return self.__ger_cooldown
-
 
     @property
     def get_ark_cooldown(self):
         return self.__ark_cooldown
 
-
     @property
     def get_embed_color(self):
         return self.__embed_color
-
 
     @property
     def get_cog_list(self):
         return self.__cog_list
     
-
     def get_ark_profession(self, prof):
         return self.__ark_professions[prof]
     
-
     @property
     def get_ark_chances(self):
         return self.__six_star_chance, self.__five_star_chance, self.__four_star_chance, self.__three_star_chance
     
-
     @property
     def get_del_delay(self):
         return self.__delete_delay
     
-
     @property
     def get_del_after(self):
         return self.__delete_after
     
-
     def get_bot_status(self, category):
         return choice(self.__bot_statuses[f"{category}"])
     

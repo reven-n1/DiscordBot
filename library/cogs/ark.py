@@ -3,6 +3,8 @@ from nextcord.ext.commands.core import guild_only, is_nsfw
 from nextcord.ext.commands import command, cooldown
 from library import user_guild_cooldown
 from nextcord.ext.commands import Cog
+from nextcord.channel import DMChannel
+from nextcord.errors import NotFound
 from random import choice, randrange
 from collections import namedtuple
 from library import data
@@ -10,6 +12,7 @@ from library import db
 from json import loads
 from re import sub
 import nextcord
+import logging
 
 
 class Ark(Cog):
@@ -24,13 +27,19 @@ class Ark(Cog):
         
         self.__stars_0_5 = "<:star:801095671720968203>"
         self.__stars_6 = "<:star2:801105195958140928>"
-        
+
+        with open("library/config/character_table.json", "rb") as character_json:
+            self.characters_data = loads(character_json.read())
+
+        with open("library/config/skin_table.json", "rb") as skin_json:
+            self.skin_data = loads(skin_json.read())['charSkins']
 
     # cog commands --------------------------------------------------------------------------------------------------------------
-    
+
     @command(name="myark", aliases=["моидевочки","майарк"],
-    brief='Вывести твою коллекцию сочных аниме девочек(и кунчиков ^-^)', 
-    description='Вывести твою коллекцию сочных аниме девочек(и кунчиков ^-^). Отправлю этот списочек прямой посылочкой в твои ЛС, братик. А если ты укажешь имя песонажа я покажу его карточку')
+    brief='Вывести твою коллекцию сочных аниме девочек(и кунчиков ^-^)',
+    description='Вывести твою коллекцию сочных аниме девочек(и кунчиков ^-^). '
+    'Отправлю этот списочек прямой посылочкой в твои ЛС, братик. А если ты укажешь имя песонажа я покажу его карточку')
     async def myark(self, ctx, char_name:str=""):
         """
         This command sends ark collection to private messages.\n
@@ -49,16 +58,18 @@ class Ark(Cog):
                 collection_message.add_field(name=":star:"*rarity if rarity<6 else ":star2:"*rarity, value=characters_list, inline=False)
             if len(ark_collection) == 0:
                 collection_message.add_field(name="Ти бомж", value="иди покрути девочек!")
-            collection_message.set_footer(text=f"Используй команду !майарк <имя> чтоб посмотреть на персонажа.")
+            collection_message.set_footer(text="Используй команду !майарк <имя> чтоб посмотреть на персонажа.")
             await ctx.message.author.send(embed=collection_message)    
         else:
             try:
-                await ctx.message.author.send(embed=self.ark_embed(self.show_character(char_name, ctx.message.author.id), ctx.message))
+                embed, selector = self.ark_embed_and_view(self.show_character(char_name, ctx.message.author.id), ctx.message)
+                selector.message = await ctx.message.author.send(embed=embed, view=selector)
             except NonOwnedCharacter:
                 await ctx.message.author.send("***Лох, у тебя нет такой дивочки***")
             except NonExistentCharacter:
                 await ctx.message.author.send("***Лошара, даже имя своей вайфу не запомнил((***")
-        await ctx.message.delete()
+        if not isinstance(ctx.message.channel, DMChannel):
+            await ctx.message.delete()
 
     @is_nsfw()
     @guild_only()
@@ -77,7 +88,8 @@ class Ark(Cog):
                 new_char = next(barter)
                 
                 while new_char:
-                    await ctx.message.channel.send(embed=self.ark_embed(new_char, ctx.message))
+                    embed, selector = self.ark_embed_and_view(new_char, ctx.message)
+                    selector.message = await ctx.message.channel.send(embed=embed, view=selector)
                     new_char = next(barter)
             except StopIteration:
                 pass
@@ -90,23 +102,22 @@ class Ark(Cog):
     @guild_only()
     @cooldown(1, data.get_ark_cooldown, user_guild_cooldown)
     @command(name="ark", aliases=["арк"],
-    brief='Твоя любимая команда', 
+    brief='Твоя любимая команда',
     description='Кидает рандомную девочку (но это не точно, там и трапики есть, ня) и сохраняет её, чтобы ты потом мог ее посмотреть при помощи команды myark, ну или обменять если ты её не любишь(')
     async def ark(self, ctx):      
         """
-        Return a random arknigts character (from char_table.json)
+        Return a random arknigts character (from character_table.json)
         """
         character_data = self.roll_random_character(ctx.message.author.id)
-        await ctx.message.channel.send(embed=self.ark_embed(character_data, ctx.message))
+        embed, selector = self.ark_embed_and_view(character_data, ctx.message)
+        selector.message = await ctx.message.channel.send(embed=embed, view=selector)
 
-
-    @staticmethod
-    def ark_embed(character_data, message):
+    def ark_embed_and_view(self, character_data, message):
         """
         Generates embed form recieved ark data
 
         Args:
-            character_data (list): random character data from char_table.json
+            character_data (list): random character data from character_table.json
             message (nextcord.message): message
         """
         embed = nextcord.Embed(color=data.get_embed_color, title=character_data.name,
@@ -121,11 +132,43 @@ class Ark(Cog):
         embed.set_thumbnail(url=character_data.profession)
         embed.set_image(url=f"https://aceship.github.io/AN-EN-Tags/img/characters/{character_data.character_id}_1.png")
         embed.set_footer(text=f"Requested by {message.author.display_name}")
-        return embed
+        return embed, Ark.SkinSelector(self.get_skin_list(character_data.character_id), data.get_chat_misc_cooldown_sec)
 
+    class SkinSelector(nextcord.ui.View):
+        message: nextcord.Message
+        def __init__(self, skins: list, timeout = 180):
+            super().__init__(timeout=timeout)
+            self.skin_select.options = []
+            for skin in skins:
+                self.skin_select.options.append(nextcord.SelectOption(label=skin.name, description=skin.desc, value=skin.id))
+
+        async def on_timeout(self) -> None:
+            try:
+                await self.message.edit(view=None)
+            except NotFound as e:
+                logging.warning(e)
+            return await super().on_timeout()
+
+        @nextcord.ui.select(placeholder='Choose skin', min_values=1, max_values=1, options=[])
+        async def skin_select(self, select: nextcord.ui.Select, interaction: nextcord.Interaction):
+            assert interaction.message.embeds
+            new_image_url = interaction.data.get('values',[''])[0].replace('#','%23')
+            new_embed = interaction.message.embeds[0].set_image(
+                url=f"https://aceship.github.io/AN-EN-Tags/img/characters/{new_image_url}.png")
+            await interaction.response.edit_message(embed=new_embed)
 
     # functions --------------------------------------------------------------------------------------------------------------------
     
+    def get_skin_list(self, character_id) -> namedtuple:
+        skinTyple = namedtuple('skin', ['id', 'name', 'desc'])
+        skin_list = []
+        for skin in self.skin_data.values():
+            if skin['charId'] == character_id:
+                skin_list.append(skinTyple._make((skin['portraitId'],
+                f"{skin['displaySkin']['skinName']}" if skin['displaySkin']['skinName'] else f"{skin['displaySkin']['modelName']}#{skin['portraitId'].split('_')[-1]}", 
+                skin['displaySkin']['skinGroupName'])))
+        return skin_list
+
     def get_ark_collection(self, collection_owner_id:int) -> dict:
         """
         This function returns all ark collection
@@ -213,7 +256,7 @@ class Ark(Cog):
             int: count of all possible characters
         """
         count = 0
-        json_data = loads(open("library/config/char_table.json", "rb").read())
+        json_data = self.characters_data
         for line in json_data.values():
             if line["rarity"] >= 2  and line["itemDesc"] is not None:
                 count += 1
@@ -261,18 +304,16 @@ class Ark(Cog):
             list: list that contains characters
         """
         choice_list = []
-        character_json = open("library/config/char_table.json", "rb")
-        characters_data = loads(character_json.read())  # Извлекаем JSON
         
-        for character in characters_data:
-            character_data = characters_data[str(character)]
+        for character in self.characters_data:
+            character_data = self.characters_data[str(character)]
             character_rarity = int(character_data["rarity"]) + 1
             if rarity == character_rarity and character_data["itemDesc"] is not None:  # to ignore summoners items and other rarities
                 choice_list.append(character)
 
         random_character = choice(choice_list)
 
-        return self.__parse_character_json(random_character, characters_data[str(random_character)])
+        return self.__parse_character_json(random_character, self.characters_data[str(random_character)])
 
     
     def __parse_character_json(self, character_id:str, character_data:dict) -> tuple:
@@ -338,7 +379,7 @@ class Ark(Cog):
         Returns:
             namedtuple: list with character description
         """
-        return self.__show_character_validator(character_name, requestor_id)  # Извлекаем JSON
+        return self.__show_character_validator(character_name, requestor_id)
 
     
     def __show_character_validator(self, character_name:str, requestor_id:int) -> tuple:
@@ -356,35 +397,28 @@ class Ark(Cog):
         Returns:
             namedtuple: list with character description
         """
-        character_json = open("library/config/char_table.json", "rb")
-        characters_data = loads(character_json.read())  # Извлекаем JSON
+
 
         is_find = False
-        for char_id in characters_data:
+        for char_id in self.characters_data:
 
-            name = characters_data[str(char_id)]["name"]
+            name = self.characters_data[str(char_id)]["name"]
             character_id = char_id
 
             if character_name == name:
-                is_find = True
                 break
-
-        if not is_find:
+        else:
             raise NonExistentCharacter
 
         res = self.__db.extract(f"SELECT operator_name FROM users_ark_collection WHERE user_id == '{requestor_id}'")
 
-        is_find = False
-
         for item in res:
             if character_name in item:
-                is_find = True
                 break
-
-        if not is_find:
+        else:
             raise NonOwnedCharacter
         
-        return self.__parse_character_json(character_id, characters_data[character_id])    
+        return self.__parse_character_json(character_id, self.characters_data[character_id])    
 
 
 def setup(bot):
