@@ -512,6 +512,7 @@ class Music(commands.Cog, nextlink.NextlinkMixin):
                     await player.add_tracks(ctx, result[0])
                     await ctx.reply(f"Добавила {result[0].title} в очередь, honey.")
                 elif 'album' in query:
+                    msg = await ctx.reply('Ищу треки для тебя, братик')
                     album = self.spoti.album(query)
                     for track in album['tracks']['items']:
                         query = f"ytsearch:{track['artists'][0]['name']} - {track['name']}"
@@ -520,14 +521,15 @@ class Music(commands.Cog, nextlink.NextlinkMixin):
                             query = f"ytsearch:{album['name']} - {track['name']}"
                             result = await self.nextlink.get_tracks(query)
                         await player.add_tracks(ctx, result[0])
-                    await ctx.reply(f"Добавила {len(album['tracks']['items'])} треков в очередь, красавчик.")
+                    await msg.edit(f"Добавила {len(album['tracks']['items'])} треков в очередь, красавчик.")
                 elif 'playlist' in query:
+                    msg = await ctx.reply('Просматриваю твои постыдные плейлисты, шалун')
                     pl = self.spoti.playlist(query)
                     for track in pl['tracks']['items']:
                         query = f"ytsearch:{track['track']['artists'][0]['name']} - {track['track']['name']}"
                         result = await self.nextlink.get_tracks(query)
                         await player.add_tracks(ctx, result[0])
-                    await ctx.reply(f"Добавила {len(pl['tracks']['items'])} треков в очередь, милашка.")
+                    await msg.edit(f"Добавила {len(pl['tracks']['items'])} треков в очередь, милашка.")
                 else:
                     await ctx.reply("Прости братишка, но я не знаю как с такими ссылками работать(")
 
