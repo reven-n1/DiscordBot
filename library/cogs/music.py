@@ -132,7 +132,7 @@ class Player(nextlink.Player):
         if (channel := getattr(ctx.author.voice, "channel", channel)) is None:
             raise NoVoiceChannel
 
-        await super().connect(channel.id)
+        await super().connect(channel.id, self_deaf=True)
         self.selfDestructor.start()
         return channel
 
@@ -501,7 +501,7 @@ class Music(commands.Cog, nextlink.NextlinkMixin):
             query = query.strip("<>")
             if not re.match(URL_REGEX, query):
                 query = f"ytsearch:{query}"
-            # ref url: https://open.spotify.com/album/4pJT0WKggr4xk149X8A6KC?si=25bc4cf368de47c9
+                await player.add_tracks(ctx, await self.nextlink.get_tracks(query))
             elif 'open.spotify.com' not in query:
                 await player.add_tracks(ctx, await self.nextlink.get_tracks(query))
             else:
