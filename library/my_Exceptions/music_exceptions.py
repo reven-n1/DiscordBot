@@ -1,5 +1,6 @@
 from nextcord.ext import commands
 
+
 class AlreadyConnectedToChannel(commands.CommandError):
     pass
 

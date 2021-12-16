@@ -3,7 +3,7 @@ from nextcord.ext.commands.core import is_nsfw
 from library import user_channel_cooldown
 from json.decoder import JSONDecodeError
 from nextcord.ext.commands import Cog
-from requests.models import HTTPError
+from requests.exceptions import HTTPError, ConnectionError
 from nextcord import Embed
 from random import choice
 from library import data
@@ -14,44 +14,48 @@ import logging
 class Reactions(Cog):
     qualified_name = 'Reactions'
     description = 'Аниме реакшоны'
+
     def __init__(self, bot):
         self.bot = bot
         self.embed_color = data.get_embed_color
 
-    def get_reaction_embed(self, category: str, phrase: str,nsfw = False):
-        response = requests.get(f'https://api.waifu.pics/{"sfw" if not nsfw else "nsfw"}/{category}')
+    def get_reaction_embed(self, category: str, phrase: str, nsfw=False):
         try:
+            response = requests.get(f'https://api.waifu.pics/{"sfw" if not nsfw else "nsfw"}/{category}')
             img_url = response.json().get('url', None)
         except (JSONDecodeError, HTTPError, ConnectionError) as e:
             logging.error(e)
             img_url = None
         if not img_url:
-            return Embed(title='Неудалось подключиться к бд картинками(', color=self.embed_color)
-        embed = Embed(title=phrase, color=self.embed_color)        
+            embed = Embed(title='Неудалось подключиться к бд картинками(', color=self.embed_color,
+                          description='Наша команда пыталась найти пикчу, но потерпела неудачу((')
+            embed.set_image(url='https://c.tenor.com/tZ2Xd8LqAnMAAAAd/typing-fast.gif')
+            return embed
+        embed = Embed(title=phrase, color=self.embed_color)
         embed.set_image(url=img_url)
         return embed
 
     @cooldown(1, data.get_chat_misc_cooldown_sec, user_channel_cooldown)
     @command(name="waifu",
-    brief='Вайфу', description='Показать твоих любимих вайфу')
+             brief='Вайфу', description='Показать твоих любимих вайфу')
     async def waifu(self, ctx):
         await ctx.send(embed=self.get_reaction_embed('waifu', ''))
 
     @cooldown(1, data.get_chat_misc_cooldown_sec, user_channel_cooldown)
     @command(name="neko",
-    brief='Кошкодевочки', description='Показать твоих любимих кошкодевочек')
+             brief='Кошкодевочки', description='Показать твоих любимих кошкодевочек')
     async def neko(self, ctx):
         await ctx.send(embed=self.get_reaction_embed('neko', ''))
 
     @cooldown(1, data.get_chat_misc_cooldown_sec, user_channel_cooldown)
     @command(name="awoo",
-    brief='Волкодевочки', description='Показать твоих любимих волкодевочек')
+             brief='Волкодевочки', description='Показать твоих любимих волкодевочек')
     async def awoo(self, ctx):
         await ctx.send(embed=self.get_reaction_embed('awoo', ''))
-    
+
     @cooldown(1, data.get_chat_misc_cooldown_sec, user_channel_cooldown)
     @command(name="bully",
-    brief='Доебаться', description='Доебаться до кого-то')
+             brief='Доебаться', description='Доебаться до кого-то')
     async def bully(self, ctx):
         if ctx.message.mentions:
             phrase = f'{ctx.author.display_name} доебался до {ctx.message.mentions[0].display_name}'
@@ -61,7 +65,7 @@ class Reactions(Cog):
 
     @cooldown(1, data.get_chat_misc_cooldown_sec, user_channel_cooldown)
     @command(name="cuddle",
-    brief='Обнимашки прижимашки', description='Сильные мужские объятья')
+             brief='Обнимашки прижимашки', description='Сильные мужские объятья')
     async def cuddle(self, ctx):
         if ctx.message.mentions:
             phrase = f'{ctx.author.display_name} прижимает к себе {ctx.message.mentions[0].display_name} крепко крепко'
@@ -71,17 +75,17 @@ class Reactions(Cog):
 
     @cooldown(1, data.get_chat_misc_cooldown_sec, user_channel_cooldown)
     @command(name="cry",
-    brief='Хнык хнык', description='Команда когда ты очень сильно расстроен')
+             brief='Хнык хнык', description='Команда когда ты очень сильно расстроен')
     async def cry(self, ctx):
         if ctx.message.mentions:
             phrase = f'{ctx.message.mentions[0].display_name} довел до слез {ctx.author.display_name}'
         else:
             phrase = f'Вы довели до слез {ctx.author.display_name}, зачем вы так?'
-        await ctx.send(embed=self.get_reaction_embed('cry', phrase))      
-    
+        await ctx.send(embed=self.get_reaction_embed('cry', phrase))
+
     @cooldown(1, data.get_chat_misc_cooldown_sec, user_channel_cooldown)
     @command(name="hug",
-    brief='Обнимашки', description='Обними себя или друга')
+             brief='Обнимашки', description='Обними себя или друга')
     async def hug(self, ctx):
         if ctx.message.mentions:
             phrase = f'{ctx.author.display_name} обнимает {ctx.message.mentions[0].display_name}'
@@ -91,7 +95,7 @@ class Reactions(Cog):
 
     @cooldown(1, data.get_chat_misc_cooldown_sec, user_channel_cooldown)
     @command(name="kiss",
-    brief='Поцелуй', description='Kissu Kissu')
+             brief='Поцелуй', description='Kissu Kissu')
     async def kiss(self, ctx):
         if ctx.message.mentions:
             phrase = f'{ctx.author.display_name} целует {ctx.message.mentions[0].display_name}'
@@ -101,7 +105,7 @@ class Reactions(Cog):
 
     @cooldown(1, data.get_chat_misc_cooldown_sec, user_channel_cooldown)
     @command(name="lick",
-    brief='Лизь лизь', description='Облизать кого-то')
+             brief='Лизь лизь', description='Облизать кого-то')
     async def lick(self, ctx):
         if ctx.message.mentions:
             phrase = f'{ctx.author.display_name} облизал {ctx.message.mentions[0].display_name}'
@@ -111,7 +115,7 @@ class Reactions(Cog):
 
     @cooldown(1, data.get_chat_misc_cooldown_sec, user_channel_cooldown)
     @command(name="pat",
-    brief='Погладить по головке', description='Погладить по головке. Не той головке, изваращенец! Бака!')
+             brief='Погладить по головке', description='Погладить по головке. Не той головке, изваращенец! Бака!')
     async def pat(self, ctx):
         if ctx.message.mentions:
             phrase = f'{ctx.author.display_name} погладил по головке {ctx.message.mentions[0].display_name}'
@@ -121,7 +125,7 @@ class Reactions(Cog):
 
     @cooldown(1, data.get_chat_misc_cooldown_sec, user_channel_cooldown)
     @command(name="smug",
-    brief='Самодовольное личико', description='S M U G')
+             brief='Самодовольное личико', description='S M U G')
     async def smug(self, ctx):
         if ctx.message.mentions:
             phrase = f'{ctx.author.display_name} показывает свое превосходство над {ctx.message.mentions[0].display_name}'
@@ -131,7 +135,7 @@ class Reactions(Cog):
 
     @cooldown(1, data.get_chat_misc_cooldown_sec, user_channel_cooldown)
     @command(name="bonk",
-    brief='Удар', description='Удар пяткой в нос')
+             brief='Удар', description='Удар пяткой в нос')
     async def bonk(self, ctx):
         if ctx.message.mentions:
             phrase = f'{ctx.author.display_name} бьет {ctx.message.mentions[0].display_name}'
@@ -141,7 +145,7 @@ class Reactions(Cog):
 
     @cooldown(1, data.get_chat_misc_cooldown_sec, user_channel_cooldown)
     @command(name="yeet",
-    brief='Уебать', description='Как бомжи за окном, только аниме')
+             brief='Уебать', description='Как бомжи за окном, только аниме')
     async def yeet(self, ctx):
         if ctx.message.mentions:
             phrase = f'{ctx.author.display_name} уебал {ctx.message.mentions[0].display_name}'
@@ -151,7 +155,7 @@ class Reactions(Cog):
 
     @cooldown(1, data.get_chat_misc_cooldown_sec, user_channel_cooldown)
     @command(name="blush",
-    brief='Смущение^-^', description='Смущение^-^. Показывает насколько ты няша стесняша')
+             brief='Смущение^-^', description='Смущение^-^. Показывает насколько ты няша стесняша')
     async def blush(self, ctx):
         if ctx.message.mentions:
             phrase = f'{ctx.author.display_name} покраснел от {ctx.message.mentions[0].display_name}'
@@ -161,7 +165,7 @@ class Reactions(Cog):
 
     @cooldown(1, data.get_chat_misc_cooldown_sec, user_channel_cooldown)
     @command(name="smile",
-    brief='Улыбнись', description='Улыбнись')
+             brief='Улыбнись', description='Улыбнись')
     async def smile(self, ctx):
         if ctx.message.mentions:
             phrase = f'{ctx.author.display_name} улыбается {ctx.message.mentions[0].display_name}'
@@ -171,7 +175,7 @@ class Reactions(Cog):
 
     @cooldown(1, data.get_chat_misc_cooldown_sec, user_channel_cooldown)
     @command(name="wave",
-    brief='Помахать', description='Помахать')
+             brief='Помахать', description='Помахать')
     async def wave(self, ctx):
         if ctx.message.mentions:
             phrase = f'{ctx.author.display_name} помахал {ctx.message.mentions[0].display_name}'
@@ -181,7 +185,7 @@ class Reactions(Cog):
 
     @cooldown(1, data.get_chat_misc_cooldown_sec, user_channel_cooldown)
     @command(name="highfive",
-    brief='Дай пять', description='Дай пять')
+             brief='Дай пять', description='Дай пять')
     async def highfive(self, ctx):
         if ctx.message.mentions:
             phrase = f'{ctx.author.display_name} дает пятюню {ctx.message.mentions[0].display_name}'
@@ -191,7 +195,7 @@ class Reactions(Cog):
 
     @cooldown(1, data.get_chat_misc_cooldown_sec, user_channel_cooldown)
     @command(name="handhold",
-    brief='Держимся за ручку', description='Держимся за ручку, ня!')
+             brief='Держимся за ручку', description='Держимся за ручку, ня!')
     async def handhold(self, ctx):
         if ctx.message.mentions:
             phrase = f'{ctx.author.display_name} взял за руку {ctx.message.mentions[0].display_name}'
@@ -201,7 +205,7 @@ class Reactions(Cog):
 
     @cooldown(1, data.get_chat_misc_cooldown_sec, user_channel_cooldown)
     @command(name="nom",
-    brief='Омнононононом', description='Заварил дошик и радуется')
+             brief='Омнононононом', description='Заварил дошик и радуется')
     async def nom(self, ctx):
         if ctx.message.mentions:
             phrase = f'{ctx.author.display_name} кушает вместе с {ctx.message.mentions[0].display_name}'
@@ -211,7 +215,7 @@ class Reactions(Cog):
 
     @cooldown(1, data.get_chat_misc_cooldown_sec, user_channel_cooldown)
     @command(name="bite",
-    brief='Кусь', description='Вцепиться зубами')
+             brief='Кусь', description='Вцепиться зубами')
     async def bite(self, ctx):
         if ctx.message.mentions:
             phrase = f'{ctx.author.display_name} кусает {ctx.message.mentions[0].display_name}'
@@ -221,7 +225,7 @@ class Reactions(Cog):
 
     @cooldown(1, data.get_chat_misc_cooldown_sec, user_channel_cooldown)
     @command(name="slap",
-    brief='Пощечина', description='Пощечина')
+             brief='Пощечина', description='Пощечина')
     async def slap(self, ctx):
         if ctx.message.mentions:
             phrase = f'{ctx.author.display_name} отвесил смачного леща {ctx.message.mentions[0].display_name}'
@@ -231,8 +235,8 @@ class Reactions(Cog):
 
     @cooldown(1, data.get_chat_misc_cooldown_sec, user_channel_cooldown)
     @command(name="kill",
-    brief='Убийство карается статьей 105 УКРФ', 
-    description="""Убийство, то есть умышленное причинение смерти другому человеку, - 
+             brief='Убийство карается статьей 105 УКРФ',
+             description="""Убийство, то есть умышленное причинение смерти другому человеку, -
     наказывается лишением свободы на срок от шести до пятнадцати лет с ограничением свободы на срок до двух лет либо без такового.
     2. Убийство:
         а) двух или более лиц;
@@ -260,7 +264,7 @@ class Reactions(Cog):
 
     @cooldown(1, data.get_chat_misc_cooldown_sec, user_channel_cooldown)
     @command(name="kick",
-    brief='Удар с ноги', description='Удар с ноги, чисто вертушка')
+             brief='Удар с ноги', description='Удар с ноги, чисто вертушка')
     async def kick(self, ctx):
         if ctx.message.mentions:
             phrase = f'{ctx.author.display_name} уебал с ноги {ctx.message.mentions[0].display_name}'
@@ -270,7 +274,7 @@ class Reactions(Cog):
 
     @cooldown(1, data.get_chat_misc_cooldown_sec, user_channel_cooldown)
     @command(name="happy",
-    brief='Счастье', description='Счастье, как будто оно есть')
+             brief='Счастье', description='Счастье, как будто оно есть')
     async def happy(self, ctx):
         if ctx.message.mentions:
             phrase = f'{ctx.author.display_name} счасли вместе с {ctx.message.mentions[0].display_name}'
@@ -280,7 +284,7 @@ class Reactions(Cog):
 
     @cooldown(1, data.get_chat_misc_cooldown_sec, user_channel_cooldown)
     @command(name="wink",
-    brief='Подмигнуть', description='Подмигнуть')
+             brief='Подмигнуть', description='Подмигнуть')
     async def wink(self, ctx):
         if ctx.message.mentions:
             phrase = f'{ctx.author.display_name} подмигнул {ctx.message.mentions[0].display_name}'
@@ -290,7 +294,7 @@ class Reactions(Cog):
 
     @cooldown(1, data.get_chat_misc_cooldown_sec, user_channel_cooldown)
     @command(name="poke",
-    brief='Тыкнуть', description='Тык тык тык тык')
+             brief='Тыкнуть', description='Тык тык тык тык')
     async def poke(self, ctx):
         if ctx.message.mentions:
             phrase = f'{ctx.author.display_name} ткул {ctx.message.mentions[0].display_name}'
@@ -300,7 +304,7 @@ class Reactions(Cog):
 
     @cooldown(1, data.get_chat_misc_cooldown_sec, user_channel_cooldown)
     @command(name="dance",
-    brief='Танцы', description='Танцы-шманцы')
+             brief='Танцы', description='Танцы-шманцы')
     async def dance(self, ctx):
         if ctx.message.mentions:
             phrase = f'{ctx.author.display_name} флексит с {ctx.message.mentions[0].display_name}'
@@ -310,7 +314,7 @@ class Reactions(Cog):
 
     @cooldown(1, data.get_chat_misc_cooldown_sec, user_channel_cooldown)
     @command(name="cringe",
-    brief='Крынж, уууу', description='Кринж, как будто в тик ток зашел')
+             brief='Крынж, уууу', description='Кринж, как будто в тик ток зашел')
     async def cringe(self, ctx):
         if ctx.message.mentions:
             phrase = f'{ctx.author.display_name} кринжует от {ctx.message.mentions[0].display_name}'
@@ -318,21 +322,21 @@ class Reactions(Cog):
             phrase = f'{ctx.author.display_name} на кринже ваще'
         await ctx.send(embed=self.get_reaction_embed('cringe', phrase))
 
-    #NSFW section
+    # NSFW section
     @is_nsfw()
     @cooldown(1, data.get_chat_misc_cooldown_sec, user_channel_cooldown)
-    @group(name='nsfw', 
-    brief='Кидает рандомную хентай картину, осторожно! Все персонажи достигли 18 лет.', 
-    description='Кидает рандомную хентай картину, осторожно! Все персонажи достигли 18 лет.', pass_context=True)
+    @group(name='nsfw',
+           brief='Кидает рандомную хентай картину, осторожно! Все персонажи достигли 18 лет.',
+           description='Кидает рандомную хентай картину, осторожно! Все персонажи достигли 18 лет.', pass_context=True)
     async def nsfw(self, ctx):
         if ctx.invoked_subcommand is None:
             await choice(list(self.nsfw.commands)).callback(self, ctx)
 
     @cooldown(1, data.get_chat_misc_cooldown_sec, user_channel_cooldown)
     @nsfw.command(name='waifu',
-    brief='Кидает обычную хентай картину', 
-    description='Кидает обычную хентай картину', 
-     pass_context=True)
+                  brief='Кидает обычную хентай картину',
+                  description='Кидает обычную хентай картину',
+                  pass_context=True)
     async def nsfw_waifu(self, ctx):
         embed = self.get_reaction_embed('waifu', '', nsfw=True)
         embed.set_footer(
@@ -341,9 +345,9 @@ class Reactions(Cog):
 
     @cooldown(1, data.get_chat_misc_cooldown_sec, user_channel_cooldown)
     @nsfw.command(name='neko',
-    brief='Кидает хентайную кошкодевочку', 
-    description='Кидает хентай картину, мяу!', 
-     pass_context=True)
+                  brief='Кидает хентайную кошкодевочку',
+                  description='Кидает хентай картину, мяу!',
+                  pass_context=True)
     async def nsfw_neko(self, ctx):
         embed = self.get_reaction_embed('neko', '', nsfw=True)
         embed.set_footer(
@@ -352,25 +356,25 @@ class Reactions(Cog):
 
     @cooldown(1, data.get_chat_misc_cooldown_sec, user_channel_cooldown)
     @nsfw.command(name='trap',
-    brief='Кидает ловушку, caution!', 
-    description='Чел, это мальчик, бля. Сука у неё хуй! Пиздец бле...', 
-     pass_context=True)
+                  brief='Кидает ловушку, caution!',
+                  description='Чел, это мальчик, бля. Сука у неё хуй! Пиздец бле...',
+                  pass_context=True)
     async def nsfw_trap(self, ctx):
         embed = self.get_reaction_embed('trap', '', nsfw=True)
         embed.set_footer(
             text=f"Фу бля, {ctx.author.display_name} любитель трапов походу", icon_url=ctx.author.avatar.url if ctx.author.avatar else None)
-        await ctx.send(embed=embed)    
+        await ctx.send(embed=embed)
 
     @cooldown(1, data.get_chat_misc_cooldown_sec, user_channel_cooldown)
     @nsfw.command(name='blowjob',
-    brief='Пососи сученька', 
-    description='Еще чуть чуть и здесь будут другие категории порно', 
-     pass_context=True)
+                  brief='Пососи сученька',
+                  description='Еще чуть чуть и здесь будут другие категории порно',
+                  pass_context=True)
     async def nsfw_blowjob(self, ctx):
         embed = self.get_reaction_embed('blowjob', '', nsfw=True)
         embed.set_footer(
             text=f"{ctx.author.display_name} любит сосать, курильщик походу", icon_url=ctx.author.avatar.url if ctx.author.avatar else None)
-        await ctx.send(embed=embed)    
+        await ctx.send(embed=embed)
 
 
 def setup(bot):
