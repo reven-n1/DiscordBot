@@ -64,7 +64,6 @@ class Bot_init(BotBase):
         logging.exception(event_method)
 
     async def on_command_error(self, context: Context, exception: CommandError):
-        context.command.reset_cooldown()
         try:
             await context.message.delete()
         except Forbidden as e:
@@ -94,6 +93,7 @@ class Bot_init(BotBase):
             logging.warning(exception)
 
         else:
+            context.command.reset_cooldown(context)
             embed = Embed(title=f"Здарова {context.message.author.name}", description=f"тут такое дело, вот эта команда `{context.message.content}` "
                           "вызвала ошибку. Не спамь пожалуйста, разрабов я уже оповестила, они уже решают проблему:")
             embed.set_footer(text=f'Эта смешная картинка пропадет через {data.get_del_after} секунд')
