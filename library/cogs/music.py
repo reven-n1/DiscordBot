@@ -6,6 +6,7 @@ from library.my_Exceptions.music_exceptions import *
 from library.data.dataLoader import dataHandler
 from nextcord.errors import NotFound
 from nextcord.ext import commands
+from random import shuffle
 from enum import Enum
 import datetime as dt
 import typing as t
@@ -94,6 +95,11 @@ class Queue:
     def empty(self):
         self._queue.clear()
         self.position = 0
+
+    def shuffle(self):
+        upcoming = self.upcoming
+        shuffle(upcoming)
+        self._queue[self.position + 1:] = upcoming
 
 
 class Player(nextlink.Player):
@@ -361,8 +367,7 @@ class PlayerControls(nextcord.ui.View):
 
     @nextcord.ui.button(emoji='⏭️', style=nextcord.ButtonStyle.gray)
     async def next(self, button: nextcord.ui.Button, interaction: nextcord.Interaction):
-        await self.player.stop()
-        await asyncio.sleep(1)
+        await self.player.advance()
         await interaction.response.edit_message(view=self, embed=self.generate_player_embed())
 
     @nextcord.ui.button(emoji='🔄', style=nextcord.ButtonStyle.gray)
@@ -659,7 +664,16 @@ class Music(commands.Cog, nextlink.NextlinkMixin):
         if isinstance(exc, QueueIsEmpty):
             await ctx.send("Ничего нет")
 
-    # player info and commands -----------------------------------------------------------------
+    @guild_only()
+    @commands.command(name="shuffle",
+                      brief='Перемешать очередь',
+                      description='Перемешивает очередь чтобы тебе было не так противно слушать одни и те же плейлисты на повторе')
+    async def shuffle(self, ctx):
+        player = self.get_player(ctx)
+        player.queue.shuffle()
+        await ctx.reply('Перемешала. Теперь как будто слушаешь новый плейлист.')
+
+    # player info and commands
 
     @guild_only()
     @commands.command(name="playing", aliases=["np"],
