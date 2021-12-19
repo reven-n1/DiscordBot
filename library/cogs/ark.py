@@ -183,8 +183,8 @@ class Ark(Cog):
             dict: requestor characters collection
         """
         requestor_collection = sorted(self.__db.extract(
-            f"""SELECT rarity, operator_name, operator_count FROM users_ark_collection
-                WHERE user_id == '{collection_owner_id}'"""))
+            """SELECT rarity, operator_name, operator_count FROM users_ark_collection
+               WHERE user_id == ?""", collection_owner_id))
 
         out_list = {}
         if requestor_collection is None:
@@ -206,8 +206,8 @@ class Ark(Cog):
         Returns:
             list: list that contains quantity and character stars
         """
-        res = sorted(self.__db.extract(f"""SELECT rarity, operator_count, operator_name FROM users_ark_collection
-                                         WHERE user_id == '{author_id}' AND operator_count >= 6 """))
+        res = sorted(self.__db.extract("""SELECT rarity, operator_count, operator_name FROM users_ark_collection
+                                         WHERE user_id == ? AND operator_count >= 6 """, author_id))
 
         barter_list = []
         for rarity, count, _ in res:
@@ -272,23 +272,32 @@ class Ark(Cog):
         Returns:
             list: random character data
         """
-        new_character = self.__return_new_character(self.__get_ark_rarity())
+        new_character = self.__return_new_character(self.__get_ark_rarity(author_id))
 
         self.__add_ark_to_db(author_id, new_character.name, new_character.rarity)
         return new_character
 
-    def __get_ark_rarity(self) -> int:
+    def __get_ark_rarity(self, author_id: int) -> int:
         """
         Returns random character rarity
         """
+
+        if chance_increase := self.__db.get_user_statistic(author_id, "six_miss"):
+            chance_increase = chance_increase[0][0]
+        else:
+            chance_increase = 0
         rarity = randrange(0, 100000)
-        if rarity <= self.__six_star_chance * 1000:
+        if rarity <= (self.__six_star_chance + (chance_increase*2 - 50 if chance_increase >= 50 else 0)) * 1000:
+            self.__db.reset_statistic_for_user(author_id, "six_miss")
             return 6
         if rarity <= self.__five_star_chance * 1000:
+            self.__db.user_statistic_increment(author_id, "six_miss")
             return 5
         if rarity <= self.__four_star_chance * 1000:
+            self.__db.user_statistic_increment(author_id, "six_miss")
             return 4
         if rarity <= self.__three_star_chance * 1000:
+            self.__db.user_statistic_increment(author_id, "six_miss")
             return 3
 
     def __return_new_character(self, rarity: int) -> tuple:
@@ -352,16 +361,12 @@ class Ark(Cog):
             character_name (str): received character name
             character_rarity (int): received chaaracter rarity
         """
-        res = self.__db.extract(f"""SELECT operator_count FROM users_ark_collection WHERE user_id == '{author_id}'
-                                  AND operator_name == '{character_name}'""")
 
-        if res == []:
-            self.__db.alter(
-                "INSERT INTO users_ark_collection (user_id, operator_name, rarity, operator_count)"
-                f" VALUES ('{author_id}', '{character_name}', '{character_rarity}', '1')")
-        else:
-            self.__db.alter(f"""UPDATE users_ark_collection SET operator_count = '{res[0][0] + 1}'
-                              WHERE user_id ='{author_id}'AND operator_name == '{character_name}'""")
+        self.__db.alter("""insert or replace into users_ark_collection(user_id, operator_name, rarity, operator_count)
+                           VALUES (:uid, :opname, :rarity,
+                           ifnull((select operator_count from users_ark_collection where user_id=:uid and operator_name=:opname),0)+1)
+                        """,
+                        uid=author_id, opname=character_name, rarity=character_rarity)
         self.__db.statistic_increment('ark')
 
     def show_character(self, character_name: str, requestor_id: int) -> namedtuple:
@@ -403,8 +408,8 @@ class Ark(Cog):
                 break
         else:
             raise NonExistentCharacter
-        res = self.__db.extract(f"SELECT operator_name FROM users_ark_collection WHERE user_id == '{requestor_id}'"
-                                f"and lower(operator_name)='{character_name}'")
+        res = self.__db.extract("SELECT operator_name FROM users_ark_collection WHERE user_id == ?"
+                                "and lower(operator_name)=?", requestor_id, character_name)
 
         if not res:
             raise NonOwnedCharacter

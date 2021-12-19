@@ -177,7 +177,7 @@ class Default(Cog):
         embed.set_thumbnail(
             url="https://aceship.github.io/AN-EN-Tags/img/factions/logo_rhodes.png")
         embed.set_image(
-            url="https://aceship.github.io/AN-EN-Tags/img/characters/char_002_amiya_epoque%234.png")
+            url="https://aceship.github.io/AN-EN-Tags/img/characters/char_102_texas_2.png")
         embed.set_footer(
             text=f"Requested by {ctx.message.author.display_name}")
         await ctx.send(embed=embed, delete_after=self.options.get_chat_misc_cooldown_sec)
@@ -219,7 +219,7 @@ class Default(Cog):
     def get_stat_users(self, parameter, top=5):
         ger_top = namedtuple('stat_top', ['user_id', 'count'])
         return [ger_top._make(rec) for rec in
-                self.__db.extract(f"select user_id, count from users_statistic_counter where parameter_name='{parameter}' order by count desc limit {top}")]
+                self.__db.get_user_statistics(parameter, top)]
 
     @property
     async def server_delete_quantity(self):

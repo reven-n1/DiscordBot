@@ -11,30 +11,34 @@ class Database(object):
 
     def __create_tables(self) -> None:
         self.__cursor.execute("""
-        CREATE TABLE IF NOT EXISTS 
+        CREATE TABLE IF NOT EXISTS
         users_ark_collection(user_id TEXT,
-                            operator_name TEXT, 
-                            rarity INT, 
-                            operator_count INT)
+                            operator_name TEXT,
+                            rarity INT,
+                            operator_count INT,
+                            PRIMARY KEY (user_id, operator_name))
+                            """)
+
+        self.__cursor.execute("""
+        CREATE TABLE IF NOT EXISTS
+        statistic_parameters(id INTEGER PRIMARY KEY AUTOINCREMENT,
+                            name TEXT UNIQUE)
                             """)
 
         self.__cursor.execute("""
         CREATE TABLE IF NOT EXISTS
         users_statistic_counter(user_id TEXT,
-                            parameter_name TEXT,
-                            count INTEGERS,
-                            PRIMARY KEY (user_id, parameter_name))
+                            parameter_id INTEGER,
+                            count INTEGER,
+                            PRIMARY KEY (user_id, parameter_id),
+                            FOREIGN KEY(parameter_id) REFERENCES statistic_parameters(id)
+                            )
                             """)
-        # self.__cursor.execute("""
-        # CREATE TABLE IF NOT EXISTS 
-        # users_hit_counter(user_id TEXT PRIMARY KEY,
-        #                    hit_count INTEGERS) 
-        #                     """)
-        # self.__cursor.execute("""
-        # CREATE TABLE IF NOT EXISTS 
-        # users_ger_counter(user_id TEXT PRIMARY KEY,
-        #                    ger_count INTEGERS) 
-        #                     """)
+
+        self.__cursor.execute("""
+        CREATE INDEX IF NOT EXISTS idx_user_statistic_parameter
+        ON users_statistic_counter (parameter_id);
+        """)
 
         self.__cursor.execute("""
         CREATE TABLE IF NOT EXISTS
@@ -43,23 +47,51 @@ class Database(object):
                             """)
         self.__db_connection.commit()
 
-    def alter(self, request: str) -> None:
-        self.__cursor.execute(request)
+    def alter(self, request: str, *args, **kwargs) -> int:
+        inserted_id = self.__cursor.execute(request, args if args else kwargs).lastrowid
         self.__commit()
+        return inserted_id
 
-    def extract(self, request: str) -> list:
-        self.__cursor.execute(request)
+    def extract(self, request: str, *args, **kwargs) -> list:
+        self.__cursor.execute(request, args if args else kwargs)
         return self.__cursor.fetchall()
 
     def statistic_increment(self, parameter_name: str):
-        self.alter(f"""insert or replace into statistic(parameter_name, value)
-        values ('{parameter_name}', ifnull((select value from statistic where parameter_name='{parameter_name}'),0)+1)
-        """)
+        self.alter("""insert or replace into statistic(parameter_name, value)
+        values (?, ifnull((select value from statistic where parameter_name=?),0)+1)
+        """, parameter_name, parameter_name)
+
+    def get_parameter_id(self, parameter_name: str) -> int:
+        id = self.extract("select id from statistic_parameters where name=?", parameter_name)
+        if not id:
+            id = self.alter("INSERT OR IGNORE INTO statistic_parameters(name) VALUES(?)", parameter_name)
+        else:
+            id = id[0][0]
+        return id
 
     def user_statistic_increment(self, user_id: int, parameter_name: str):
-        self.alter(f"""insert or replace into users_statistic_counter(user_id, parameter_name, count)
-        values ({user_id},'{parameter_name}', ifnull((select count from users_statistic_counter where parameter_name='{parameter_name}' and user_id='{user_id}'),0)+1)
+        id = self.get_parameter_id(parameter_name)
+        self.alter(f"""insert or replace into users_statistic_counter(user_id, parameter_id, count)
+        values ({user_id},'{id}', ifnull((select count from users_statistic_counter where parameter_id='{id}' and user_id='{user_id}'),0)+1)
         """)
+
+    def get_user_statistics(self, parameter_name: str, limit=5):
+        return self.extract("""select user_id, count from users_statistic_counter stats
+                    join statistic_parameters params on params.id=stats.parameter_id
+                    where params.name=? order by count desc limit ?""", parameter_name, limit)
+
+    def get_user_statistic(self, user_id: int, parameter_name: str):
+        return self.extract("""select count from users_statistic_counter stats
+                    join statistic_parameters params on params.id=stats.parameter_id
+                    where user_id=? and params.name=?""", user_id, parameter_name)
+
+    def reset_statistic_for_user(self, user_id: int, parameter_name: str):
+        id = self.get_parameter_id(parameter_name)
+        self.alter("update users_statistic_counter set count=0 where user_id=? and parameter_id=?", user_id, id)
+
+    @property
+    def user_statistic_types(self) -> list[str]:
+        return [str(x[0]) for x in self.extract("select name from statistic_parameters")]
 
     def __commit(self) -> None:
         self.__db_connection.commit()
