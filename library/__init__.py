@@ -1,5 +1,7 @@
+from io import BytesIO
 from nextcord.errors import Forbidden
-from nextcord.ext.commands.errors import CommandOnCooldown, MissingPermissions, \
+from nextcord.ext.commands.context import Context
+from nextcord.ext.commands.errors import CommandError, CommandOnCooldown, MissingPermissions, \
     NSFWChannelRequired, NoPrivateMessage
 from nextcord import Activity, ActivityType, Game, Streaming, Intents
 from nextcord.ext.commands import Bot as BotBase, CommandNotFound
@@ -13,6 +15,7 @@ from nextcord.ext import tasks
 from random import choice
 from math import ceil
 import feedparser
+import requests
 import logging
 
 logging.basicConfig(format='%(asctime)s|%(levelname)s|file:%(module)s.py func:%(funcName)s:%(lineno)d: %(message)s', level=logging.INFO)
@@ -60,12 +63,12 @@ class Bot_init(BotBase):
     async def on_error(self, event_method, *args, **kwargs):
         logging.exception(event_method)
 
-    async def on_command_error(self, context, exception):
+    async def on_command_error(self, context: Context, exception: CommandError):
+        context.command.reset_cooldown()
         try:
             await context.message.delete()
         except Forbidden as e:
             logging.warning(e)
-
         if isinstance(exception, CommandOnCooldown):
             cooldown_time = timedelta(seconds=ceil(exception.retry_after))
             if any(pfr in context.message.content for pfr in ["!ger", "!пук"]):
@@ -131,10 +134,18 @@ def user_channel_cooldown(msg):
     return hash(str(channel_id)+str(user_id))
 
 
-@tasks.loop(minutes=1.0)
+@tasks.loop(minutes=5.0)
 async def status_setter():
     try:
-        feed = feedparser.parse('https://myanimelist.net/rss.php?type=rwe&u=wladbelsky')
+        resp = requests.get('https://myanimelist.net/rss.php?type=rwe&u=wladbelsky', timeout=60.0)
+    except requests.ReadTimeout:
+        logging.warn("Timeout when reading MAL RSS")
+        return
+
+    content = BytesIO(resp.content)
+
+    try:
+        feed = feedparser.parse(content)
         await bot.change_presence(activity=Activity(type=ActivityType.watching, name=feed['entries'][0]['title']))
-    except IndexError as ie:
-        logging.exception(ie)
+    except IndexError:
+        logging.warn('MAL RSS response invalid')
