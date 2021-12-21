@@ -1,6 +1,7 @@
 # Arknights Discord Bot(Texass)
 
 [![CodeFactor](https://www.codefactor.io/repository/github/reven-n1/discordbot/badge/main)](https://www.codefactor.io/repository/github/reven-n1/discordbot/overview/main)
+
 [Invite link](https://discord.com/oauth2/authorize?client_id=885800080169398292&scope=bot&permissions=3401792)
 
 ## Features
