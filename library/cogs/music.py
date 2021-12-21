@@ -30,10 +30,10 @@ class RepeatMode(Enum):
 
 
 class Queue:
-    def __init__(self):
-        self._queue: list(nextlink.Track) = []
-        self.position = 0
-        self.repeat_mode = RepeatMode.NONE
+    _queue = []  #TODO type annotation
+    position: int = 0
+    repeat_mode: RepeatMode = RepeatMode.NONE
+    _user_tracks = {}  #TODO type annotation
 
     @property
     def is_empty(self):
@@ -65,7 +65,9 @@ class Queue:
     def length(self):
         return len(self._queue)
 
-    def add(self, *args):
+    def add(self, user_id: int,  *args):
+        for track in args:
+            self._user_tracks[track] = user_id
         self._queue.extend(args)
 
     def get_next_track(self) -> nextlink.Track:
@@ -75,11 +77,14 @@ class Queue:
         self.position += 1
 
         if self.position < 0:
+            self.position = 0
             return None
         if self.position > len(self._queue) - 1:
             if self.repeat_mode == RepeatMode.ALL:
                 self.position = 0
             else:
+                if self.position > len(self._queue):
+                    self.position -= 1
                 return None
 
         return self._queue[self.position]
@@ -92,14 +97,23 @@ class Queue:
         elif mode == "all":
             self.repeat_mode = RepeatMode.ALL
 
-    def empty(self):
+    def clear(self):
         self._queue.clear()
+        self._user_tracks.clear()
         self.position = 0
 
     def shuffle(self):
         upcoming = self.upcoming
         shuffle(upcoming)
         self._queue[self.position + 1:] = upcoming
+
+    def get_track_owner(self, track: nextlink.Track = None):
+        if track:
+            return self._user_tracks[track]
+        elif self.current_track:
+            return self._user_tracks[self.current_track]
+        else:
+            return False
 
 
 class Player(nextlink.Player):
@@ -110,7 +124,7 @@ class Player(nextlink.Player):
         self.selfDestructor = Player.SelfDestruct(timeout, self)
 
     class SelfDestruct:
-        parent: nextlink.Player = None
+        parent = None
         _task: asyncio.Task = None
 
         def __init__(self, timeout: int, parent, start=False):
@@ -129,7 +143,7 @@ class Player(nextlink.Player):
                 if self.parent.is_playing:
                     break
             if not self.parent.is_playing:
-                await self.parent.disconnect()
+                await self.parent.teardown()
 
     async def connect(self, ctx, channel=None):
         if self.is_connected:
@@ -144,30 +158,31 @@ class Player(nextlink.Player):
 
     async def teardown(self):
         try:
+            self.queue.clear()
             await self.destroy()
         except KeyError:
             pass
 
-    async def add_tracks(self, ctx, tracks):
+    async def add_tracks(self, ctx: Context, tracks):
         if not tracks:
             raise NoTracksFound
 
         if isinstance(tracks, nextlink.TrackPlaylist):
-            self.queue.add(*tracks.tracks)
+            self.queue.add(ctx.author.id, *tracks.tracks)
         elif isinstance(tracks, nextlink.Track):
-            self.queue.add(tracks)
+            self.queue.add(ctx.author.id, tracks)
         elif len(tracks) == 1:
-            self.queue.add(tracks[0])
+            self.queue.add(ctx.author.id, tracks[0])
             await ctx.reply(f"Добавила {tracks[0].title} в очередь, сладенький.")
         else:
             if (track := await self.choose_track(ctx, tracks)) is not None:
-                self.queue.add(track)
+                self.queue.add(ctx.author.id, track)
                 await ctx.reply(f"Добавила {track.title} в очередь, сладенький.")
 
         if not self.is_playing and not self.queue.is_empty:
             await self.start_playback()
 
-    async def choose_track(self, ctx, tracks):
+    async def choose_track(self, ctx: Context, tracks: list):
         embed = nextcord.Embed(
             title="Выбери песню",
             description=(
@@ -189,7 +204,7 @@ class Player(nextlink.Player):
         await msg.delete()
         if choice >= 0:
             return tracks[choice]
-        await ctx.delete()
+        await ctx.message.delete()
 
     async def start_playback(self):
         await self.play(self.queue.current_track)
@@ -199,9 +214,9 @@ class Player(nextlink.Player):
             if (track := self.queue.get_next_track()):
                 await self.play(track)
             else:
-                self.selfDestructor.start()
+                await self.stop()
         except QueueIsEmpty:
-            pass
+            await self.stop()
 
     async def repeat_track(self):
         await self.play(self.queue.current_track)
@@ -210,8 +225,10 @@ class Player(nextlink.Player):
         self.selfDestructor.start()
         return await super().stop()
 
-    async def play(self, track, *, replace: bool = True, start: int = 0, end: int = 0):
-        return await super().play(track, replace=replace, start=start, end=end)
+    async def disconnect(self, *, force: bool = False) -> None:
+        self.queue.clear()
+        return await super().disconnect(force=force)
+
 
     class SongSelector(nextcord.ui.View):
         class CallBackButton(nextcord.ui.Button):
@@ -339,10 +356,15 @@ class PlayerControls(nextcord.ui.View):
         if not self.player.queue.history:
             await interaction.response.send_message('Это первый трек', ephemeral=True)
             return
-
+        if not interaction.user.guild_permissions.administrator and not self.player.queue.get_track_owner() or interaction.user.id  == interaction.user.id:
+            await interaction.response.send_message('Нельзя пропускать чужие треки!', ephemeral=True)
+            return
         self.player.queue.position -= 2
-        await self.player.stop()
-        await asyncio.sleep(1)
+        if self.player.is_playing:
+            await self.player.stop()
+        else:
+            await self.player.advance()
+        await asyncio.sleep(0.5)
         await interaction.response.edit_message(view=self, embed=self.generate_player_embed())
 
     @nextcord.ui.button(emoji='⏸️', style=nextcord.ButtonStyle.gray)
@@ -360,14 +382,24 @@ class PlayerControls(nextcord.ui.View):
 
     @nextcord.ui.button(emoji='⏹️', style=nextcord.ButtonStyle.gray)
     async def stop_button(self, button: nextcord.ui.Button, interaction: nextcord.Interaction):
-        self.player.queue.empty()
+        if not interaction.user.guild_permissions.administrator and not self.player.queue.get_track_owner() or interaction.user.id  == interaction.user.id:
+            await interaction.response.send_message('Нельзя пропускать чужие треки!', ephemeral=True)
+            return
+        self.player.queue.clear()
         await self.player.stop()
-        await asyncio.sleep(1)
+        await asyncio.sleep(0.5)
         await interaction.response.edit_message(view=self, embed=self.generate_player_embed())
 
     @nextcord.ui.button(emoji='⏭️', style=nextcord.ButtonStyle.gray)
     async def next(self, button: nextcord.ui.Button, interaction: nextcord.Interaction):
-        await self.player.advance()
+        if not interaction.user.guild_permissions.administrator and not self.player.queue.get_track_owner() or interaction.user.id  == interaction.user.id:
+            await interaction.response.send_message('Нельзя пропускать чужие треки!', ephemeral=True)
+            return
+        if self.player.is_playing:
+            await self.player.stop()
+        else:
+            await self.player.advance()
+        await asyncio.sleep(0.5)
         await interaction.response.edit_message(view=self, embed=self.generate_player_embed())
 
     @nextcord.ui.button(emoji='🔄', style=nextcord.ButtonStyle.gray)
@@ -498,7 +530,6 @@ class Music(commands.Cog, nextlink.NextlinkMixin):
         if query is None:
             if player.queue.is_empty:
                 raise QueueIsEmpty
-
             await player.set_pause(False)
             await ctx.send("Продолжаем.")
 
@@ -569,7 +600,10 @@ class Music(commands.Cog, nextlink.NextlinkMixin):
                       brief='Остановить проигрывание', description='Остановить проигрывание и запустить выигрывание')
     async def stop_command(self, ctx):
         player = self.get_player(ctx)
-        player.queue.empty()
+        if not ctx.author.guild_permissions.administrator and not player.queue.get_track_owner() or ctx.author.id == ctx.author.id:
+            await ctx.reply('Нельзя останавливать чужие треки, бака!')
+            return
+        player.queue.clear()
         await player.stop()
         await ctx.send("Остановлено")
 
@@ -578,7 +612,9 @@ class Music(commands.Cog, nextlink.NextlinkMixin):
                       brief='Запустить следующий трек', description='Запустить следующий трек')
     async def next_command(self, ctx):
         player = self.get_player(ctx)
-
+        if not ctx.author.guild_permissions.administrator and not player.queue.get_track_owner() or ctx.author.id == ctx.author.id:
+            await ctx.reply('Нельзя пропускать чужие треки, бака!')
+            return
         await player.stop()
         if not player.queue.upcoming:
             await ctx.send("Ну вот и все")
@@ -591,11 +627,13 @@ class Music(commands.Cog, nextlink.NextlinkMixin):
             await ctx.send("Очередь и так пустая, куда дальше?")
 
     @guild_only()
-    @commands.command(name="previous",
+    @commands.command(name="previous", aliases=['prev'],
                       brief='Играть предыдущий трек', description='Играть предыдущий трек')
     async def previous_command(self, ctx):
         player = self.get_player(ctx)
-
+        if not ctx.author.guild_permissions.administrator and not player.queue.get_track_owner() or ctx.author.id == ctx.author.id:
+            await ctx.reply('Нельзя пропускать чужие треки, бака!')
+            return
         if not player.queue.history:
             raise NoPreviousTracks
 
@@ -705,7 +743,9 @@ class Music(commands.Cog, nextlink.NextlinkMixin):
                       brief='Перейти сразу к треку под номером N', description='Перейти сразу к треку под номером N. N указывать через пробел')
     async def skipto_command(self, ctx, index: int):
         player = self.get_player(ctx)
-
+        if not ctx.author.guild_permissions.administrator and not player.queue.get_track_owner() or ctx.author.id == ctx.author.id:
+            await ctx.reply('Нельзя пропускать чужие треки, бака!')
+            return
         if player.queue.is_empty:
             raise QueueIsEmpty
 
