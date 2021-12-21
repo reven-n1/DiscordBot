@@ -113,7 +113,7 @@ class Ark(Cog):
         embed, selector = self.ark_embed_and_view(character_data, ctx.message)
         selector.message = await ctx.message.channel.send(embed=embed, view=selector)
 
-    def ark_embed_and_view(self, character_data, message):
+    def ark_embed_and_view(self, character_data: list, message: nextcord.Message):
         """
         Generates embed form recieved ark data
 
@@ -133,13 +133,15 @@ class Ark(Cog):
         embed.set_thumbnail(url=character_data.profession)
         embed.set_image(url=f"https://aceship.github.io/AN-EN-Tags/img/characters/{character_data.character_id}_1.png")
         embed.set_footer(text=f"Requested by {message.author.display_name}")
-        return embed, Ark.SkinSelector(self.get_skin_list(character_data.character_id), data.get_chat_misc_cooldown_sec)
+        return embed, Ark.SkinSelector(self.get_skin_list(character_data.character_id), message.author.id, data.get_chat_misc_cooldown_sec)
 
     class SkinSelector(nextcord.ui.View):
         message: nextcord.Message
+        user_id: int
 
-        def __init__(self, skins: list, timeout=180):
+        def __init__(self, skins: list, user_id: int, timeout=180):
             super().__init__(timeout=timeout)
+            self.user_id = user_id
             self.skin_select.options = []
             for skin in skins:
                 self.skin_select.options.append(nextcord.SelectOption(label=skin.name, description=skin.desc, value=skin.id))
@@ -152,8 +154,10 @@ class Ark(Cog):
             return await super().on_timeout()
 
         @nextcord.ui.select(placeholder='Choose skin', min_values=1, max_values=1, options=[])
-        async def skin_select(self, select: nextcord.ui.Select, interaction: nextcord.Interaction):
-            assert interaction.message.embeds
+        async def skin_select(self, _: nextcord.ui.Select, interaction: nextcord.Interaction):
+            if interaction.user.id != self.user_id:
+                await interaction.response.send_message('Не трожь. Не твоя девочка, вот ты и бесишся!', ephemeral=True)
+                return
             new_image_url = interaction.data.get('values', [''])[0].replace('#', '%23')
             new_embed = interaction.message.embeds[0].set_image(
                 url=f"https://aceship.github.io/AN-EN-Tags/img/characters/{new_image_url}.png")
