@@ -72,8 +72,8 @@ class Database(object):
     def user_statistic_increment(self, user_id: int, parameter_name: str):
         id = self.get_parameter_id(parameter_name)
         self.alter(f"""insert or replace into users_statistic_counter(user_id, parameter_id, count)
-        values ({user_id},'{id}', ifnull((select count from users_statistic_counter where parameter_id='{id}' and user_id='{user_id}'),0)+1)
-        """)
+        values (:uid,:pid, ifnull((select count from users_statistic_counter where parameter_id=:pid and user_id=:uid),0)+1)
+        """, uid=user_id, pid=id)
 
     def get_user_statistics(self, parameter_name: str, limit=5):
         return self.extract("""select user_id, count from users_statistic_counter stats
