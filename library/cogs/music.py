@@ -356,7 +356,7 @@ class PlayerControls(nextcord.ui.View):
         if not self.player.queue.history:
             await interaction.response.send_message('Это первый трек', ephemeral=True)
             return
-        if not interaction.user.guild_permissions.administrator and not self.player.queue.get_track_owner() or interaction.user.id  == interaction.user.id:
+        if not interaction.user.guild_permissions.administrator and not (self.player.queue.get_track_owner() or interaction.user.id)  == interaction.user.id:
             await interaction.response.send_message('Нельзя пропускать чужие треки!', ephemeral=True)
             return
         self.player.queue.position -= 2
@@ -382,7 +382,7 @@ class PlayerControls(nextcord.ui.View):
 
     @nextcord.ui.button(emoji='⏹️', style=nextcord.ButtonStyle.gray)
     async def stop_button(self, button: nextcord.ui.Button, interaction: nextcord.Interaction):
-        if not interaction.user.guild_permissions.administrator and not self.player.queue.get_track_owner() or interaction.user.id  == interaction.user.id:
+        if not interaction.user.guild_permissions.administrator and not (self.player.queue.get_track_owner() or interaction.user.id) == interaction.user.id:
             await interaction.response.send_message('Нельзя пропускать чужие треки!', ephemeral=True)
             return
         self.player.queue.clear()
@@ -392,7 +392,7 @@ class PlayerControls(nextcord.ui.View):
 
     @nextcord.ui.button(emoji='⏭️', style=nextcord.ButtonStyle.gray)
     async def next(self, button: nextcord.ui.Button, interaction: nextcord.Interaction):
-        if not interaction.user.guild_permissions.administrator and not self.player.queue.get_track_owner() or interaction.user.id  == interaction.user.id:
+        if not interaction.user.guild_permissions.administrator and not (self.player.queue.get_track_owner() or interaction.user.id) == interaction.user.id:
             await interaction.response.send_message('Нельзя пропускать чужие треки!', ephemeral=True)
             return
         if self.player.is_playing:
@@ -600,7 +600,7 @@ class Music(commands.Cog, nextlink.NextlinkMixin):
                       brief='Остановить проигрывание', description='Остановить проигрывание и запустить выигрывание')
     async def stop_command(self, ctx):
         player = self.get_player(ctx)
-        if not ctx.author.guild_permissions.administrator and not player.queue.get_track_owner() or ctx.author.id == ctx.author.id:
+        if not ctx.author.guild_permissions.administrator and not (player.queue.get_track_owner() or ctx.author.id) == ctx.author.id:
             await ctx.reply('Нельзя останавливать чужие треки, бака!')
             return
         player.queue.clear()
@@ -612,7 +612,7 @@ class Music(commands.Cog, nextlink.NextlinkMixin):
                       brief='Запустить следующий трек', description='Запустить следующий трек')
     async def next_command(self, ctx):
         player = self.get_player(ctx)
-        if not ctx.author.guild_permissions.administrator and not player.queue.get_track_owner() or ctx.author.id == ctx.author.id:
+        if not ctx.author.guild_permissions.administrator and not (player.queue.get_track_owner() or ctx.author.id) == ctx.author.id:
             await ctx.reply('Нельзя пропускать чужие треки, бака!')
             return
         await player.stop()
@@ -631,7 +631,7 @@ class Music(commands.Cog, nextlink.NextlinkMixin):
                       brief='Играть предыдущий трек', description='Играть предыдущий трек')
     async def previous_command(self, ctx):
         player = self.get_player(ctx)
-        if not ctx.author.guild_permissions.administrator and not player.queue.get_track_owner() or ctx.author.id == ctx.author.id:
+        if not ctx.author.guild_permissions.administrator and not (player.queue.get_track_owner() or ctx.author.id) == ctx.author.id:
             await ctx.reply('Нельзя пропускать чужие треки, бака!')
             return
         if not player.queue.history:
@@ -743,7 +743,7 @@ class Music(commands.Cog, nextlink.NextlinkMixin):
                       brief='Перейти сразу к треку под номером N', description='Перейти сразу к треку под номером N. N указывать через пробел')
     async def skipto_command(self, ctx, index: int):
         player = self.get_player(ctx)
-        if not ctx.author.guild_permissions.administrator and not player.queue.get_track_owner() or ctx.author.id == ctx.author.id:
+        if not ctx.author.guild_permissions.administrator and not (player.queue.get_track_owner() or ctx.author.id) == ctx.author.id:
             await ctx.reply('Нельзя пропускать чужие треки, бака!')
             return
         if player.queue.is_empty:
