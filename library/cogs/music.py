@@ -353,8 +353,12 @@ class PlayerControls(nextcord.ui.View):
 
     @nextcord.ui.button(emoji='⏮️', style=nextcord.ButtonStyle.gray)
     async def prev(self, button: nextcord.ui.Button, interaction: nextcord.Interaction):
-        if not self.player.queue.history:
-            await interaction.response.send_message('Это первый трек', ephemeral=True)
+        try:
+            if not self.player.queue.history:
+                await interaction.response.send_message('Это первый трек', ephemeral=True)
+                return
+        except QueueIsEmpty:
+            await interaction.response.send_message('Очередь пуста', ephemeral=True)
             return
         if not interaction.user.guild_permissions.administrator and not (self.player.queue.get_track_owner() or interaction.user.id)  == interaction.user.id:
             await interaction.response.send_message('Нельзя пропускать чужие треки!', ephemeral=True)
@@ -458,6 +462,9 @@ class Music(commands.Cog, nextlink.NextlinkMixin):
     @nextlink.NextlinkMixin.listener("on_track_end")
     @nextlink.NextlinkMixin.listener("on_track_exception")
     async def on_player_stop(self, node, payload):
+        if hasattr(payload, 'error'):
+            logging.warning(payload.error)
+            return
         if payload.player.queue.repeat_mode == RepeatMode.ONE:
             await payload.player.repeat_track()
         else:
@@ -495,7 +502,6 @@ class Music(commands.Cog, nextlink.NextlinkMixin):
 
     # cog commands -------------------------------------------------------------------------
 
-    @guild_only()
     @commands.command(name="connect", aliases=["join"],
                       brief='Присоединиться к голосовому каналу', description='Присоединиться к голосовому каналу')
     async def connect_command(self, ctx, *, channel: t.Optional[nextcord.VoiceChannel]):
@@ -510,7 +516,6 @@ class Music(commands.Cog, nextlink.NextlinkMixin):
         elif isinstance(exc, NoVoiceChannel):
             await ctx.send("Немогу подключиться к каналу, сорян(")
 
-    @guild_only()
     @commands.command(name="disconnect", aliases=["leave"],
                       brief='Отключиться от голосового канала', description='Отключиться от голосового канала')
     async def disconnect_command(self, ctx):
@@ -518,7 +523,6 @@ class Music(commands.Cog, nextlink.NextlinkMixin):
         await player.teardown()
         await ctx.send("Ну все, пока.")
 
-    @guild_only()
     @commands.command(name="play", aliases=["p"],
                       brief='Поиск музыки', description='Поиск твоей любимой музыки в интернете. Будем вместе слушать ^.^')
     async def play_command(self, ctx, *, query: t.Optional[str]):
@@ -578,7 +582,6 @@ class Music(commands.Cog, nextlink.NextlinkMixin):
         else:
             logging.exception(exc)
 
-    @guild_only()
     @commands.command(name="pause",
                       brief='Поставить на паузу', description='Поставить на паузу')
     async def pause_command(self, ctx):
@@ -595,7 +598,6 @@ class Music(commands.Cog, nextlink.NextlinkMixin):
         if isinstance(exc, PlayerIsAlreadyPaused):
             await ctx.send("И так ничего не играет")
 
-    @guild_only()
     @commands.command(name="stop",
                       brief='Остановить проигрывание', description='Остановить проигрывание и запустить выигрывание')
     async def stop_command(self, ctx):
@@ -607,7 +609,6 @@ class Music(commands.Cog, nextlink.NextlinkMixin):
         await player.stop()
         await ctx.send("Остановлено")
 
-    @guild_only()
     @commands.command(name="next", aliases=["skip"],
                       brief='Запустить следующий трек', description='Запустить следующий трек')
     async def next_command(self, ctx):
@@ -626,7 +627,6 @@ class Music(commands.Cog, nextlink.NextlinkMixin):
         if isinstance(exc, QueueIsEmpty):
             await ctx.send("Очередь и так пустая, куда дальше?")
 
-    @guild_only()
     @commands.command(name="previous", aliases=['prev'],
                       brief='Играть предыдущий трек', description='Играть предыдущий трек')
     async def previous_command(self, ctx):
@@ -648,7 +648,6 @@ class Music(commands.Cog, nextlink.NextlinkMixin):
         elif isinstance(exc, NoPreviousTracks):
             await ctx.send("Это и так первый трек")
 
-    @guild_only()
     @commands.command(name="repeat",
                       brief='Установить режим повтора. Подробнее в расширенной справке',
                       description='Установить режим повтора.\nДоступные режимы: none, 1, all')
@@ -665,7 +664,6 @@ class Music(commands.Cog, nextlink.NextlinkMixin):
         if isinstance(exc, InvalidRepeatMode):
             await ctx.send("Невалидный режим повтора, иди смотри справку")
 
-    @guild_only()
     @commands.command(name="queue", aliases=["q"],
                       brief='Показать очередь', description='Показать очередь')
     async def queue_command(self, ctx, show: t.Optional[int] = 10):
@@ -702,7 +700,6 @@ class Music(commands.Cog, nextlink.NextlinkMixin):
         if isinstance(exc, QueueIsEmpty):
             await ctx.send("Ничего нет")
 
-    @guild_only()
     @commands.command(name="shuffle",
                       brief='Перемешать очередь',
                       description='Перемешивает очередь чтобы тебе было не так противно слушать одни и те же плейлисты на повторе')
@@ -713,7 +710,6 @@ class Music(commands.Cog, nextlink.NextlinkMixin):
 
     # player info and commands
 
-    @guild_only()
     @commands.command(name="playing", aliases=["np"],
                       brief='Показать что сейчас играет', description='Показать что сейчас играет')
     async def playing_command(self, ctx: Context):
@@ -738,7 +734,6 @@ class Music(commands.Cog, nextlink.NextlinkMixin):
         if isinstance(exc, PlayerIsAlreadyPaused):
             await ctx.send("Ничего не играет(")
 
-    @guild_only()
     @commands.command(name="skipto", aliases=["playindex", "pi"],
                       brief='Перейти сразу к треку под номером N', description='Перейти сразу к треку под номером N. N указывать через пробел')
     async def skipto_command(self, ctx, index: int):
@@ -763,7 +758,6 @@ class Music(commands.Cog, nextlink.NextlinkMixin):
         elif isinstance(exc, NoMoreTracks):
             await ctx.send("Указан неверный номер(")
 
-    @guild_only()
     @commands.command(name="restart",
                       brief='Запустить трек заново', description='Запустить трек заново, все хуйня Саня, дайвай по новой!')
     async def restart_command(self, ctx):
