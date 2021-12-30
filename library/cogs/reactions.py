@@ -340,7 +340,7 @@ class Reactions(Cog):
     async def nsfw_waifu(self, ctx):
         embed = self.get_reaction_embed('waifu', '', nsfw=True)
         embed.set_footer(
-            text=f"{ctx.author.display_name} смотрит хентай!", icon_url=ctx.author.avatar.url if ctx.author.avatar else None)
+            text=f"{ctx.author.display_name} смотрит хентай!", icon_url=ctx.author.avatar.url if ctx.author.avatar else '')
         await ctx.send(embed=embed)
 
     @cooldown(1, data.get_chat_misc_cooldown_sec, user_channel_cooldown)
@@ -351,7 +351,7 @@ class Reactions(Cog):
     async def nsfw_neko(self, ctx):
         embed = self.get_reaction_embed('neko', '', nsfw=True)
         embed.set_footer(
-            text=f"{ctx.author.display_name} любитель фурри, ясно понятно", icon_url=ctx.author.avatar.url if ctx.author.avatar else None)
+            text=f"{ctx.author.display_name} любитель фурри, ясно понятно", icon_url=ctx.author.avatar.url if ctx.author.avatar else '')
         await ctx.send(embed=embed)
 
     @cooldown(1, data.get_chat_misc_cooldown_sec, user_channel_cooldown)
@@ -362,7 +362,7 @@ class Reactions(Cog):
     async def nsfw_trap(self, ctx):
         embed = self.get_reaction_embed('trap', '', nsfw=True)
         embed.set_footer(
-            text=f"Фу бля, {ctx.author.display_name} любитель трапов походу", icon_url=ctx.author.avatar.url if ctx.author.avatar else None)
+            text=f"Фу бля, {ctx.author.display_name} любитель трапов походу", icon_url=ctx.author.avatar.url if ctx.author.avatar else '')
         await ctx.send(embed=embed)
 
     @cooldown(1, data.get_chat_misc_cooldown_sec, user_channel_cooldown)
@@ -373,7 +373,7 @@ class Reactions(Cog):
     async def nsfw_blowjob(self, ctx):
         embed = self.get_reaction_embed('blowjob', '', nsfw=True)
         embed.set_footer(
-            text=f"{ctx.author.display_name} любит сосать, курильщик походу", icon_url=ctx.author.avatar.url if ctx.author.avatar else None)
+            text=f"{ctx.author.display_name} любит сосать, курильщик походу", icon_url=ctx.author.avatar.url if ctx.author.avatar else '')
         await ctx.send(embed=embed)
 
 

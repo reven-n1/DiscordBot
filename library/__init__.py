@@ -4,8 +4,7 @@ from nextcord.ext.commands.context import Context
 from nextcord.ext.commands.errors import CommandError, CommandOnCooldown, MissingPermissions, \
     NSFWChannelRequired, NoPrivateMessage
 from nextcord import Activity, ActivityType, Game, Streaming, Intents
-from nextcord.ext.commands import Bot as BotBase, CommandNotFound
-# from discord_slash import SlashCommand, SlashContext
+from nextcord.ext.commands import Bot, CommandNotFound
 from library.data.dataLoader import dataHandler
 from library.data.db.database import Database
 from library.bot_token import token
@@ -21,7 +20,7 @@ import logging
 logging.basicConfig(format='%(asctime)s|%(levelname)s|file:%(module)s.py func:%(funcName)s:%(lineno)d: %(message)s', level=logging.INFO)
 
 
-class Bot_init(BotBase):
+class Bot_init(Bot):
     def __init__(self):
         self.Prefix = "!"
         self.TOKEN = token
@@ -29,10 +28,10 @@ class Bot_init(BotBase):
         super().__init__(command_prefix=self.Prefix,
                          case_insensitive=True,
                          intents=Intents().all(),
+                         help_command=None
                          )
 
     def setup(self):
-        bot.remove_command('help')
         for _ in data.get_cog_list:
             self.load_extension(f"library.cogs.{_}")
         logging.info("setup complete")
@@ -47,18 +46,15 @@ class Bot_init(BotBase):
     async def on_connect(self):
         logging.info(" bot connected")
         logging.info(f" latensy:{round(self.latency*1000, 1)} ms")
+        await super().on_connect()
 
     async def on_ready(self):
         logging.info(" ***bot ready***")
         status_setter.start()
 
-    async def shutdown(self):
-        logging.info(" Closing connection")
-        await super().close()
-
     async def close(self):
         logging.info("Closing on keyboard interrupt...")
-        await self.shutdown()
+        await super().close()
 
     async def on_error(self, event_method, *args, **kwargs):
         logging.exception(event_method)
@@ -78,7 +74,7 @@ class Bot_init(BotBase):
                 await context.send(f"***Ожидайте: {cooldown_time}***", delete_after=data.get_del_after)
 
         elif isinstance(exception, CommandNotFound):
-            await context.send(f"{context.message.content} - ***В последнее время я тебя совсем не понимаю***:crying_cat_face: ", delete_after=data.get_del_after)
+            await context.send(f"{context.message.content} - ***В последнее время я тебя совсем не понимаю*** :crying_cat_face: ", delete_after=data.get_del_after)
 
         elif isinstance(exception, MissingPermissions):
             await context.send(f"{context.message.author} ***- Я же сказала низя!***", delete_after=data.get_del_after)
@@ -119,7 +115,6 @@ class Bot_init(BotBase):
 db = Database()
 bot = Bot_init()
 data = dataHandler()
-# slash = SlashCommand(bot, sync_commands=True)
 
 
 def user_guild_cooldown(msg):
