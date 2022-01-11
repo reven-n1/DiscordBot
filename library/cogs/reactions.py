@@ -3,7 +3,7 @@ from nextcord.ext.commands.core import is_nsfw
 from library import user_channel_cooldown
 from json.decoder import JSONDecodeError
 from nextcord.ext.commands import Cog
-from requests.exceptions import HTTPError, ConnectionError
+from requests.exceptions import HTTPError, ConnectionError, Timeout
 from nextcord import Embed
 from random import choice
 from library import data
@@ -21,9 +21,9 @@ class Reactions(Cog):
 
     def get_reaction_embed(self, category: str, phrase: str, nsfw=False):
         try:
-            response = requests.get(f'https://api.waifu.pics/{"sfw" if not nsfw else "nsfw"}/{category}')
+            response = requests.get(f'https://api.waifu.pics/{"sfw" if not nsfw else "nsfw"}/{category}', timeout=10)
             img_url = response.json().get('url', None)
-        except (JSONDecodeError, HTTPError, ConnectionError) as e:
+        except (JSONDecodeError, HTTPError, ConnectionError, Timeout) as e:
             logging.error(e)
             img_url = None
         if not img_url:
