@@ -1,21 +1,23 @@
 from io import BytesIO
-from nextcord.errors import Forbidden
-from nextcord.ext.commands.context import Context
-from nextcord.ext.commands.errors import CommandError, CommandOnCooldown, MissingPermissions, \
+from discord import ApplicationContext
+from discord.errors import Forbidden
+from discord.ext.commands.context import Context
+from discord.ext.commands.errors import CommandError, CommandOnCooldown, MissingPermissions, \
     NSFWChannelRequired, NoPrivateMessage
-from nextcord import Activity, ActivityType, Game, Streaming, Intents
-from nextcord.ext.commands import Bot, CommandNotFound
+from discord import Activity, ActivityType, Game, Streaming, Intents
+from discord.ext.commands import Bot, CommandNotFound
 from library.data.dataLoader import dataHandler
 from library.data.db.database import Database
 from library.bot_token import token
-from nextcord.embeds import Embed
+from discord.embeds import Embed
 from datetime import timedelta
-from nextcord.ext import tasks
+from discord.ext import tasks
 from random import choice
 from math import ceil
 import feedparser
 import requests
 import logging
+
 
 logging.basicConfig(format='%(asctime)s|%(levelname)s|file:%(module)s.py func:%(funcName)s:%(lineno)d: %(message)s', level=logging.INFO)
 
@@ -59,40 +61,35 @@ class Bot_init(Bot):
     async def on_error(self, event_method, *args, **kwargs):
         logging.exception(event_method)
 
-    async def on_command_error(self, context: Context, exception: CommandError):
-        try:
-            await context.message.delete()
-        except Forbidden as e:
-            logging.warning(e)
+    async def get_exception_embed(self, ctx, exception: Exception) -> Embed:
         if isinstance(exception, CommandOnCooldown):
             cooldown_time = timedelta(seconds=ceil(exception.retry_after))
-            if any(pfr in context.message.content for pfr in ["!ger", "!пук"]):
-                await context.send(f"***Заряжаем жепу, осталось: {cooldown_time}***", delete_after=data.get_del_after)
-            elif any(pfr in context.message.content for pfr in ["!ark", "!арк"]):
-                await context.send(f"***Копим орундум, осталось: {cooldown_time}***", delete_after=data.get_del_after)
+            if any(pfr in ctx.command.name for pfr in ["ger", "пук"]):
+                return Embed(title=f"***Заряжаем жепу, осталось: {cooldown_time}***")
+            elif any(pfr in ctx.command.name for pfr in ["ark", "арк"]):
+                return Embed(title=f"***Копим орундум, осталось: {cooldown_time}***")
             else:
-                await context.send(f"***Ожидайте: {cooldown_time}***", delete_after=data.get_del_after)
+                return Embed(title=f"***Ожидайте: {cooldown_time}***")
 
         elif isinstance(exception, CommandNotFound):
-            await context.send(f"{context.message.content} - ***В последнее время я тебя совсем не понимаю*** :crying_cat_face: ", delete_after=data.get_del_after)
+            return Embed(title=f"{ctx.message.content} - ***В последнее время я тебя совсем не понимаю*** :crying_cat_face: ")
 
         elif isinstance(exception, MissingPermissions):
-            await context.send(f"{context.message.author} ***- Я же сказала низя!***", delete_after=data.get_del_after)
+            return Embed(title=f"{ctx.author} ***- Я же сказала низя!***")
 
         elif isinstance(exception, NSFWChannelRequired):
-            await context.send(f"{context.message.author} ***- Доступно только в NSFW ***", delete_after=data.get_del_after)
+            return Embed(title=f"{ctx.author} ***- Доступно только в NSFW ***")
 
         elif isinstance(exception, NoPrivateMessage):
-            await context.send(f"{context.message.author} ***- Доступно только на сервере ***", delete_after=data.get_del_after)
+            return Embed(title=f"{ctx.author} ***- Доступно только на сервере ***")
 
-        elif context.command.has_error_handler() or context.cog.has_error_handler():
+        elif ctx.command.has_error_handler() or ctx.cog.has_error_handler():
             logging.warning(exception)
 
         else:
-            context.command.reset_cooldown(context)
-            embed = Embed(title=f"Здарова {context.message.author.name}", description=f"тут такое дело, вот эта команда `{context.message.content}` "
+            ctx.command.reset_cooldown(ctx)
+            embed = Embed(title=f"Здарова {ctx.author.name}", description=f"тут такое дело, вот эта команда `{ctx.command.name}` "
                           "вызвала ошибку. Не спамь пожалуйста, разрабов я уже оповестила, они уже решают проблему:")
-            embed.set_footer(text=f'Эта смешная картинка пропадет через {data.get_del_after} секунд')
             embed.set_image(url=choice([
                 'https://c.tenor.com/tZ2Xd8LqAnMAAAAd/typing-fast.gif',
                 'https://c.tenor.com/TbTe1Nc6j34AAAAC/hacker-hackerman.gif',
@@ -102,14 +99,39 @@ class Bot_init(Bot):
                 'https://c.tenor.com/9ItR8nSuxE0AAAAC/thumbs-up-computer.gif',
                 'https://c.tenor.com/fRnYF76D4jUAAAAd/hack-hacker.gif'
             ]))
-            await context.message.channel.send(embed=embed, delete_after=data.get_del_after)
+
             super_progers = [319151213679476737, 355344401964204033]
             for proger in super_progers:
-                await self.get_user(proger).send(f"Йо, разраб, иди фикси:\nМне какой-то черт (**{context.message.author.display_name}**) "
-                                                 f"написал вот такую херню: `{context.message.content}` не ну ты прикинь и вот что "
+                await self.get_user(proger).send(f"Йо, разраб, иди фикси:\nМне какой-то черт (**{ctx.author.display_name}**) "
+                                                 f"написал вот такую херню: `{ctx.message.content if ctx.message else ctx.command.name}` не ну ты прикинь и вот что "
                                                  f"из этого получилось: `{exception}`\nЯ в шоке с этих даунов. Они опять сломали меня. "
                                                  "Крч жду фикс в ближайшие пару часов иначе я знаю где ты живешь.")
             logging.exception(exception)
+            return embed
+
+    async def on_command_error(self, context: Context, exception: CommandError):
+        try:
+            await context.message.delete()
+        except Forbidden as e:
+            logging.warning(e)
+        content = await self.get_exception_embed(context, exception)
+        if isinstance(content, str):
+            await context.send(content, delete_after=data.get_del_after)
+        elif isinstance(content, Embed):
+            await context.send(embed=content, delete_after=data.get_del_after)
+
+    async def on_application_command_error(self, ctx: ApplicationContext, error):
+        content = await self.get_exception_embed(ctx, error.original if hasattr(error, 'original') and error.original else error)
+        if not ctx.interaction.response.is_done():
+            await ctx.interaction.response.send_message(embed=content, ephemeral=True)
+        else:
+            await ctx.interaction.followup.send(embed=content, ephemeral=True)
+
+    async def process_commands(self, message) -> None:
+        res = await super().process_commands(message)
+        if message.content.startswith('!'):
+            await message.reply('Ахтунг, все эти вот ваши комманды обычные устарели, пользуйтесь слеш-командами (это когда ты пишиешь / и дискорд сам тебе подсказывает!), скоро обычные перестанут работать, ня!')
+        return res
 
 
 db = Database()

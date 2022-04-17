@@ -1,6 +1,6 @@
-from nextcord.ext.commands import command, cooldown
-from nextcord.ext.commands import Cog
-from nextcord.ext.commands.cooldowns import BucketType
+from discord.ext.commands import command, cooldown
+from discord.ext.commands import Cog
+from discord.ext.commands.cooldowns import BucketType
 import nextcord
 
 
@@ -13,7 +13,7 @@ class Commands(Cog):
         """
         Test command
         """
-        await ctx.send(nextcord.utils.get(ctx.guild.channels ,name="основной").id)
+        await ctx.send(discord.utils.get(ctx.guild.channels ,name="основной").id)
 
 
 def setup(bot):

@@ -1,4 +1,4 @@
-from nextcord.ext.commands import Cog
+from discord.ext.commands import Cog
 
 
 class Welcome(Cog):

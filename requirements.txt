@@ -1,12 +1,11 @@
 feedparser
-aiohttp==3.7.4
+aiohttp
 PyNaCl
 wheel
 aiodns
 Brotli
 cchardet
 orjson
-nextcord[voice]
-https://github.com/wladbelsky/Nextlink/archive/refs/heads/master.zip
 requests
-spotipy
+https://github.com/Pycord-Development/pycord/archive/refs/heads/master.zip #py-cord[voice]
+https://github.com/PythonistaGuild/Wavelink/archive/refs/heads/main.zip #wavelink

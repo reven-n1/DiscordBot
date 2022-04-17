@@ -1,10 +1,11 @@
-from nextcord.ext.commands.core import is_nsfw, guild_only
-from nextcord.ext.commands import command, cooldown
+from discord.ext.commands.core import is_nsfw, guild_only
+from discord.ext.commands import command, cooldown
 from library import data, user_guild_cooldown
-from nextcord.ext.commands import Cog
+from discord.ext.commands import Cog
 from random import randint, choice
 from library import db, bot
-import nextcord
+from discord import Interaction, slash_command
+import discord
 
 
 class Ger(Cog):
@@ -25,7 +26,7 @@ class Ger(Cog):
     @cooldown(1, data.get_ger_cooldown, user_guild_cooldown)
     @command(name="ger", aliases=["пук"],
              brief='Пукает в рандома, или в себя)', description='Пукает в рандома, или в себя)')
-    async def ger(self, ctx):
+    async def ger_command(self, ctx):
         """
         This funny function farts on random server member or whoever called it
         """
@@ -35,9 +36,21 @@ class Ger(Cog):
         ger_message = self.ger_function(ctx.message.author, random_user)
         await ctx.send(ger_message)
 
+    @is_nsfw()
+    @guild_only()
+    @cooldown(1, data.get_ger_cooldown, user_guild_cooldown)
+    @slash_command(name="ger",
+                   description='Пукает в рандома, или в себя)')
+    async def ger_slash(self, ctx: Interaction):
+        random_user = choice(ctx.guild.members)
+        while random_user == ctx.user:
+            random_user = choice(ctx.guild.members)
+        ger_message = self.ger_function(ctx.user, random_user)
+        await ctx.response.send_message(ger_message)
+
     # functions ----------------------------------------------------------------------------------------------
 
-    def ger_function(self, message_author: nextcord.member.Member, random_member: nextcord.member.Member) -> str:
+    def ger_function(self, message_author: discord.member.Member, random_member: discord.member.Member) -> str:
         """
         Farts on random server member or whoever called it
 

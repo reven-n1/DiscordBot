@@ -1,15 +1,14 @@
-from nextcord.ext.commands import command, has_permissions, cooldown, guild_only
-# from discord_slash.utils.manage_components import wait_for_component
+from discord import ApplicationContext, Interaction, Member, Option, TextChannel, slash_command, user_command
+from discord.ext.commands import command, has_permissions, cooldown, guild_only
 from library import data, user_guild_cooldown
-# from discord_slash import cog_ext, SlashContext
 from library.data.dataLoader import dataHandler
 from library.data.pressf_images import fimages
-from nextcord.errors import HTTPException
-from nextcord.ext.commands import Cog
+from discord.errors import HTTPException
+from discord.ext.commands import Cog
 from collections import namedtuple
 from random import choice
 from library import db
-import nextcord
+import discord
 import logging
 
 
@@ -27,39 +26,22 @@ class Default(Cog):
 
     # cog commands
 
-    # @cog_ext.cog_slash(name="ping", )
-    # async def ping(self, ctx: SlashContext):
-    #     from discord_slash.utils.manage_components import create_button, create_actionrow
-    #     from discord_slash.model import ButtonStyle
-
-    #     buttons = [
-    #         create_button(style=ButtonStyle.green, label="A green button", custom_id='greeeny'),
-    #         create_button(style=ButtonStyle.blue, label="A blue button", custom_id='useless')
-    #     ]
-    #     action_row = create_actionrow(*buttons)
-
-    #     await ctx.send(content="Pong!",components=[action_row])
-    #     button_ctx = await wait_for_component(bot, components=action_row)
-    #     # await button_ctx.edit_origin(content="You pressed a button!")
-    #     # await button_ctx.reply('U win')
-    #     await button_ctx.edit_origin(content='U lose', components=None)
-
-    @command(name="hello", aliases=["hi", "привет"],
-             brief='Привет, братик', description='Привет, братик')
-    async def hello(self, ctx):
-        """
-        Congratulations command
-        """
-        await ctx.send(f"{choice(('Hello', 'Hi', 'Hey', 'Hiya'))} {ctx.author.mention}!")
-
     @command(name="ping", aliases=["пинг"],
              brief='Замеряет задержку в развитии',
              description='Замеряет задержку в развитии, твоем)')
-    async def ping(self, ctx):
+    async def ping_command(self, ctx):
         """
         Checks ping
         """
         await ctx.reply(f"Pong! {round(self.bot.latency*1000, 1)} ms")
+
+    @slash_command(name="ping",
+                   description='Замеряет задержку в развитии, твоем)')
+    async def ping_slash(self, ctx: Interaction):
+        """
+        Checks ping
+        """
+        await ctx.response.send_message(f"Pong! {round(self.bot.latency*1000, 1)} ms")
 
     @command(name="say", aliases=["скажи"],
              brief='Я скажу все что ты хочешь, братик.',
@@ -70,7 +52,6 @@ class Default(Cog):
         """
         Bot say what u what whenever u want. Need administrator rights.
         """
-        # TODO: send pm or msg to channel via arguments
         try:
             await ctx.message.delete()
         except HTTPException as e:
@@ -79,41 +60,102 @@ class Default(Cog):
         logging.info(f'User {ctx.author.name} sent message as bot')
         logging.info(" ".join(args))
 
+    @slash_command(name="say",
+                   description="Я скажу все что ты хочешь, братик.")
     @guild_only()
+    @has_permissions(administrator=True)
+    async def say_slash(self, interaction: Interaction, msg: Option(str, description='Message', name='message'),
+                        chnl: Option((TextChannel), name="channel", description="Choose a channel to say")):
+        await self.bot.get_channel(chnl.id).send(msg)
+        await interaction.response.send_message(
+            "Alldone, boss", ephemeral=True
+        )
+        logging.info(f'User {interaction.user.name} sent message as bot')
+        logging.info(msg)
+
+    def pressf(self, user: Member, target: Member = None):
+        if target:
+            title = f"**{user.display_name}** заплатил увожение за {target.display_name}"
+        else:
+            title = f"**{user.display_name}** заплатил увожение. o7"
+        emb = discord.Embed(title=title, color=self.embed_color)
+        emb.set_image(url="https://pbs.twimg.com/media/D-5sUKNXYAA5K9l.jpg")
+        return emb
+
     @command(name="f", aliases=["ф"],
              brief='Отдать честь за почивших героев',
              description='Отдать честь за почивших героев. Можно упоминанием указать кого чтим.')
+    @guild_only()
     @cooldown(1, data.get_chat_misc_cooldown_sec, user_guild_cooldown)
-    async def pressf(self, ctx):
+    async def pressf_command(self, ctx):
         """
         press f for fallen heroes.
         sends simple picture of saluting girl. can mention people
         """
-        if ctx.message.mentions:
-            title = f"**{ctx.author.display_name}** заплатил увожение за {ctx.message.mentions[0].display_name}"
-        else:
-            title = f"**{ctx.author.display_name}** заплатил увожение. o7"
-        emb = nextcord.Embed(title=title, color=self.embed_color)
-        emb.set_image(url="https://pbs.twimg.com/media/D-5sUKNXYAA5K9l.jpg")
-        await ctx.message.channel.send(embed=emb)
+        await ctx.message.channel.send(embed=self.pressf(ctx.author, ctx.message.mentions[0] if ctx.message.mentions else None))
 
+    @slash_command(name="f",
+                   description='Отдать честь за почивших героев. Можно упоминанием указать кого чтим.')
     @guild_only()
+    @cooldown(1, data.get_chat_misc_cooldown_sec, user_guild_cooldown)
+    async def pressf_slash(self, ctx: Interaction, member: Option(Member, default=None)):
+        """
+        press f for fallen heroes.
+        sends simple picture of saluting girl. can mention people
+        """
+        await ctx.response.send_message(embed=self.pressf(ctx.user, member))
+
+    @user_command(name='f')
+    @guild_only()
+    @cooldown(1, data.get_chat_misc_cooldown_sec, user_guild_cooldown)
+    async def pressf_user(self, ctx: Interaction, member: Member):
+        """
+        press f for fallen heroes.
+        sends simple picture of saluting girl. can mention people
+        """
+        await ctx.response.send_message(embed=self.pressf(ctx.user, member))
+
+    def o7(self, user: Member, target: Member = None):
+        if target:
+            title = f"**{user.display_name}** приветствует {target.display_name}. o7"
+        else:
+            title = f"**{user.display_name}** приветствует вас командиры. o7"
+        emb = discord.Embed(title=title, color=self.embed_color)
+        emb.set_image(url=choice(fimages))
+        return emb
+
     @command(name="o7", aliases=["07", "о7"],
              brief='Поприветсвовать командиров',
              description='Поприветсвовать командиров, а можно и кого-то конкретного')
+    @guild_only()
     @cooldown(1, data.get_chat_misc_cooldown_sec, user_guild_cooldown)
-    async def o7(self, ctx):
+    async def o7_command(self, ctx):
         """
         greet fellow commanders
         can mention whom to greet
         """
-        if ctx.message.mentions:
-            title = f"**{ctx.author.display_name}** приветствует {ctx.message.mentions[0].display_name}. o7"
-        else:
-            title = f"**{ctx.author.display_name}** приветствует вас командиры. o7"
-        emb = nextcord.Embed(title=title, color=self.embed_color)
-        emb.set_image(url=choice(fimages))
-        await ctx.message.channel.send(embed=emb)
+        await ctx.message.channel.send(embed=self.o7(ctx.user, ctx.message.mentions[0] if ctx.message.mentions else None))
+
+    @slash_command(name="o7", aliases=["07", "о7"],
+                   description='Поприветсвовать командиров, а можно и кого-то конкретного')
+    @guild_only()
+    @cooldown(1, data.get_chat_misc_cooldown_sec, user_guild_cooldown)
+    async def o7_slash(self, ctx: Interaction, member: Option(Member, default=None)):
+        """
+        greet fellow commanders
+        can mention whom to greet
+        """
+        await ctx.response.send_message(embed=self.o7(ctx.user, member))
+
+    @user_command(name="o7")
+    @cooldown(1, data.get_chat_misc_cooldown_sec, user_guild_cooldown)
+    @guild_only()
+    async def o7_user(self, ctx: Interaction, member: Member):
+        """
+        greet fellow commanders
+        can mention whom to greet
+        """
+        await ctx.response.send_message(embed=self.o7(ctx.user, member))
 
     @command(name="avatar", aliases=["аватар"],
              brief='Показывает аватар пользователя',
@@ -130,22 +172,25 @@ class Default(Cog):
             if ctx.message.author.avatar:
                 url = ctx.message.author.avatar.url
         if url:
-            emb = nextcord.Embed(title=title, color=self.embed_color)
+            emb = discord.Embed(title=title, color=self.embed_color)
             emb.set_image(url=url)
             await ctx.send(embed=emb)
         else:
             await ctx.send('Аватар не найден')
 
-    @guild_only()
-    @command(name="info", aliases=["инфо"],
-             brief='Информация и статистика бота',
-             description='Информация и статистика бота')
-    async def info(self, ctx):
-        """
-        This command shows bot info
-        """
-        embed = nextcord.Embed(color=self.embed_color, title=self.name,
-                               url="https://discord.com/oauth2/authorize?client_id=885800080169398292&scope=bot&permissions=3401792")
+    @user_command(
+        name='Avatar'
+    )
+    async def avatar_user(self, interaction: Interaction, usr: Member):
+        emb = discord.Embed(title='Avatarr')
+        emb.set_image(url=usr.avatar.url)
+        await interaction.response.send_message(
+            embed=emb, ephemeral=True
+        )
+
+    def info(self, user: Member):
+        embed = discord.Embed(color=self.embed_color, title=self.name,
+                              url="https://discord.com/oauth2/authorize?client_id=885800080169398292&scope=bot&permissions=3401792")
         embed.add_field(name="Описание",
                         value="Тупая деффка еще и бот", inline=False)
         embed.add_field(name="Версия", value=self.bot.VERSION, inline=False)
@@ -179,12 +224,33 @@ class Default(Cog):
         embed.set_image(
             url="https://aceship.github.io/AN-EN-Tags/img/characters/char_102_texas_2.png")
         embed.set_footer(
-            text=f"Requested by {ctx.message.author.display_name}")
+            text=f"Requested by {user.display_name}")
+        return embed
+
+    @command(name="info", aliases=["инфо"],
+             brief='Информация и статистика бота',
+             description='Информация и статистика бота')
+    @guild_only()
+    async def info_command(self, ctx):
+        """
+        This command shows bot info
+        """
+        embed = self.info(ctx.author)
         await ctx.send(embed=embed, delete_after=self.options.get_chat_misc_cooldown_sec)
         try:
             await ctx.message.delete(delay=self.options.get_chat_misc_cooldown_sec)
         except Exception as e:
             logging.warning(e)
+
+    @slash_command(name="info",
+                   description='Информация и статистика бота')
+    @guild_only()
+    async def info_slash(self, ctx: ApplicationContext):
+        """
+        This command shows bot info
+        """
+        embed = self.info(ctx.author)
+        await ctx.response.send_message(embed=embed, ephemeral=True)
 
     # functions----------------------------------------------------------------------------------------------------------------------------
 

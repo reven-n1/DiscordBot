@@ -1,17 +1,23 @@
+from typing import Tuple
 from library.my_Exceptions.validator import NonOwnedCharacter, NonExistentCharacter
-from nextcord.ext.commands.core import guild_only, is_nsfw
-from nextcord.ext.commands import command, cooldown
+from discord.ext.commands.core import guild_only, is_nsfw
+from discord.ext.commands import command, cooldown
 from library import user_guild_cooldown
-from nextcord.ext.commands import Cog
-from nextcord.channel import DMChannel
-from nextcord.errors import NotFound
+from discord.commands import slash_command, Option
+from discord import User
+from discord.interactions import Interaction
+from discord.ext.commands.bot import Bot
+from discord.embeds import Embed
+from discord.ext.commands import Cog
+from discord.channel import DMChannel
+from discord.errors import NotFound
 from random import choice, randrange
 from collections import namedtuple
 from library import data
 from library import db
 from json import loads
 from re import sub
-import nextcord
+import discord
 import logging
 
 
@@ -19,7 +25,35 @@ class Ark(Cog):
     qualified_name = 'Ark'
     description = 'Рулетка с дефками'
 
-    def __init__(self, bot):
+    class SkinSelector(discord.ui.View):
+        message: discord.Message
+        user_id: int
+
+        def __init__(self, skins: list, user_id: int, timeout=180):
+            super().__init__(timeout=timeout)
+            self.user_id = user_id
+            self.skin_select.options = []
+            for skin in skins:
+                self.skin_select.options.append(discord.SelectOption(label=skin.name, description=skin.desc, value=skin.id))
+
+        async def on_timeout(self) -> None:
+            try:
+                await self.message.edit(view=None)
+            except NotFound as e:
+                logging.warning(e)
+            return await super().on_timeout()
+
+        @discord.ui.select(placeholder='Choose skin', min_values=1, max_values=1, options=[])
+        async def skin_select(self, _: discord.ui.Select, interaction: discord.Interaction):
+            if interaction.user.id != self.user_id:
+                await interaction.response.send_message('Не трожь. Не твоя девочка, вот ты и бесишся!', ephemeral=True)
+                return
+            new_image_url = interaction.data.get('values', [''])[0].replace('#', '%23')
+            new_embed = interaction.message.embeds[0].set_image(
+                url=f"https://aceship.github.io/AN-EN-Tags/img/characters/{new_image_url}.png")
+            await interaction.response.edit_message(embed=new_embed)
+
+    def __init__(self, bot: Bot):
         self.bot = bot
         self.__db = db
 
@@ -35,49 +69,46 @@ class Ark(Cog):
         with open("library/config/skin_table.json", "rb") as skin_json:
             self.skin_data = loads(skin_json.read())['charSkins']
 
-    # cog commands --------------------------------------------------------------------------------------------------------------
+    # cog commands ----------------------------------------------------------------------------------------------
 
     @command(name="myark", aliases=["моидевочки", "майарк"],
              brief='Вывести твою коллекцию сочных аниме девочек(и кунчиков ^-^)',
              description='Вывести твою коллекцию сочных аниме девочек(и кунчиков ^-^). '
              'Отправлю этот списочек прямой посылочкой в твои ЛС, братик. А если ты укажешь имя песонажа я покажу его карточку')
-    async def myark(self, ctx, *char_name):
+    async def myark_command(self, ctx, *char_name):
         """
         This command sends ark collection to private messages.\n
         If collection empty -> returns 'Empty collection'
         """
         char_name = " ".join(char_name)
-        ark_collection = self.get_ark_collection(ctx.message.author.id)
-
-        if char_name == "":
-            all_character_count = self.get_ark_count()
-            user_chara_count = sum([len(characters) for characters in ark_collection.values()])
-            collection_message = nextcord.Embed(title=f"{ctx.author.display_name}'s collection {user_chara_count}/{all_character_count} \
-                                              ({round((user_chara_count/all_character_count)*100,2)}%)", color=data.get_embed_color)
-            for rarity, characters in ark_collection.items():
-                characters_list = "\n".join([f"{character[1]} x {character[2]}" for character in characters])
-                collection_message.add_field(name=":star:"*rarity if rarity < 6 else ":star2:"*rarity, value=characters_list, inline=False)
-            if len(ark_collection) == 0:
-                collection_message.add_field(name="Ти бомж", value="иди покрути девочек!")
-            collection_message.set_footer(text="Используй команду !майарк <имя> чтоб посмотреть на персонажа.")
-            await ctx.message.author.send(embed=collection_message)
-        else:
-            try:
-                embed, selector = self.ark_embed_and_view(self.show_character(char_name, ctx.message.author.id), ctx.message)
-                selector.message = await ctx.message.author.send(embed=embed, view=selector)
-            except NonOwnedCharacter:
-                await ctx.message.author.send("***Лох, у тебя нет такой дивочки***")
-            except NonExistentCharacter:
-                await ctx.message.author.send("***Лошара, даже имя своей вайфу не запомнил((***")
+        embed, selector = self.myark(char_name, ctx.message.author)
+        message = await ctx.message.author.send(embed=embed, view=selector)
+        if selector:
+            selector.message = message
         if not isinstance(ctx.message.channel, DMChannel):
             await ctx.message.delete()
+
+    def myark_autocomplete(self, ctx: discord.AutocompleteContext):
+        collection = self.get_ark_collection(ctx.interaction.user.id)
+        return list(sorted([char[1] for rar in collection.values() for char in rar if str(char[1]).lower().startswith(ctx.value.lower())]))
+
+    @is_nsfw()
+    @slash_command(name="myark",
+                   description='Вывести твою коллекцию сочных аниме девочек(и кунчиков ^-^). ')
+    async def myark_slash(self, ctx: Interaction,
+                          char_name: Option(str, 'Имя персонажа', autocomplete=myark_autocomplete, default=None), 
+                          public: Option(bool, 'Похвастаться?', default=False)):
+        embed, selector = self.myark(char_name, ctx.user)
+        message = await ctx.response.send_message(embed=embed, view=selector, ephemeral=not public)
+        if selector:
+            selector.message = await message.original_message()
 
     @is_nsfw()
     @guild_only()
     @command(name="barter", aliases=["обмен"],
              brief='Обменять много хуевых персов на мало пиздатых',
              description='Обменять 5 дубликатов персонажей на 1 персонажа с более высоким уровнем редкости, йо.')
-    async def barter(self, ctx):
+    async def barter_command(self, ctx):
         """
         Serves to exchange 5 characters for 1 rank higher\n
         if possible else returns 'Нет операторов на обмен'
@@ -85,18 +116,32 @@ class Ark(Cog):
         barter_list = self.get_barter_list(ctx.message.author.id)
         if barter_list:
             barter = self.ark_barter(barter_list, ctx.message.author.id)
-            try:
-                new_char = next(barter)
-
-                while new_char:
-                    embed, selector = self.ark_embed_and_view(new_char, ctx.message)
-                    selector.message = await ctx.message.channel.send(embed=embed, view=selector)
-                    new_char = next(barter)
-            except StopIteration:
-                pass
+            for new_char in barter:
+                embed, selector = self.ark_embed_and_view(new_char, ctx.message.author)
+                selector.message = await ctx.message.channel.send(embed=embed, view=selector)
         else:
             await ctx.send("***Нет операторов на обмен***", delete_after=15)
             await ctx.message.delete(delay=15)
+
+    @is_nsfw()
+    @guild_only()
+    @slash_command(name="barter",
+                   brief='Обменять много хуевых персов на мало пиздатых')
+    async def barter_slash(self, ctx: Interaction):
+        """
+        Serves to exchange 5 characters for 1 rank higher\n
+        if possible else returns 'Нет операторов на обмен'
+        """
+        barter_list = self.get_barter_list(ctx.user.id)
+        if barter_list:
+            await ctx.response.defer()
+            barter = self.ark_barter(barter_list, ctx.user.id)
+            for new_char in barter:
+                embed, selector = self.ark_embed_and_view(new_char, ctx.user)
+                selector.message = await ctx.channel.send(embed=embed, view=selector)
+            await ctx.followup.send(content="Готово! Наслаждайся!")
+        else:
+            await ctx.response.send_message("***Нет операторов на обмен***", ephemeral=15)
 
     @is_nsfw()
     @guild_only()
@@ -105,25 +150,39 @@ class Ark(Cog):
              brief='Твоя любимая команда',
              description='Кидает рандомную девочку (но это не точно, там и трапики есть, ня) и сохраняет её'
              ', чтобы ты потом мог ее посмотреть при помощи команды myark, ну или обменять если ты её не любишь(')
-    async def ark(self, ctx):
+    async def ark_command(self, ctx):
         """
         Return a random arknigts character (from character_table.json)
         """
         character_data = self.roll_random_character(ctx.message.author.id)
-        embed, selector = self.ark_embed_and_view(character_data, ctx.message)
+        embed, selector = self.ark_embed_and_view(character_data, ctx.message.author)
         selector.message = await ctx.message.channel.send(embed=embed, view=selector)
 
-    def ark_embed_and_view(self, character_data: list, message: nextcord.Message):
+    @slash_command(name="ark",
+                   description='Кидает рандомную девочку (но это не точно, там и трапики есть, ня) и сохраняет её')
+    @is_nsfw()
+    @guild_only()
+    @cooldown(1, data.get_ark_cooldown, user_guild_cooldown)
+    async def ark_slash(self, ctx: Interaction):
+        """
+        Return a random arknigts character (from character_table.json)
+        """
+        character_data = self.roll_random_character(ctx.user.id)
+        embed, selector = self.ark_embed_and_view(character_data, ctx.user)
+        message = await ctx.response.send_message(embed=embed, view=selector)
+        selector.message = await message.original_message()
+
+    def ark_embed_and_view(self, character_data: list, author: discord.Member):
         """
         Generates embed form recieved ark data
 
         Args:
             character_data (list): random character data from character_table.json
-            message (nextcord.message): message
+            message (discord.message): message
         """
-        embed = nextcord.Embed(color=data.get_embed_color, title=character_data.name,
-                               description=str(character_data.stars) * character_data.rarity,
-                               url=f"https://aceship.github.io/AN-EN-Tags/akhrchars.html?opname={character_data.name}")
+        embed = discord.Embed(color=data.get_embed_color, title=character_data.name,
+                              description=str(character_data.stars) * character_data.rarity,
+                              url=f"https://aceship.github.io/AN-EN-Tags/akhrchars.html?opname={character_data.name}")
         embed.add_field(name="Description", value=f"{character_data.description_first_part}\n{character_data.description_sec_part}",
                         inline=False)
         embed.add_field(name="Position", value=character_data.position)
@@ -132,38 +191,32 @@ class Ark(Cog):
         embed.add_field(name="Traits", value=line.replace("bakw", ""), inline=False)
         embed.set_thumbnail(url=character_data.profession)
         embed.set_image(url=f"https://aceship.github.io/AN-EN-Tags/img/characters/{character_data.character_id}_1.png")
-        embed.set_footer(text=f"Requested by {message.author.display_name}")
-        return embed, Ark.SkinSelector(self.get_skin_list(character_data.character_id), message.author.id, data.get_chat_misc_cooldown_sec)
-
-    class SkinSelector(nextcord.ui.View):
-        message: nextcord.Message
-        user_id: int
-
-        def __init__(self, skins: list, user_id: int, timeout=180):
-            super().__init__(timeout=timeout)
-            self.user_id = user_id
-            self.skin_select.options = []
-            for skin in skins:
-                self.skin_select.options.append(nextcord.SelectOption(label=skin.name, description=skin.desc, value=skin.id))
-
-        async def on_timeout(self) -> None:
-            try:
-                await self.message.edit(view=None)
-            except NotFound as e:
-                logging.warning(e)
-            return await super().on_timeout()
-
-        @nextcord.ui.select(placeholder='Choose skin', min_values=1, max_values=1, options=[])
-        async def skin_select(self, _: nextcord.ui.Select, interaction: nextcord.Interaction):
-            if interaction.user.id != self.user_id:
-                await interaction.response.send_message('Не трожь. Не твоя девочка, вот ты и бесишся!', ephemeral=True)
-                return
-            new_image_url = interaction.data.get('values', [''])[0].replace('#', '%23')
-            new_embed = interaction.message.embeds[0].set_image(
-                url=f"https://aceship.github.io/AN-EN-Tags/img/characters/{new_image_url}.png")
-            await interaction.response.edit_message(embed=new_embed)
+        embed.set_footer(text=f"Requested by {author.display_name}")
+        return embed, Ark.SkinSelector(self.get_skin_list(character_data.character_id), author.id, data.get_chat_misc_cooldown_sec)
 
     # functions --------------------------------------------------------------------------------------------------------------------
+
+    def myark(self, char_name: str, user: User) -> Tuple[Embed, SkinSelector]:
+        ark_collection = self.get_ark_collection(user.id)
+        if not char_name:
+            all_character_count = self.get_ark_count()
+            user_chara_count = sum([len(characters) for characters in ark_collection.values()])
+            collection_message = discord.Embed(title=f"{user.display_name}'s collection {user_chara_count}/{all_character_count} \
+                                              ({round((user_chara_count/all_character_count)*100,2)}%)", color=data.get_embed_color)
+            for rarity, characters in ark_collection.items():
+                characters_list = "\n".join([f"{character[1]} x {character[2]}" for character in characters])
+                collection_message.add_field(name=":star:"*rarity if rarity < 6 else ":star2:"*rarity, value=characters_list, inline=False)
+            if len(ark_collection) == 0:
+                collection_message.add_field(name="Ти бомж", value="иди покрути девочек!")
+            collection_message.set_footer(text="Используй команду !майарк <имя> чтоб посмотреть на персонажа.")
+            return (collection_message, None)
+        else:
+            try:
+                return self.ark_embed_and_view(self.show_character(char_name, user.id), user)
+            except NonOwnedCharacter:
+                return (discord.Embed(title="***Лох, у тебя нет такой дивочки***"), None)
+            except NonExistentCharacter:
+                return (discord.Embed(title="***Лошара, даже имя своей вайфу не запомнил((***"), None)
 
     def get_skin_list(self, character_id) -> namedtuple:
         skinTyple = namedtuple('skin', ['id', 'name', 'desc'])

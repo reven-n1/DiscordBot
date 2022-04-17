@@ -1,9 +1,9 @@
-from nextcord.ext.commands import command, has_permissions
-from nextcord.errors import HTTPException, NotFound
-from nextcord.ext.commands.core import guild_only
-from nextcord.ext.commands import Cog
+from discord.ext.commands import command, has_permissions
+from discord.errors import HTTPException, NotFound
+from discord.ext.commands.core import guild_only
+from discord.ext.commands import Cog
 from library import Amia
-import nextcord.member
+import discord.member
 
 
 class Admin(Cog):
@@ -17,7 +17,7 @@ class Admin(Cog):
              description='Забанить челика на серве, только для админов, ну ну а ты что думал.')
     @guild_only()
     @has_permissions(ban_members=True)
-    async def ban(self, ctx, member: nextcord.Member, reason=None):
+    async def ban(self, ctx, member: discord.Member, reason=None):
         """
         Ban command
         """
@@ -33,7 +33,7 @@ class Admin(Cog):
              brief='Кикнуть лоха', description='Кикнуть челика с сервера, только для админов, ну ну а ты что думал.')
     @guild_only()
     @has_permissions(kick_members=True)
-    async def kick(self, ctx, member: nextcord.Member, reason=None):
+    async def kick(self, ctx, member: discord.Member, reason=None):
         """
         Kick command
         """
@@ -49,7 +49,7 @@ class Admin(Cog):
              brief='Разбанить невиновного', description='Разбанить невиновного, что он тебе плохого сделал, бака?')
     @guild_only()
     @has_permissions(administrator=True)
-    async def unban(self, ctx, user: nextcord.User):
+    async def unban(self, ctx, user: discord.User):
         """
         Unban command
         """
@@ -79,14 +79,14 @@ class Admin(Cog):
              brief='Выдать роль', description='Выдать роль')
     @guild_only()
     @has_permissions(administrator=True)
-    async def give_role(self, ctx, member: nextcord.Member, role: nextcord.Role):
+    async def give_role(self, ctx, member: discord.Member, role: discord.Role):
         """
         Gives role to person
 
         Args:
             ctx (Any): context
-            member (nextcord.Member): target member
-            role (nextcord.Role): chosen role
+            member (discord.Member): target member
+            role (discord.Role): chosen role
         """
         await member.add_roles(role)
 
@@ -94,14 +94,14 @@ class Admin(Cog):
              brief='Убрать роль', description='Убрать роль с человека, потому что ты его ненавидишь')
     @guild_only()
     @has_permissions(administrator=True)
-    async def remove_role(self, ctx, member: nextcord.Member, role: nextcord.Role):
+    async def remove_role(self, ctx, member: discord.Member, role: discord.Role):
         """
         Remove role from person
 
         Args:
             ctx (Any): context
-            member (nextcord.Member): target member
-            role (nextcord.Role): role to remove
+            member (discord.Member): target member
+            role (discord.Role): role to remove
         """
         await member.remove_roles(role)
 
