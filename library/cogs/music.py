@@ -152,18 +152,21 @@ class Player(wavelink.Player):
         except KeyError:
             pass
 
-    async def add_tracks(self, ctx: Context, tracks) -> str:
+    async def add_tracks(self, ctx: Context, tracks, playlist=False) -> str:
         if not tracks:
             raise NoTracksFound
 
-        response = 'Хз'
+        response = 'Ясно понятно'
         if isinstance(tracks, wavelink.YouTubePlaylist):
             self.queue.add(ctx.author.id, *tracks.tracks)
             response = f"Добавила {len(tracks.tracks)} треков в очередь, сладенький."
+        elif isinstance(tracks, (list, set, tuple)) and playlist:
+            self.queue.add(ctx.author.id, *tracks)
+            response = f"Добавила {len(tracks)} треков в очередь, сладенький."
         elif isinstance(tracks, wavelink.Track):
             self.queue.add(ctx.author.id, tracks)
-            response = f"Добавила {len(tracks)} треков в очередь, сладенький."
-        elif len(tracks) == 1:
+            response = f"Добавила {tracks.title} треков в очередь, сладенький."
+        elif isinstance(tracks, (list, set, tuple)) and len(tracks) == 1:
             self.queue.add(ctx.author.id, tracks[0])
             response = f"Добавила {tracks[0].title} в очередь, сладенький."
         else:
@@ -173,7 +176,7 @@ class Player(wavelink.Player):
 
         if not self.is_playing() and not self.queue.is_empty:
             await self.start_playback()
-        
+
         return response
 
     async def choose_track(self, ctx: Context, tracks: list):
@@ -181,7 +184,7 @@ class Player(wavelink.Player):
             title="Выбери песню",
             description=(
                 "\n".join(
-                    f"**{i+1}.** {t.title} ({t.length//60000}:{str(t.length%60).zfill(2)})"
+                    f"**{i+1}.** {t.title} ({int(t.length//60)}:{int(float(str(t.length%60).zfill(2)))})"
                     for i, t in enumerate(tracks[:5])
                 )
             ),
@@ -200,7 +203,8 @@ class Player(wavelink.Player):
             return tracks[choice]
 
     async def start_playback(self):
-        await self.play(self.queue.current_track)
+        if self.queue.current_track:
+            await self.play(self.queue.current_track)
 
     async def advance(self):
         try:
@@ -294,7 +298,7 @@ class PlayerControls(discord.ui.View):
         await asyncio.sleep(self.update_interval)
         assert self.message
         while not self._stop:
-            if not self.player.is_connected:
+            if not self.player.is_connected():
                 await self.message.delete()
                 self.stop()
                 break
@@ -313,7 +317,7 @@ class PlayerControls(discord.ui.View):
         play_state_emoji = ''
         if self.player.is_paused():
             play_state_emoji = '⏸️'
-        elif self.player.is_playing:
+        elif self.player.is_playing():
             play_state_emoji = '▶️'
         else:
             play_state_emoji = '⏹️'
@@ -411,18 +415,17 @@ class Music(commands.Cog):
     async def on_node_ready(self, node):
         logging.info(f" wavelink node `{node.identifier}` ready.")
 
-    @commands.Cog.listener("on_track_stuck")
-    @commands.Cog.listener("on_track_end")
-    @commands.Cog.listener("on_track_exception")
-    @commands.Cog.listener("on_player_stop")
-    async def on_player_stop(self, node: wavelink.Node, payload):
-        if hasattr(payload, 'error'):
-            logging.warning(payload.error)
+    @commands.Cog.listener("on_wavelink_track_stuck")
+    @commands.Cog.listener("on_wavelink_track_end")
+    @commands.Cog.listener("on_wavelink_track_exception")
+    async def on_player_stop(self, player: Player, track: wavelink.Track, exception: Exception = None, *args, **kwargs):
+        if exception:
+            logging.warning(exception)
             return
-        if payload.player.queue.repeat_mode == RepeatMode.ONE:
-            await payload.player.repeat_track()
+        if player.queue.repeat_mode == RepeatMode.ONE:
+            await player.repeat_track()
         else:
-            await payload.player.advance()
+            await player.advance()
 
     async def cog_check(self, ctx):
         if isinstance(ctx.channel, discord.DMChannel):
@@ -453,8 +456,6 @@ class Music(commands.Cog):
             return await ctx.author.voice.channel.connect(cls=Player)
         else:
             return ctx.voice_client
-
-    # music_group = discord.SlashCommandGroup("music", "Все что связанно с музыкой и больше")
 
     @commands.command(name="disconnect", aliases=["leave"],
                       brief='Отключиться от голосового канала', description='Отключиться от голосового канала')
@@ -493,7 +494,7 @@ class Music(commands.Cog):
                 else:
                     return await player.add_tracks(ctx, await wavelink.YouTubePlaylist.search(query))
             elif 'spotify.com' in query:
-                return await player.add_tracks(ctx, await SpotifyTrack.search(query))
+                return await player.add_tracks(ctx, await SpotifyTrack.search(query), playlist=True)
         return 'Чот я не поняла'
 
     @commands.command(name="play", aliases=["p"],
@@ -665,7 +666,8 @@ class Music(commands.Cog):
 
     @queue_slash.error
     async def queue_slash_error(self, ctx: ApplicationContext, exc):
-        await ctx.response.send_message("Ничего нет", ephemeral=True)
+        if isinstance(exc.original, QueueIsEmpty):
+            await ctx.response.send_message("Ничего нет", ephemeral=True)
 
     @commands.command(name="shuffle",
                       brief='Перемешать очередь',
@@ -688,7 +690,7 @@ class Music(commands.Cog):
     async def playing_command(self, ctx: Context):
         player = await self.get_player(ctx)
 
-        if not player.is_playing:
+        if not player.is_playing():
             raise PlayerIsAlreadyPaused
 
         if player in self.player_controls and not self.player_controls[player].is_finished():
