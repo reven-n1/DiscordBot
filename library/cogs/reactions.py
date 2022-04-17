@@ -105,7 +105,7 @@ class Reactions(Cog):
             'slap': f'{ctx.author.display_name} отвесил смачного леща {member.display_name}' if member else f'{ctx.author.display_name} дал аплеуху сам себе, лол',
             'kill':  f'{ctx.author.display_name} совершает уголовно-наказуемое деяние в отношении {member.display_name}' if member else f'{ctx.author.display_name} совершает Роскомнадзор',
             'kick': f'{ctx.author.display_name} уебал с ноги {member.display_name}' if member else f'{ctx.author.display_name} жостка крутанул вертушку',
-            'happy': f'{ctx.author.display_name} счасли вместе с {member.display_name}' if member else f'{ctx.author.display_name} радуется',
+            'happy': f'{ctx.author.display_name} счаслив вместе с {member.display_name}' if member else f'{ctx.author.display_name} радуется',
             'wink': f'{ctx.author.display_name} подмигнул {member.display_name}' if member else f'{ctx.author.display_name} моргнул одним глазом',
             'poke': f'{ctx.author.display_name} ткул {member.display_name}' if member else f'{ctx.author.display_name} пытаеться куда ткнуть но не может попасть',
             'dance': f'{ctx.author.display_name} флексит с {member.display_name}' if member else f'{ctx.author.display_name} отжигает на танцполе',
@@ -376,7 +376,7 @@ class Reactions(Cog):
              brief='Счастье', description='Счастье, как будто оно есть')
     async def happy(self, ctx):
         if ctx.message.mentions:
-            phrase = f'{ctx.author.display_name} счасли вместе с {ctx.message.mentions[0].display_name}'
+            phrase = f'{ctx.author.display_name} счаслив вместе с {ctx.message.mentions[0].display_name}'
         else:
             phrase = f'{ctx.author.display_name} радуется'
         await ctx.send(embed=self.get_reaction_embed('happy', phrase))

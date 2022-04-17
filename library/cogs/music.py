@@ -299,19 +299,30 @@ class PlayerControls(discord.ui.View):
         assert self.message
         while not self._stop:
             if not self.player.is_connected():
-                await self.message.delete()
+                if isinstance(self.message, Interaction):
+                    await self.message.delete_original_message()
+                else:
+                    await self.message.delete()
                 self.stop()
                 break
             try:
-                await self.message.edit(embed=self.generate_player_embed())
+                if isinstance(self.message, Interaction):
+                    await self.message.edit_original_message(embed=self.generate_player_embed())
+                else:
+                    await self.message.edit(embed=self.generate_player_embed())
             except NotFound:
                 self._stop = True
                 break
+            except Exception as e:
+                logging.exception(e)
             await asyncio.sleep(self.update_interval)
 
     def stop(self):
         self._stop = True
         return super().stop()
+
+    def is_stopped(self):
+        return self._stop
 
     def generate_player_embed(self):
         play_state_emoji = ''
@@ -693,7 +704,7 @@ class Music(commands.Cog):
         if not player.is_playing():
             raise PlayerIsAlreadyPaused
 
-        if player in self.player_controls and not self.player_controls[player].is_finished():
+        if player in self.player_controls and self.player_controls[player].is_stopped():
             controls: PlayerControls = self.player_controls[player]
             try:
                 if isinstance(controls._message, Interaction):
@@ -718,7 +729,7 @@ class Music(commands.Cog):
     async def playing_slash(self, ctx: ApplicationContext):
         player = await self.get_player(ctx)
 
-        if player in self.player_controls and not self.player_controls[player].is_finished():
+        if player in self.player_controls and self.player_controls[player].is_stopped():
             controls: PlayerControls = self.player_controls[player]
             try:
                 if isinstance(controls._message, Interaction):
