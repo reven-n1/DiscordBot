@@ -190,7 +190,7 @@ class Default(Cog):
 
     def info(self, user: Member):
         embed = discord.Embed(color=self.embed_color, title=self.name,
-                              url="https://discord.com/oauth2/authorize?client_id=885800080169398292&scope=bot&permissions=3401792")
+                              url="https://discord.com/oauth2/authorize?client_id=885800080169398292&scope=&scope=applications.commands%20bot&permissions=3401792")
         embed.add_field(name="Описание",
                         value="Тупая деффка еще и бот", inline=False)
         embed.add_field(name="Версия", value=self.bot.VERSION, inline=False)
