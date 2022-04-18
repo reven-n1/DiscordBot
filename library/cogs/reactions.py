@@ -81,6 +81,7 @@ class Reactions(Cog):
     async def sfw_slash(self, ctx: ApplicationContext,
                   type: Option(str, description='Выбери что хочешь посмотреть', autocomplete=sfw_autocomplete),
                   member: Option(Member, required=False)):
+        await ctx.interaction.response.defer()
         pharases_list = {
             'waifu': '',
             'neko': '',
@@ -112,15 +113,16 @@ class Reactions(Cog):
             'cringe': f'{ctx.author.display_name} кринжует от {member.display_name}' if member else f'{ctx.author.display_name} на кринже ваще'
         }
         if type in pharases_list:
-            await ctx.response.send_message(embed=self.get_reaction_embed(type, pharases_list[type], nsfw=False))
+            await ctx.followup.send(embed=self.get_reaction_embed(type, pharases_list[type], nsfw=False))
         else:
-            await ctx.response.send_message('Я таких картинок не знаю!', ephemeral=True)
+            await ctx.followup.send('Я таких картинок не знаю!', ephemeral=True)
 
     @slash_command(name='nsfw', description='Аниме пикчи)')
     @cooldown(1, data.get_chat_misc_cooldown_sec, user_channel_type_cooldown)
     @is_nsfw()
     async def nsfw_slash(self, ctx: ApplicationContext,
                          type: Option(str, description='Выбери что хочешь посмотреть', choices=['waifu', 'neko', 'trap', 'blowjob'], required=False)):
+        await ctx.interaction.response.defer()
         if type is None:
             type = choice(['waifu', 'neko', 'trap', 'blowjob'])
         footers = {
@@ -132,7 +134,7 @@ class Reactions(Cog):
         embed = self.get_reaction_embed(type, '', nsfw=True)
         embed.set_footer(
             text=footers[type], icon_url=ctx.author.avatar.url if ctx.author.avatar else '')
-        await ctx.response.send_message(embed=embed)
+        await ctx.followup.send(embed=embed)
 
     @cooldown(1, data.get_chat_misc_cooldown_sec, user_channel_cooldown)
     @command(name="waifu",

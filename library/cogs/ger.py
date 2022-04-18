@@ -21,11 +21,11 @@ class Ger(Cog):
 
     # cog commands ----------------------------------------------------------------------------------------------
 
+    @command(name="ger", aliases=["пук"],
+             brief='Пукает в рандома, или в себя)', description='Пукает в рандома, или в себя)')
     @is_nsfw()
     @guild_only()
     @cooldown(1, data.get_ger_cooldown, user_guild_cooldown)
-    @command(name="ger", aliases=["пук"],
-             brief='Пукает в рандома, или в себя)', description='Пукает в рандома, или в себя)')
     async def ger_command(self, ctx):
         """
         This funny function farts on random server member or whoever called it
@@ -36,11 +36,11 @@ class Ger(Cog):
         ger_message = self.ger_function(ctx.message.author, random_user)
         await ctx.send(ger_message)
 
+    @slash_command(name="ger",
+                   description='Пукает в рандома, или в себя)')
     @is_nsfw()
     @guild_only()
     @cooldown(1, data.get_ger_cooldown, user_guild_cooldown)
-    @slash_command(name="ger",
-                   description='Пукает в рандома, или в себя)')
     async def ger_slash(self, ctx: Interaction):
         random_user = choice(ctx.guild.members)
         while random_user == ctx.user:
