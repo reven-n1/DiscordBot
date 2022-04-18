@@ -1,6 +1,5 @@
 from discord.ext.commands import command, cooldown, group
 from discord.ext.commands.core import is_nsfw
-from pkg_resources import require
 from library import user_channel_cooldown
 from json.decoder import JSONDecodeError
 from discord.ext.commands import Cog
@@ -43,11 +42,15 @@ class Reactions(Cog):
         embed.set_image(url=img_url)
         return embed
 
-    def sfw_autocomplete(self, ctx: AutocompleteContext):
+    @slash_command(name='sfw', description='Аниме пикчи)')
+    @cooldown(1, data.get_chat_misc_cooldown_sec, user_channel_type_cooldown)
+    async def sfw_slash(self, ctx: ApplicationContext,
+                        type: Option(str, description='Выбери что хочешь посмотреть', choices=['waifu', 'neko', 'awoo'])):
+        await ctx.interaction.response.defer()
+        await ctx.followup.send(embed=self.get_reaction_embed(type, '', nsfw=False))
+
+    def reaction_autocomplete(self, ctx: AutocompleteContext):
         types = [
-                    'waifu',
-                    'neko',
-                    'awoo',
                     'bully',
                     'cuddle',
                     'cry',
@@ -76,16 +79,13 @@ class Reactions(Cog):
         ]
         return [type for type in types if type.lower().startswith(ctx.value.lower())]
 
-    @slash_command(name='sfw', description='Аниме пикчи)')
+    @slash_command(name='reaction', description='Аниме реакшоны',guild_ids=[630848078181826580])
     @cooldown(1, data.get_chat_misc_cooldown_sec, user_channel_type_cooldown)
-    async def sfw_slash(self, ctx: ApplicationContext,
-                  type: Option(str, description='Выбери что хочешь посмотреть', autocomplete=sfw_autocomplete),
-                  member: Option(Member, required=False)):
+    async def reaction_slash(self, ctx: ApplicationContext,
+                             type: Option(str, description='Выбери эмоцию', autocomplete=reaction_autocomplete),
+                             member: Option(Member, description='Выбери кого упомянуть (для парных эмоций)', required=False)):
         await ctx.interaction.response.defer()
         pharases_list = {
-            'waifu': '',
-            'neko': '',
-            'awoo': '',
             'bully': f'{ctx.author.display_name} доебался до {member.display_name}' if member else f'{ctx.author.display_name} так и не понял до кого хотел доебаться и доебался до самого себя',
             'cuddle': f'{ctx.author.display_name} прижимает к себе {member.display_name}' if member else f'{ctx.author.display_name} хотел обнять кого-то, а обнял аниме девку',
             'cry': f'{member.display_name} довел до слез {ctx.author.display_name}' if member else f'Вы довели до слез {ctx.author.display_name}, зачем вы так?',
@@ -115,9 +115,9 @@ class Reactions(Cog):
         if type in pharases_list:
             await ctx.followup.send(embed=self.get_reaction_embed(type, pharases_list[type], nsfw=False))
         else:
-            await ctx.followup.send('Я таких картинок не знаю!', ephemeral=True)
+            await ctx.followup.send('Я таких картинок не знаю!')
 
-    @slash_command(name='nsfw', description='Аниме пикчи)')
+    @slash_command(name='nsfw', description='Пошлые аниме пикчи))')
     @cooldown(1, data.get_chat_misc_cooldown_sec, user_channel_type_cooldown)
     @is_nsfw()
     async def nsfw_slash(self, ctx: ApplicationContext,
