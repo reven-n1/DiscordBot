@@ -770,6 +770,7 @@ class Music(commands.Cog):
 
     @slash_command(name="skipto", aliases=["playindex", "pi"],
                    description='Перейти сразу к треку под номером index')
+    @guild_only()
     async def skipto_slash(self, ctx: ApplicationContext, index: Option(int, description='Номер песни')):
         player = await self.get_player(ctx)
         if not ctx.author.guild_permissions.administrator and not (player.queue.get_track_owner() or ctx.author.id) == ctx.author.id:

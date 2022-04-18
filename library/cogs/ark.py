@@ -92,9 +92,9 @@ class Ark(Cog):
         collection = self.get_ark_collection(ctx.interaction.user.id)
         return list(sorted([char[1] for rar in collection.values() for char in rar if str(char[1]).lower().startswith(ctx.value.lower())]))
 
-    @is_nsfw()
     @slash_command(name="myark",
                    description='Вывести твою коллекцию сочных аниме девочек(и кунчиков ^-^). ')
+    @is_nsfw()
     async def myark_slash(self, ctx: Interaction,
                           char_name: Option(str, 'Имя персонажа', autocomplete=myark_autocomplete, default=None), 
                           public: Option(bool, 'Похвастаться?', default=False)):
@@ -123,10 +123,10 @@ class Ark(Cog):
             await ctx.send("***Нет операторов на обмен***", delete_after=15)
             await ctx.message.delete(delay=15)
 
-    @is_nsfw()
-    @guild_only()
     @slash_command(name="barter",
                    brief='Обменять много хуевых персов на мало пиздатых')
+    @is_nsfw()
+    @guild_only()
     async def barter_slash(self, ctx: Interaction):
         """
         Serves to exchange 5 characters for 1 rank higher\n
