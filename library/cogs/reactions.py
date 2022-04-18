@@ -45,7 +45,8 @@ class Reactions(Cog):
     @slash_command(name='sfw', description='Аниме пикчи)')
     @cooldown(1, data.get_chat_misc_cooldown_sec, user_channel_type_cooldown)
     async def sfw_slash(self, ctx: ApplicationContext,
-                        type: Option(str, description='Выбери что хочешь посмотреть', choices=['waifu', 'neko', 'awoo'])):
+                        type: Option(str, description='Выбери что хочешь посмотреть',
+                        choices=['waifu', 'neko', 'awoo', 'shinobu', 'megumin'])):
         await ctx.interaction.response.defer()
         await ctx.followup.send(embed=self.get_reaction_embed(type, '', nsfw=False))
 
@@ -79,7 +80,7 @@ class Reactions(Cog):
         ]
         return [type for type in types if type.lower().startswith(ctx.value.lower())]
 
-    @slash_command(name='reaction', description='Аниме реакшоны',guild_ids=[630848078181826580])
+    @slash_command(name='reaction', description='Аниме реакшоны')
     @cooldown(1, data.get_chat_misc_cooldown_sec, user_channel_type_cooldown)
     async def reaction_slash(self, ctx: ApplicationContext,
                              type: Option(str, description='Выбери эмоцию', autocomplete=reaction_autocomplete),
