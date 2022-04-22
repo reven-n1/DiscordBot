@@ -1,6 +1,6 @@
 from discord import ApplicationContext, Interaction, Option, slash_command
 from library.bot_token import spotipy_client_id, spotipy_client_secret
-from wavelink.ext.spotify import SpotifyClient, SpotifyTrack
+from wavelink.ext.spotify import SpotifyClient, SpotifyTrack, SpotifyRequestError
 from discord.ext.commands.context import Context
 from library.my_Exceptions.music_exceptions import *
 from library.data.dataLoader import dataHandler
@@ -8,6 +8,7 @@ from discord.ext.commands import guild_only
 from discord.errors import NotFound
 from discord.ext import commands, pages
 from random import shuffle
+from asyncio import sleep
 from copy import deepcopy
 from enum import Enum
 import datetime as dt
@@ -501,15 +502,31 @@ class Music(commands.Cog):
                 else:
                     return await player.add_tracks(ctx, await wavelink.YouTubePlaylist.search(query))
             elif 'spotify.com' in query:
-                return await player.add_tracks(ctx, await SpotifyTrack.search(query), playlist=True)
+                tries = 10
+                res = None
+                while tries > 0:
+                    try:
+                        if 'track' in query:
+                            res = await player.add_tracks(ctx, await SpotifyTrack.search(query, return_first=True))
+                        else:
+                            res = await player.add_tracks(ctx, await SpotifyTrack.search(query), playlist=True)
+                    except SpotifyRequestError as e:
+                        logging.exception(e)
+                        tries -= 1
+                        await sleep(5)
+                    else:
+                        return res
         return 'Чот я не поняла'
 
     @slash_command(name="play",
                    description='Поиск твоей любимой музыки в интернете. Будем вместе слушать ^.^')
     @guild_only()
-    async def play_slash(self, ctx: discord.ApplicationContext, query: discord.Option(str, "Поисковый запрос", default=None)):
+    async def play_slash(self, ctx: discord.ApplicationContext, query: discord.Option(str, "Поисковый запрос")):
         await ctx.interaction.response.defer()
-        await ctx.interaction.followup.send(await self.play(ctx, query))
+        try:
+            await ctx.interaction.followup.send(await self.play(ctx, query))
+        except Exception:
+            await ctx.interaction.followup.send('Говно случилось')
 
     @play_slash.error
     async def play_slash_error(self, ctx: ApplicationContext, exc):
@@ -545,17 +562,19 @@ class Music(commands.Cog):
                   "Ничего сейчас не играет(\nЗапроси трек командой play",
             inline=False
         )
+        embed.add_field(name="Всего треков", value=player.queue.length, inline=False)
         pages_embeds = []
-        if upcoming := player.queue.upcoming:
+        if upcoming := player.queue.history + player.queue.upcoming:
             for idx in range(0, len(upcoming), show):
                 new_embed = deepcopy(embed)
                 new_embed.add_field(
-                    name="Далее в программе",
-                    value="\n".join(f"{idx+player.queue.position+2+i}) {t.title}" for i, t in enumerate(upcoming[idx:idx + show]) if t),
+                    name="Очередь",
+                    value="\n".join(f"{idx+1+i}) {t.title}" for i, t in enumerate(upcoming[idx:idx + show]) if t),
                     inline=False
                 )
                 pages_embeds.append(new_embed)
-        embed.add_field(name="Всего треков", value=player.queue.length, inline=False)
+        if not pages_embeds:
+            pages_embeds.append(embed)
         return pages_embeds
 
     @slash_command(name="queue", description='Показать очередь')
@@ -603,7 +622,7 @@ class Music(commands.Cog):
     async def skipto_slash(self, ctx: ApplicationContext, index: Option(int, description='Номер песни')):
         player = await self.get_player(ctx)
         if not ctx.author.guild_permissions.administrator and not (player.queue.get_track_owner() or ctx.author.id) == ctx.author.id:
-            await ctx.reply('Нельзя пропускать чужие треки, бака!')
+            await ctx.response.send_message('Нельзя пропускать чужие треки, бака!')
             return
         if player.queue.is_empty:
             await ctx.response.send_message('Ничего не играет.')
@@ -611,10 +630,11 @@ class Music(commands.Cog):
         if not 0 <= index <= player.queue.length:
             await ctx.response.send_message('Указан неверный номер')
 
-        player.queue.position = index - 1
+        player.queue.position = index - 2
         await player.stop()
         await ctx.response.send_message(f"Играем музяку под номером {index}.")
-        await player.start_playback()
+        if not player.is_playing():
+            await player.start_playback()
 
 
 def setup(bot):
