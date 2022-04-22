@@ -465,23 +465,19 @@ class Music(commands.Cog):
     async def get_player(self, ctx: commands.Context) -> Player:
         if not ctx.voice_client and ctx.author.voice:
             return await ctx.author.voice.channel.connect(cls=Player)
-        else:
+        elif ctx.voice_client:
             return ctx.voice_client
-
-    @commands.command(name="disconnect", aliases=["leave"],
-                      brief='Отключиться от голосового канала', description='Отключиться от голосового канала')
-    async def disconnect_command(self, ctx):
-        player = await self.get_player(ctx)
-        await player.teardown()
-        await ctx.send("Ну все, пока.")
+        raise NoVoiceChannel()
 
     @slash_command(name="disconnect",
                    description='Отключиться от голосового канала')
     @guild_only()
     async def disconnect_slash(self, interaction: discord.ApplicationContext):
         player = await self.get_player(interaction)
-        await player.teardown()
-        await interaction.response.send_message("Ну все, пока.")
+        if player:
+            await player.teardown()
+        else:
+            await interaction.response.send_message("Нет подключения к войсу и так", ephemeral=True)
 
     async def play(self, ctx, query: str) -> str:
         player = await self.get_player(ctx)
@@ -508,20 +504,6 @@ class Music(commands.Cog):
                 return await player.add_tracks(ctx, await SpotifyTrack.search(query), playlist=True)
         return 'Чот я не поняла'
 
-    @commands.command(name="play", aliases=["p"],
-                      brief='Поиск музыки', description='Поиск твоей любимой музыки в интернете. Будем вместе слушать ^.^')
-    async def play_command(self, ctx, *, query: t.Optional[str]):
-        await ctx.reply(await self.play(ctx, query))
-
-    @play_command.error
-    async def play_command_error(self, ctx, exc):
-        if isinstance(exc, QueueIsEmpty):
-            await ctx.send("Ничего в очереди нет(")
-        elif isinstance(exc, NoVoiceChannel):
-            await ctx.send("Немогу подключиться к каналу, сорян(")
-        else:
-            logging.exception(exc)
-
     @slash_command(name="play",
                    description='Поиск твоей любимой музыки в интернете. Будем вместе слушать ^.^')
     @guild_only()
@@ -538,83 +520,6 @@ class Music(commands.Cog):
         else:
             logging.exception(exc)
 
-    @commands.command(name="pause",
-                      brief='Поставить на паузу', description='Поставить на паузу')
-    async def pause_command(self, ctx):
-        player = await self.get_player(ctx)
-
-        if player.is_paused():
-            raise PlayerIsAlreadyPaused
-
-        await player.set_pause(True)
-        await ctx.send("Пауза, давай передохнем немного")
-
-    @pause_command.error
-    async def pause_command_error(self, ctx, exc):
-        if isinstance(exc, PlayerIsAlreadyPaused):
-            await ctx.send("И так ничего не играет")
-
-    @commands.command(name="stop",
-                      brief='Остановить проигрывание', description='Остановить проигрывание и запустить выигрывание')
-    async def stop_command(self, ctx):
-        player = await self.get_player(ctx)
-        if not ctx.author.guild_permissions.administrator and not (player.queue.get_track_owner() or ctx.author.id) == ctx.author.id:
-            await ctx.reply('Нельзя останавливать чужие треки, бака!')
-            return
-        player.queue.clear()
-        await player.stop()
-        await ctx.send("Остановлено")
-
-    @commands.command(name="next", aliases=["skip"],
-                      brief='Запустить следующий трек', description='Запустить следующий трек')
-    async def next_command(self, ctx):
-        player = await self.get_player(ctx)
-        if not ctx.author.guild_permissions.administrator and not (player.queue.get_track_owner() or ctx.author.id) == ctx.author.id:
-            await ctx.reply('Нельзя пропускать чужие треки, бака!')
-            return
-        await player.stop()
-        if not player.queue.upcoming:
-            await ctx.send("Ну вот и все")
-        else:
-            await ctx.send("Играем дальше")
-
-    @next_command.error
-    async def next_command_error(self, ctx, exc):
-        if isinstance(exc, QueueIsEmpty):
-            await ctx.send("Очередь и так пустая, куда дальше?")
-
-    @commands.command(name="previous", aliases=['prev'],
-                      brief='Играть предыдущий трек', description='Играть предыдущий трек')
-    async def previous_command(self, ctx):
-        player = await self.get_player(ctx)
-        if not ctx.author.guild_permissions.administrator and not (player.queue.get_track_owner() or ctx.author.id) == ctx.author.id:
-            await ctx.reply('Нельзя пропускать чужие треки, бака!')
-            return
-        if not player.queue.history:
-            raise NoPreviousTracks
-
-        player.queue.position -= 2
-        await player.stop()
-        await ctx.send("Играем то что уже слушали. Это действительно такой хороший трек?")
-
-    @previous_command.error
-    async def previous_command_error(self, ctx, exc):
-        if isinstance(exc, QueueIsEmpty):
-            await ctx.send("Очередь пуста(")
-        elif isinstance(exc, NoPreviousTracks):
-            await ctx.send("Это и так первый трек")
-
-    @commands.command(name="repeat",
-                      brief='Установить режим повтора. Подробнее в расширенной справке',
-                      description='Установить режим повтора.\nДоступные режимы: none, 1, all')
-    async def repeat_command(self, ctx, mode: str):
-        if mode not in ("none", "1", "all"):
-            raise InvalidRepeatMode
-
-        player = await self.get_player(ctx)
-        player.queue.set_repeat_mode(mode)
-        await ctx.send(f"Установила {mode} как режим повтора.")
-
     @slash_command(name="repeat",
                    description='Установить режим повтора.')
     @guild_only()
@@ -622,11 +527,6 @@ class Music(commands.Cog):
         player = await self.get_player(ctx)
         player.queue.set_repeat_mode(mode)
         await ctx.interaction.response.send_message(f"Установила {mode} как режим повтора.")
-
-    @repeat_command.error
-    async def repeat_command_error(self, ctx, exc):
-        if isinstance(exc, InvalidRepeatMode):
-            await ctx.send("Невалидный режим повтора, иди смотри справку")
 
     async def queue_pages(self, ctx):
         player = await self.get_player(ctx)
@@ -658,17 +558,6 @@ class Music(commands.Cog):
         embed.add_field(name="Всего треков", value=player.queue.length, inline=False)
         return pages_embeds
 
-    @commands.command(name="queue", aliases=["q"],
-                      brief='Показать очередь', description='Показать очередь')
-    async def queue_command(self, ctx):
-        embeds = await self.queue_pages(ctx)
-        await ctx.send(embed=embeds[0])
-
-    @queue_command.error
-    async def queue_command_error(self, ctx: Context, exc):
-        if isinstance(exc, QueueIsEmpty):
-            await ctx.send("Ничего нет")
-
     @slash_command(name="queue", description='Показать очередь')
     @guild_only()
     async def queue_slash(self, ctx: ApplicationContext):
@@ -680,14 +569,6 @@ class Music(commands.Cog):
         if isinstance(exc.original, QueueIsEmpty):
             await ctx.response.send_message("Ничего нет", ephemeral=True)
 
-    @commands.command(name="shuffle",
-                      brief='Перемешать очередь',
-                      description='Перемешивает очередь чтобы тебе было не так противно слушать одни и те же плейлисты на повторе')
-    async def shuffle_command(self, ctx):
-        player = await self.get_player(ctx)
-        player.queue.shuffle()
-        await ctx.reply('Перемешала. Теперь как будто слушаешь новый плейлист.')
-
     @slash_command(name="shuffle",
                    description='Перемешивает очередь чтобы тебе было не так противно слушать одни и те же плейлисты на повторе')
     @guild_only()
@@ -695,33 +576,6 @@ class Music(commands.Cog):
         player = await self.get_player(ctx)
         player.queue.shuffle()
         await ctx.interaction.response.send_message('Перемешала. Теперь как будто слушаешь новый плейлист.')
-
-    @commands.command(name="playing", aliases=["np"],
-                      brief='Показать что сейчас играет', description='Показать что сейчас играет')
-    async def playing_command(self, ctx: Context):
-        player = await self.get_player(ctx)
-
-        if not player.is_playing():
-            raise PlayerIsAlreadyPaused
-
-        if player in self.player_controls and self.player_controls[player].is_stopped():
-            controls: PlayerControls = self.player_controls[player]
-            try:
-                if isinstance(controls._message, Interaction):
-                    await controls._message.delete_original_message()
-                else:
-                    await controls._message.delete()
-            except NotFound as e:
-                logging.warning(e)
-        else:
-            controls = PlayerControls(player, ctx)
-        controls.message = await ctx.send(embed=controls.generate_player_embed(), view=controls)
-        self.player_controls[player] = controls
-
-    @playing_command.error
-    async def playing_command_error(self, ctx, exc):
-        if isinstance(exc, PlayerIsAlreadyPaused):
-            await ctx.send("Ничего не играет(")
 
     @slash_command(name="np",
                    description='Показать что сейчас играет')
@@ -743,31 +597,6 @@ class Music(commands.Cog):
         controls.message = await ctx.interaction.response.send_message(embed=controls.generate_player_embed(), view=controls)
         self.player_controls[player] = controls
 
-    @commands.command(name="skipto", aliases=["playindex", "pi"],
-                      brief='Перейти сразу к треку под номером N', description='Перейти сразу к треку под номером N. N указывать через пробел')
-    async def skipto_command(self, ctx, index: int):
-        player = await self.get_player(ctx)
-        if not ctx.author.guild_permissions.administrator and not (player.queue.get_track_owner() or ctx.author.id) == ctx.author.id:
-            await ctx.reply('Нельзя пропускать чужие треки, бака!')
-            return
-        if player.queue.is_empty:
-            raise QueueIsEmpty
-
-        if not 0 <= index <= player.queue.length:
-            raise NoMoreTracks
-
-        player.queue.position = index - 1
-        await player.stop()
-        await ctx.send(f"Играем музяку под номером {index}.")
-        await player.start_playback()
-
-    @skipto_command.error
-    async def skipto_command_error(self, ctx, exc):
-        if isinstance(exc, QueueIsEmpty):
-            await ctx.send("Ничего не играет.")
-        elif isinstance(exc, NoMoreTracks):
-            await ctx.send("Указан неверный номер(")
-
     @slash_command(name="skipto", aliases=["playindex", "pi"],
                    description='Перейти сразу к треку под номером index')
     @guild_only()
@@ -786,22 +615,6 @@ class Music(commands.Cog):
         await player.stop()
         await ctx.response.send_message(f"Играем музяку под номером {index}.")
         await player.start_playback()
-
-    @commands.command(name="restart",
-                      brief='Запустить трек заново', description='Запустить трек заново, все хуйня Саня, дайвай по новой!')
-    async def restart_command(self, ctx):
-        player = await self.get_player(ctx)
-
-        if player.queue.is_empty:
-            raise QueueIsEmpty
-
-        await player.seek(0)
-        await ctx.send("Перезапустила")
-
-    @restart_command.error
-    async def restart_command_error(self, ctx, exc):
-        if isinstance(exc, QueueIsEmpty):
-            await ctx.send("Нечего перезапускать")
 
 
 def setup(bot):

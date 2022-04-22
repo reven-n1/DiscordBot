@@ -6,7 +6,8 @@ class AlreadyConnectedToChannel(commands.CommandError):
 
 
 class NoVoiceChannel(commands.CommandError):
-    pass
+    def __init__(self, *args) -> None:
+        super().__init__('No Voice Channel can be found', *args)
 
 
 class QueueIsEmpty(commands.CommandError):

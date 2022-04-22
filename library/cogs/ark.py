@@ -71,23 +71,6 @@ class Ark(Cog):
 
     # cog commands ----------------------------------------------------------------------------------------------
 
-    @command(name="myark", aliases=["моидевочки", "майарк"],
-             brief='Вывести твою коллекцию сочных аниме девочек(и кунчиков ^-^)',
-             description='Вывести твою коллекцию сочных аниме девочек(и кунчиков ^-^). '
-             'Отправлю этот списочек прямой посылочкой в твои ЛС, братик. А если ты укажешь имя песонажа я покажу его карточку')
-    async def myark_command(self, ctx, *char_name):
-        """
-        This command sends ark collection to private messages.\n
-        If collection empty -> returns 'Empty collection'
-        """
-        char_name = " ".join(char_name)
-        embed, selector = self.myark(char_name, ctx.message.author)
-        message = await ctx.message.author.send(embed=embed, view=selector)
-        if selector:
-            selector.message = message
-        if not isinstance(ctx.message.channel, DMChannel):
-            await ctx.message.delete()
-
     def myark_autocomplete(self, ctx: discord.AutocompleteContext):
         collection = self.get_ark_collection(ctx.interaction.user.id)
         return list(sorted([char[1] for rar in collection.values() for char in rar if str(char[1]).lower().startswith(ctx.value.lower())]))
@@ -102,26 +85,6 @@ class Ark(Cog):
         message = await ctx.response.send_message(embed=embed, view=selector, ephemeral=not public)
         if selector:
             selector.message = await message.original_message()
-
-    @is_nsfw()
-    @guild_only()
-    @command(name="barter", aliases=["обмен"],
-             brief='Обменять много хуевых персов на мало пиздатых',
-             description='Обменять 5 дубликатов персонажей на 1 персонажа с более высоким уровнем редкости, йо.')
-    async def barter_command(self, ctx):
-        """
-        Serves to exchange 5 characters for 1 rank higher\n
-        if possible else returns 'Нет операторов на обмен'
-        """
-        barter_list = self.get_barter_list(ctx.message.author.id)
-        if barter_list:
-            barter = self.ark_barter(barter_list, ctx.message.author.id)
-            for new_char in barter:
-                embed, selector = self.ark_embed_and_view(new_char, ctx.message.author)
-                selector.message = await ctx.message.channel.send(embed=embed, view=selector)
-        else:
-            await ctx.send("***Нет операторов на обмен***", delete_after=15)
-            await ctx.message.delete(delay=15)
 
     @slash_command(name="barter",
                    brief='Обменять много хуевых персов на мало пиздатых')
@@ -142,21 +105,6 @@ class Ark(Cog):
             await ctx.followup.send(content="Готово! Наслаждайся!")
         else:
             await ctx.response.send_message("***Нет операторов на обмен***", ephemeral=15)
-
-    @is_nsfw()
-    @guild_only()
-    @cooldown(1, data.get_ark_cooldown, user_guild_cooldown)
-    @command(name="ark", aliases=["арк"],
-             brief='Твоя любимая команда',
-             description='Кидает рандомную девочку (но это не точно, там и трапики есть, ня) и сохраняет её'
-             ', чтобы ты потом мог ее посмотреть при помощи команды myark, ну или обменять если ты её не любишь(')
-    async def ark_command(self, ctx):
-        """
-        Return a random arknigts character (from character_table.json)
-        """
-        character_data = self.roll_random_character(ctx.message.author.id)
-        embed, selector = self.ark_embed_and_view(character_data, ctx.message.author)
-        selector.message = await ctx.message.channel.send(embed=embed, view=selector)
 
     @slash_command(name="ark",
                    description='Кидает рандомную девочку (но это не точно, там и трапики есть, ня) и сохраняет её')

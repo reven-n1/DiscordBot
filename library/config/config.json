@@ -1,9 +1,7 @@
 {
     "default_settings": {
         
-        "cog_list": ["default", "ark", "ger", "music", "help", "reactions"],
-        
-        "allowed_channels": ["arkbot", "bots", "android"],
+        "cog_list": ["default", "ark", "ger", "music", "reactions"],
         
         "ger": {
             "self_ger_chance": "10",
@@ -23,14 +21,6 @@
         },
         
         "chat_misc_cooldown":"1800",
-
-        "bot_statuses":
-        {
-            "gaming_status": ["жизнь", "Detroit: Become Human", "Warface"],
-            "listening_status": ["music_status1", "music_status2", "music_status3"],
-            "streaming_status": ["stream_status1", "stream_status2", "stream_status3"],
-            "watching_status": ["listen_status1", "listen_status2", "listen_status3"]
-        }, 
 
         "embed_color":"ff9900",
 

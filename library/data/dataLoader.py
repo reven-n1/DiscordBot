@@ -21,12 +21,6 @@ class dataHandler():
             try:
                 self.__data = load(json_config_file)["default_settings"]
 
-                # bot work channels
-                self.__bot_channels = self.__data["allowed_channels"]
-
-                # bot statuses
-                self.__bot_statuses = self.__data["bot_statuses"]
-
                 # ger chance and phrases, cooldown
                 self.__ger_self_chance = int(self.__data["ger"]["self_ger_chance"])
                 self.__ger_phrases = self.__data["ger"]["phrase_variants"]
@@ -112,9 +106,6 @@ class dataHandler():
     @property
     def get_del_after(self):
         return self.__delete_after
-    
-    def get_bot_status(self, category):
-        return choice(self.__bot_statuses[f"{category}"])
     
     @property
     def get_prefix(self):

@@ -26,15 +26,6 @@ class Default(Cog):
 
     # cog commands
 
-    @command(name="ping", aliases=["пинг"],
-             brief='Замеряет задержку в развитии',
-             description='Замеряет задержку в развитии, твоем)')
-    async def ping_command(self, ctx):
-        """
-        Checks ping
-        """
-        await ctx.reply(f"Pong! {round(self.bot.latency*1000, 1)} ms")
-
     @slash_command(name="ping",
                    description='Замеряет задержку в развитии, твоем)')
     async def ping_slash(self, ctx: Interaction):
@@ -42,23 +33,6 @@ class Default(Cog):
         Checks ping
         """
         await ctx.response.send_message(f"Pong! {round(self.bot.latency*1000, 1)} ms")
-
-    @command(name="say", aliases=["скажи"],
-             brief='Я скажу все что ты хочешь, братик.',
-             description='Я скажу все что ты хочешь, братик. Разве что тебе админом нужно быть)')
-    @guild_only()
-    @has_permissions(administrator=True)
-    async def say(self, ctx, *args):
-        """
-        Bot say what u what whenever u want. Need administrator rights.
-        """
-        try:
-            await ctx.message.delete()
-        except HTTPException as e:
-            logging.error(e)
-        await ctx.message.channel.send(" ".join(args))
-        logging.info(f'User {ctx.author.name} sent message as bot')
-        logging.info(" ".join(args))
 
     @slash_command(name="say",
                    description="Я скажу все что ты хочешь, братик.")
@@ -81,18 +55,6 @@ class Default(Cog):
         emb = discord.Embed(title=title, color=self.embed_color)
         emb.set_image(url="https://pbs.twimg.com/media/D-5sUKNXYAA5K9l.jpg")
         return emb
-
-    @command(name="f", aliases=["ф"],
-             brief='Отдать честь за почивших героев',
-             description='Отдать честь за почивших героев. Можно упоминанием указать кого чтим.')
-    @guild_only()
-    @cooldown(1, data.get_chat_misc_cooldown_sec, user_guild_cooldown)
-    async def pressf_command(self, ctx):
-        """
-        press f for fallen heroes.
-        sends simple picture of saluting girl. can mention people
-        """
-        await ctx.message.channel.send(embed=self.pressf(ctx.author, ctx.message.mentions[0] if ctx.message.mentions else None))
 
     @slash_command(name="f",
                    description='Отдать честь за почивших героев. Можно упоминанием указать кого чтим.')
@@ -124,18 +86,6 @@ class Default(Cog):
         emb.set_image(url=choice(fimages))
         return emb
 
-    @command(name="o7", aliases=["07", "о7"],
-             brief='Поприветсвовать командиров',
-             description='Поприветсвовать командиров, а можно и кого-то конкретного')
-    @guild_only()
-    @cooldown(1, data.get_chat_misc_cooldown_sec, user_guild_cooldown)
-    async def o7_command(self, ctx):
-        """
-        greet fellow commanders
-        can mention whom to greet
-        """
-        await ctx.message.channel.send(embed=self.o7(ctx.user, ctx.message.mentions[0] if ctx.message.mentions else None))
-
     @slash_command(name="o7", aliases=["07", "о7"],
                    description='Поприветсвовать командиров, а можно и кого-то конкретного')
     @guild_only()
@@ -156,27 +106,6 @@ class Default(Cog):
         can mention whom to greet
         """
         await ctx.response.send_message(embed=self.o7(ctx.user, member))
-
-    @command(name="avatar", aliases=["аватар"],
-             brief='Показывает аватар пользователя',
-             description='Показывает твой аватар. С помощью упоминания можно посмотреть аватар другого пользователя')
-    @cooldown(1, data.get_chat_misc_cooldown_sec, user_guild_cooldown)
-    async def avatar(self, ctx):
-        url = None
-        if ctx.message.mentions:
-            title = f"Аватар {ctx.message.mentions[0].display_name}"
-            if ctx.message.mentions[0].avatar:
-                url = ctx.message.mentions[0].avatar.url
-        else:
-            title = f"Аватар {ctx.message.author.display_name}"
-            if ctx.message.author.avatar:
-                url = ctx.message.author.avatar.url
-        if url:
-            emb = discord.Embed(title=title, color=self.embed_color)
-            emb.set_image(url=url)
-            await ctx.send(embed=emb)
-        else:
-            await ctx.send('Аватар не найден')
 
     @user_command(
         name='Avatar'
@@ -226,21 +155,6 @@ class Default(Cog):
         embed.set_footer(
             text=f"Requested by {user.display_name}")
         return embed
-
-    @command(name="info", aliases=["инфо"],
-             brief='Информация и статистика бота',
-             description='Информация и статистика бота')
-    @guild_only()
-    async def info_command(self, ctx):
-        """
-        This command shows bot info
-        """
-        embed = self.info(ctx.author)
-        await ctx.send(embed=embed, delete_after=self.options.get_chat_misc_cooldown_sec)
-        try:
-            await ctx.message.delete(delay=self.options.get_chat_misc_cooldown_sec)
-        except Exception as e:
-            logging.warning(e)
 
     @slash_command(name="info",
                    description='Информация и статистика бота')

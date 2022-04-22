@@ -72,7 +72,15 @@ class Bot_init(Bot):
                 return Embed(title=f"***Ожидайте: {cooldown_time}***")
 
         elif isinstance(exception, CommandNotFound):
-            return Embed(title=f"{ctx.message.content} - ***В последнее время я тебя совсем не понимаю*** :crying_cat_face: ")
+            return Embed(title=choice((
+                "Я же предупреждала! Пользуйся слешами.",
+                "Не, не, не, пользуйся слешами",
+                "Команды запрещены РКН, пользуйтесь слешами",
+                "Команд больше нибудит, жи. Пользуся слешами",
+                "Братик, я же говорила, слеши! Бака совсем чтоли?",
+                "Dolboeb found, use slashes!",
+                "Никак вы блять не научитесь. Слешы юзай.",
+            )))
 
         elif isinstance(exception, MissingPermissions):
             return Embed(title=f"{ctx.author} ***- Я же сказала низя!***")
@@ -126,12 +134,6 @@ class Bot_init(Bot):
             await ctx.interaction.response.send_message(embed=content, ephemeral=True)
         else:
             await ctx.interaction.followup.send(embed=content, ephemeral=True)
-
-    async def process_commands(self, message) -> None:
-        res = await super().process_commands(message)
-        if message.content.startswith('!'):
-            await message.reply('Ахтунг, все эти вот ваши комманды обычные устарели, пользуйтесь слеш-командами (это когда ты пишиешь / и дискорд сам тебе подсказывает!), скоро обычные перестанут работать, ня!')
-        return res
 
 
 db = Database()
