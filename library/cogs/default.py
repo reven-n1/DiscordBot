@@ -22,7 +22,6 @@ class Default(Cog):
         self.__delete_quantity = 100
         self.__db = db
         self.options = dataHandler()
-        self.embed_color = self.options.get_embed_color
 
     # cog commands
 
@@ -52,7 +51,7 @@ class Default(Cog):
             title = f"**{user.display_name}** заплатил увожение за {target.display_name}"
         else:
             title = f"**{user.display_name}** заплатил увожение. o7"
-        emb = discord.Embed(title=title, color=self.embed_color)
+        emb = discord.Embed(title=title, color=user.color)
         emb.set_image(url="https://pbs.twimg.com/media/D-5sUKNXYAA5K9l.jpg")
         return emb
 
@@ -82,7 +81,7 @@ class Default(Cog):
             title = f"**{user.display_name}** приветствует {target.display_name}. o7"
         else:
             title = f"**{user.display_name}** приветствует вас командиры. o7"
-        emb = discord.Embed(title=title, color=self.embed_color)
+        emb = discord.Embed(title=title, color=user.color)
         emb.set_image(url=choice(fimages))
         return emb
 
@@ -118,7 +117,7 @@ class Default(Cog):
         )
 
     def info(self, user: Member):
-        embed = discord.Embed(color=self.embed_color, title=self.name,
+        embed = discord.Embed(color=user.color, title=self.name,
                               url="https://discord.com/oauth2/authorize?client_id=885800080169398292&scope=&scope=applications.commands%20bot&permissions=3401792")
         embed.add_field(name="Описание",
                         value="Тупая деффка еще и бот", inline=False)

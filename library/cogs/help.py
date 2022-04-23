@@ -34,7 +34,6 @@ class Help(Cog):
     def __init__(self, bot):
         self.bot = bot
         self.options = dataHandler()
-        self.embed_color = self.options.get_embed_color
 
     @cooldown(10, data.get_chat_misc_cooldown_sec, user_channel_cooldown)
     @command(brief='Показать помощь, ня', description='Показать помощь, ня')
@@ -56,9 +55,9 @@ class Help(Cog):
                     break
             else:
                 emb = discord.Embed(title="Ты совсем бака?:anger: ",
-                                     description=f"Они-чан, только не туда! Я никогда не слышала о `{args[0]}`. Не думаю что такая группа существует."
-                                     "Спроси у меня справочку если забыл что я умею.",
-                                     color=discord.Color.orange())
+                                    description=f"Они-чан, только не туда! Я никогда не слышала о `{args[0]}`. Не думаю что такая группа существует."
+                                    "Спроси у меня справочку если забыл что я умею.",
+                                    color=discord.Color.orange())
             if selected_cog:
                 if len(selected_cog.get_commands()) <= 25:
                     for cmd in selected_cog.walk_commands():
@@ -95,7 +94,7 @@ class Help(Cog):
                     if args[1].lower() in aliases:
 
                         emb = discord.Embed(title=f'{"/".join(aliases)} - помощч', description=f"`{cmd.description}`",
-                                            color=discord.Color.green())  # TODO color from cfg
+                                            color=discord.Color.green())
                         break
                 else:
                     emb = discord.Embed(title="Ты совсем бака?:anger: ",

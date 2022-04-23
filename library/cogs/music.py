@@ -1,4 +1,5 @@
-from discord import ApplicationContext, Interaction, Option, slash_command
+from email.message import Message
+from discord import ApplicationContext, Interaction, InteractionMessage, Option, slash_command
 from library.bot_token import spotipy_client_id, spotipy_client_secret
 from wavelink.ext.spotify import SpotifyClient, SpotifyTrack, SpotifyRequestError
 from discord.ext.commands.context import Context
@@ -189,7 +190,7 @@ class Player(wavelink.Player):
                     for i, t in enumerate(tracks[:5])
                 )
             ),
-            colour=options.get_embed_color,
+            colour=ctx.author.color,
             timestamp=dt.datetime.utcnow()
         )
         embed.set_author(name="Результаты поиска")
@@ -268,27 +269,37 @@ class Player(wavelink.Player):
 
 
 class PlayerControls(discord.ui.View):
-    player: Player
-    ctx: Context
-    _message: Interaction
+    _player: Player
+    _ctx: Context
+    _interaction: Interaction = None
+    _message: Message = None
     _stop = False
     _task: asyncio.Task = None
 
     def __init__(self, player: Player, ctx: Context, update_interval=10):
         super().__init__(timeout=None)
-        self.player = player
-        self.ctx = ctx
+        self._player = player
+        self._ctx = ctx
         self.update_interval = update_interval
+
+    @property
+    def interaction(self) -> Interaction:
+        return self._interaction
+
+    @interaction.setter
+    def interaction(self, interaction: Interaction):
+        self._interaction = interaction
+        self._message = None
         self.create_update_task()
 
     @property
-    def message(self) -> Interaction:
+    def message(self) -> Message:
         return self._message
 
     @message.setter
     def message(self, message: Interaction):
-        self.create_update_task()
         self._message = message
+        self.create_update_task()
 
     def create_update_task(self):
         if not self._task or self._task.done():
@@ -296,20 +307,22 @@ class PlayerControls(discord.ui.View):
             self._task = asyncio.create_task(self.update())
 
     async def update(self):
-        await asyncio.sleep(self.update_interval)
-        assert self.message
         while not self._stop:
-            if not self.player.is_connected():
-                await self.message.delete_original_message()
+            await asyncio.sleep(self.update_interval)
+            if not self._message and self._interaction:
+                msg = await self._interaction.original_message()
+                self._message = await self._interaction.channel.fetch_message(msg.id)
+            if not self._player.is_connected():
+                await self._message.delete()
                 self.stop()
             try:
-                await self.message.edit_original_message(embed=self.generate_player_embed())
-            except discord.HTTPException:
-                self._stop = True
-                break
+                await self._message.edit(embed=self.generate_player_embed())
+            except discord.HTTPException as e:
+                self.stop()
+                logging.exception(e)
+                await self._message.delete()
             except Exception as e:
                 logging.exception(e)
-            await asyncio.sleep(self.update_interval)
 
     def stop(self):
         self._stop = True
@@ -320,30 +333,30 @@ class PlayerControls(discord.ui.View):
 
     def generate_player_embed(self):
         play_state_emoji = ''
-        if self.player.is_paused():
+        if self._player.is_paused():
             play_state_emoji = '⏸️'
-        elif self.player.is_playing():
+        elif self._player.is_playing():
             play_state_emoji = '▶️'
         else:
             play_state_emoji = '⏹️'
         embed = discord.Embed(
             title=f"{play_state_emoji}Сейчас играет",
-            colour=options.get_embed_color,
+            colour=self._ctx.author.colour,
             timestamp=dt.datetime.utcnow(),
         )
         embed.set_footer(
-            text=f"Запросил {self.ctx.author.display_name}", icon_url=self.ctx.author.avatar.url if self.ctx.author.avatar else '')
+            text=f"Запросил {self._ctx.author.display_name}", icon_url=self._ctx.author.avatar.url if self._ctx.author.avatar else '')
         embed.add_field(name="Название трека",
-                        value=self.player.queue.current_track.title if not self.player.queue.is_empty and self.player.queue.current_track
+                        value=self._player.queue.current_track.title if not self._player.queue.is_empty and self._player.queue.current_track
                         else "Очередь пуста, добавь музыку командой /play", inline=False)
-        if not self.player.queue.is_empty and self.player.queue.current_track:
+        if not self._player.queue.is_empty and self._player.queue.current_track:
 
             embed.add_field(
-                name="Исполнитель", value=self.player.queue.current_track.author, inline=False)
+                name="Исполнитель", value=self._player.queue.current_track.author, inline=False)
 
-            position = divmod(self.player.position, 60)
-            length = divmod(self.player.queue.current_track.length, 60)
-            percent = round((self.player.position*20)/self.player.queue.current_track.length)
+            position = divmod(self._player.position, 60)
+            length = divmod(self._player.queue.current_track.length, 60)
+            percent = round((self._player.position*20)/self._player.queue.current_track.length)
             embed.add_field(
                 name="Время",
                 value=f"{int(position[0])}:{round(position[1]):02}/{int(length[0])}:{round(length[1]):02}"
@@ -355,49 +368,49 @@ class PlayerControls(discord.ui.View):
     @discord.ui.button(emoji='⏮️', style=discord.ButtonStyle.gray)
     async def prev(self, button: discord.ui.Button, interaction: discord.Interaction):
         try:
-            if not self.player.queue.history:
+            if not self._player.queue.history:
                 await interaction.response.send_message('Это первый трек', ephemeral=True)
                 return
         except QueueIsEmpty:
             await interaction.response.send_message('Очередь пуста', ephemeral=True)
             return
-        if not interaction.user.guild_permissions.administrator and not (self.player.queue.get_track_owner() or interaction.user.id) == interaction.user.id:
+        if not interaction.user.guild_permissions.administrator and not (self._player.queue.get_track_owner() or interaction.user.id) == interaction.user.id:
             await interaction.response.send_message('Нельзя пропускать чужие треки!', ephemeral=True)
             return
-        self.player.queue.position -= 2
-        await self.player.advance()
+        self._player.queue.position -= 2
+        await self._player.advance()
         await asyncio.sleep(0.5)
         await interaction.response.edit_message(view=self, embed=self.generate_player_embed())
 
     @discord.ui.button(emoji='⏸️', style=discord.ButtonStyle.gray)
     async def play_pause(self, button: discord.ui.Button, interaction: discord.Interaction):
-        if self.player.queue.is_empty:
+        if self._player.queue.is_empty:
             await interaction.response.send_message('В очереди больше ничего нет!', ephemeral=True)
             return
-        if not self.player.is_paused():
+        if not self._player.is_paused():
             button.emoji = '▶️'
-            await self.player.set_pause(True)
+            await self._player.set_pause(True)
         else:
             button.emoji = '⏸️'
-            await self.player.set_pause(False)
+            await self._player.set_pause(False)
         await interaction.response.edit_message(view=self, embed=self.generate_player_embed())
 
     @discord.ui.button(emoji='⏹️', style=discord.ButtonStyle.gray)
     async def stop_button(self, button: discord.ui.Button, interaction: discord.Interaction):
-        if not interaction.user.guild_permissions.administrator and not (self.player.queue.get_track_owner() or interaction.user.id) == interaction.user.id:
+        if not interaction.user.guild_permissions.administrator and not (self._player.queue.get_track_owner() or interaction.user.id) == interaction.user.id:
             await interaction.response.send_message('Нельзя пропускать чужие треки!', ephemeral=True)
             return
-        self.player.queue.clear()
-        await self.player.stop()
+        self._player.queue.clear()
+        await self._player.stop()
         await asyncio.sleep(0.5)
         await interaction.response.edit_message(view=self, embed=self.generate_player_embed())
 
     @discord.ui.button(emoji='⏭️', style=discord.ButtonStyle.gray)
     async def next(self, button: discord.ui.Button, interaction: discord.Interaction):
-        if not interaction.user.guild_permissions.administrator and not (self.player.queue.get_track_owner() or interaction.user.id) == interaction.user.id:
+        if not interaction.user.guild_permissions.administrator and not (self._player.queue.get_track_owner() or interaction.user.id) == interaction.user.id:
             await interaction.response.send_message('Нельзя пропускать чужие треки!', ephemeral=True)
             return
-        await self.player.advance()
+        await self._player.advance()
         await asyncio.sleep(0.5)
         await interaction.response.edit_message(view=self, embed=self.generate_player_embed())
 
@@ -435,13 +448,6 @@ class Music(commands.Cog):
         if reason == 'FINISHED':
             await player.advance()
 
-    async def cog_check(self, ctx):
-        if isinstance(ctx.channel, discord.DMChannel):
-            await ctx.send("Музыка доступна только на сервере")
-            return False
-
-        return True
-
     async def start_nodes(self):
         """Connect to our Lavalink nodes."""
         await self.bot.wait_until_ready()
@@ -459,8 +465,8 @@ class Music(commands.Cog):
         for node in nodes.values():
             await wavelink.NodePool.create_node(bot=self.bot, **node, spotify_client=self.spotify_client)
 
-    async def get_player(self, ctx: commands.Context) -> Player:
-        if not ctx.voice_client and ctx.author.voice:
+    async def get_player(self, ctx: commands.Context, connect=False) -> Player:
+        if not ctx.voice_client and ctx.author.voice and connect:
             return await ctx.author.voice.channel.connect(cls=Player)
         elif ctx.voice_client:
             return ctx.voice_client
@@ -471,47 +477,33 @@ class Music(commands.Cog):
     @guild_only()
     async def disconnect_slash(self, interaction: discord.ApplicationContext):
         player = await self.get_player(interaction)
-        if player:
-            await player.teardown()
-        else:
-            await interaction.response.send_message("Нет подключения к войсу и так", ephemeral=True)
+        await player.teardown()
+        await interaction.response.send_message("Ну все, до новых встреч, пока!")
 
     async def play(self, ctx, query: str) -> str:
-        player = await self.get_player(ctx)
-        if not player:
-            return 'Не могу подключится'
-        if query is None:
-            if player.queue.is_empty:
-                raise QueueIsEmpty
-            await player.set_pause(False)
-            if not player.is_playing():
-                await player.start_playback()
-            return "Продолжаем."
-
-        else:
-            query = query.strip("<>")
-            if not re.match(URL_REGEX, query):
-                return await player.add_tracks(ctx, await wavelink.YouTubeTrack.search(query))
-            elif 'spotify.com' not in query:
-                if 'list' not in query:
-                    return await player.add_tracks(ctx, await wavelink.YouTubeTrack.search(query, return_first=True))
-                else:
-                    return await player.add_tracks(ctx, await wavelink.YouTubePlaylist.search(query))
-            elif 'spotify.com' in query:
-                tries = 10
-                res = None
-                while tries > 0:
-                    try:
-                        if 'track' in query:
-                            res = await player.add_tracks(ctx, await SpotifyTrack.search(query, return_first=True))
-                        else:
-                            res = await player.add_tracks(ctx, await SpotifyTrack.search(query), playlist=True)
-                    except SpotifyRequestError as e:
-                        logging.exception(e)
-                        tries -= 1
-                        await sleep(5)
+        player = await self.get_player(ctx, connect=True)
+        if not re.match(URL_REGEX, query):
+            return await player.add_tracks(ctx, await wavelink.YouTubeTrack.search(query))
+        elif 'spotify.com' not in query:
+            if 'list' not in query:
+                return await player.add_tracks(ctx, await wavelink.YouTubeTrack.search(query, return_first=True))
+            else:
+                return await player.add_tracks(ctx, await wavelink.YouTubePlaylist.search(query))
+        elif 'spotify.com' in query:
+            tries = 10
+            res = None
+            while tries > 0:
+                try:
+                    if 'track' in query:
+                        res = await player.add_tracks(ctx, await SpotifyTrack.search(query, return_first=True))
                     else:
-                        return res
+                        res = await player.add_tracks(ctx, await SpotifyTrack.search(query), playlist=True)
+                except SpotifyRequestError as e:
+                    logging.exception(e)
+                    tries -= 1
+                    await sleep(5)
+                else:
+                    return res
         return 'Чот я не поняла'
 
     @slash_command(name="play",
@@ -521,6 +513,8 @@ class Music(commands.Cog):
         await ctx.interaction.response.defer()
         try:
             await ctx.interaction.followup.send(await self.play(ctx, query))
+        except NoVoiceChannel:
+            await ctx.interaction.followup.send('Ты не подключен к каналу!')
         except Exception as e:
             await ctx.interaction.followup.send('Ошибочка вышла')
             logging.exception(e)
@@ -538,12 +532,12 @@ class Music(commands.Cog):
                    description='Установить режим повтора.')
     @guild_only()
     async def repeat_slash(self, ctx: ApplicationContext, mode: Option(str, choices=['none', '1', 'all'])):
-        player = await self.get_player(ctx)
+        player = await self.get_player(ctx, connect=False)
         player.queue.set_repeat_mode(mode)
         await ctx.interaction.response.send_message(f"Установила {mode} как режим повтора.")
 
     async def queue_pages(self, ctx):
-        player = await self.get_player(ctx)
+        player = await self.get_player(ctx, connect=False)
         show = 10
         embed = discord.Embed(
             title="Очередь",
@@ -581,6 +575,7 @@ class Music(commands.Cog):
     @slash_command(name="queue", description='Показать очередь')
     @guild_only()
     async def queue_slash(self, ctx: ApplicationContext):
+        await ctx.response.defer()
         custom_buttons = [
             pages.PaginatorButton("first", emoji="⏪", style=discord.ButtonStyle.gray),
             pages.PaginatorButton("prev", emoji="⬅", style=discord.ButtonStyle.gray),
@@ -589,36 +584,46 @@ class Music(commands.Cog):
             pages.PaginatorButton("last", emoji="⏩", style=discord.ButtonStyle.gray),
         ]
         paginator = pages.Paginator(pages=await self.queue_pages(ctx),
-                                    disable_on_timeout=True,
-                                    timeout=60, use_default_buttons=False,
+                                    use_default_buttons=False,
                                     custom_buttons=custom_buttons)
         await paginator.respond(ctx.interaction)
-        asyncio.create_task(self.queue_updater(paginator, ctx, custom_buttons))
+        asyncio.create_task(self.queue_updater(paginator, ctx))
 
-    async def queue_updater(self, paginator: pages.Paginator, ctx: ApplicationContext, custom_buttons: List[pages.PaginatorButton]):
-        player = await self.get_player(ctx)
-        while not paginator.is_finished() and player.is_playing():
+    async def queue_updater(self, paginator: pages.Paginator, ctx: ApplicationContext):
+        player = await self.get_player(ctx, connect=False)
+        while not paginator.is_finished() and player.is_connected():
             await sleep(10)
             current_page = paginator.current_page
-            #await paginator.update(pages=await self.queue_pages(ctx), use_default_buttons=not bool(custom_buttons), custom_buttons=custom_buttons)
-            paginator.pages = await self.queue_pages(ctx)
-            if current_page > paginator.page_count:
+            try:
+                paginator.pages = await self.queue_pages(ctx)
+            except NoVoiceChannel:
+                break
+            if current_page > len(paginator.pages) - 1:
                 current_page = 0
-            await paginator.goto_page(current_page)
-        await paginator.stop()
+            try:
+                await paginator.goto_page(current_page)
+            except discord.HTTPException as e:
+                logging.warning(e)
+                break
+        try:
+            await paginator.disable()
+        except discord.HTTPException:
+            pass
 
     @queue_slash.error
     async def queue_slash_error(self, ctx: ApplicationContext, exc):
         if isinstance(exc.original, QueueIsEmpty):
             await ctx.response.send_message("Ничего нет", ephemeral=True)
         else:
-            raise exc
+            await self.no_voice_error(ctx, exc)
 
     @slash_command(name="shuffle",
                    description='Перемешивает очередь чтобы тебе было не так противно слушать одни и те же плейлисты на повторе')
     @guild_only()
     async def shuffle_slash(self, ctx: ApplicationContext):
-        player = await self.get_player(ctx)
+        player = await self.get_player(ctx, connect=False)
+        if not player:
+            await ctx.interaction.response.send_message('Нет подключения к войсу')    
         player.queue.shuffle()
         await ctx.interaction.response.send_message('Перемешала. Теперь как будто слушаешь новый плейлист.')
 
@@ -631,12 +636,12 @@ class Music(commands.Cog):
         if player in self.player_controls:
             controls: PlayerControls = self.player_controls[player]
             try:
-                await controls._message.delete_original_message()
+                await controls._message.delete()
             except discord.HTTPException as e:
                 logging.warning(e)
         else:
             controls = PlayerControls(player, ctx)
-        controls.message = await ctx.interaction.response.send_message(embed=controls.generate_player_embed(), view=controls)
+        controls.interaction = await ctx.interaction.response.send_message(embed=controls.generate_player_embed(), view=controls)
         self.player_controls[player] = controls
 
     @slash_command(name="skipto", description='Перейти сразу к треку под номером index')
@@ -658,6 +663,17 @@ class Music(commands.Cog):
         await ctx.response.send_message(f"Играем музяку под номером {index}.")
         if not player.is_playing():
             await player.start_playback()
+
+    @disconnect_slash.error
+    @repeat_slash.error
+    @shuffle_slash.error
+    @playing_slash.error
+    @skipto_slash.error
+    async def no_voice_error(self, ctx: ApplicationContext, exc):
+        if isinstance(exc.original, NoVoiceChannel):
+            await ctx.respond("Нет подключения к войсу!", ephemeral=True)
+        else:
+            raise exc
 
 
 def setup(bot):
