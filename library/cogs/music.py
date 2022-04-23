@@ -2,17 +2,17 @@ from discord import ApplicationContext, Interaction, Option, slash_command
 from library.bot_token import spotipy_client_id, spotipy_client_secret
 from wavelink.ext.spotify import SpotifyClient, SpotifyTrack, SpotifyRequestError
 from discord.ext.commands.context import Context
-from library.my_Exceptions.music_exceptions import *
+from library.my_Exceptions.music_exceptions import NoVoiceChannel, QueueIsEmpty, NoTracksFound
 from library.data.dataLoader import dataHandler
 from discord.ext.commands import guild_only
 from discord.errors import NotFound
 from discord.ext import commands, pages
+from typing import Dict, List
 from random import shuffle
 from asyncio import sleep
 from copy import deepcopy
 from enum import Enum
 import datetime as dt
-import typing as t
 import wavelink
 import discord
 import asyncio
@@ -31,10 +31,10 @@ class RepeatMode(Enum):
 
 
 class Queue:
-    _queue = []  #TODO type annotation
+    _queue: List[wavelink.Track] = []
     position: int = 0
     repeat_mode: RepeatMode = RepeatMode.NONE
-    _user_tracks = {}  #TODO type annotation
+    _user_tracks: Dict[wavelink.Track, int] = {}
 
     @property
     def is_empty(self):
@@ -65,6 +65,10 @@ class Queue:
     @property
     def length(self):
         return len(self._queue)
+
+    @property
+    def all(self):
+        return self._queue
 
     def add(self, user_id: int,  *args):
         for track in args:
@@ -125,7 +129,7 @@ class Player(wavelink.Player):
         self.selfDestructor = Player.SelfDestruct(timeout, self)
 
     class SelfDestruct:
-        parent = None
+        parent: wavelink.Player = None
         _task: asyncio.Task = None
 
         def __init__(self, timeout: int, parent, start=False):
@@ -147,11 +151,8 @@ class Player(wavelink.Player):
                 await self.parent.teardown()
 
     async def teardown(self):
-        try:
-            self.queue.clear()
-            await self.disconnect()
-        except KeyError:
-            pass
+        self.queue.clear()
+        await self.disconnect()
 
     async def add_tracks(self, ctx: Context, tracks, playlist=False) -> str:
         if not tracks:
@@ -166,7 +167,7 @@ class Player(wavelink.Player):
             response = f"Добавила {len(tracks)} треков в очередь, сладенький."
         elif isinstance(tracks, wavelink.Track):
             self.queue.add(ctx.author.id, tracks)
-            response = f"Добавила {tracks.title} треков в очередь, сладенький."
+            response = f"Добавила {tracks.title} в очередь, сладенький."
         elif isinstance(tracks, (list, set, tuple)) and len(tracks) == 1:
             self.queue.add(ctx.author.id, tracks[0])
             response = f"Добавила {tracks[0].title} в очередь, сладенький."
@@ -270,7 +271,7 @@ class Player(wavelink.Player):
 class PlayerControls(discord.ui.View):
     player: Player
     ctx: Context
-    _message: discord.Message
+    _message: Interaction
     _stop = False
     _task: asyncio.Task = None
 
@@ -282,11 +283,11 @@ class PlayerControls(discord.ui.View):
         self.create_update_task()
 
     @property
-    def message(self) -> discord.Message:
+    def message(self) -> Interaction:
         return self._message
 
     @message.setter
-    def message(self, message: discord.Message):
+    def message(self, message: Interaction):
         self.create_update_task()
         self._message = message
 
@@ -300,17 +301,10 @@ class PlayerControls(discord.ui.View):
         assert self.message
         while not self._stop:
             if not self.player.is_connected():
-                if isinstance(self.message, Interaction):
-                    await self.message.delete_original_message()
-                else:
-                    await self.message.delete()
+                await self.message.delete_original_message()
                 self.stop()
-                break
             try:
-                if isinstance(self.message, Interaction):
-                    await self.message.edit_original_message(embed=self.generate_player_embed())
-                else:
-                    await self.message.edit(embed=self.generate_player_embed())
+                await self.message.edit_original_message(embed=self.generate_player_embed())
             except NotFound:
                 self._stop = True
                 break
@@ -416,7 +410,7 @@ class PlayerControls(discord.ui.View):
 class Music(commands.Cog):
     qualified_name = 'Music'
     description = 'Играет музыку'
-    player_controls = {}
+    player_controls: Dict[Player, PlayerControls] = {}
 
     def __init__(self, bot):
         self.bot: discord.client.Client = bot
@@ -428,15 +422,18 @@ class Music(commands.Cog):
         logging.info(f" wavelink node `{node.identifier}` ready.")
 
     @commands.Cog.listener("on_wavelink_track_stuck")
-    @commands.Cog.listener("on_wavelink_track_end")
     @commands.Cog.listener("on_wavelink_track_exception")
     async def on_player_stop(self, player: Player, track: wavelink.Track, exception: Exception = None, *args, **kwargs):
         if exception:
             logging.warning(exception)
+            player.advance()
             return
         if player.queue.repeat_mode == RepeatMode.ONE:
             await player.repeat_track()
-        else:
+
+    @commands.Cog.listener("on_wavelink_track_end")
+    async def on_track_end(self, player: Player, track: wavelink.Track, reason: str):
+        if reason == 'FINISHED':
             await player.advance()
 
     async def cog_check(self, ctx):
@@ -525,8 +522,9 @@ class Music(commands.Cog):
         await ctx.interaction.response.defer()
         try:
             await ctx.interaction.followup.send(await self.play(ctx, query))
-        except Exception:
-            await ctx.interaction.followup.send('Говно случилось')
+        except Exception as e:
+            await ctx.interaction.followup.send('Ошибочка вышла')
+            logging.exception(e)
 
     @play_slash.error
     async def play_slash_error(self, ctx: ApplicationContext, exc):
@@ -564,7 +562,7 @@ class Music(commands.Cog):
         )
         embed.add_field(name="Всего треков", value=player.queue.length, inline=False)
         pages_embeds = []
-        if upcoming := player.queue.history + player.queue.upcoming:
+        if upcoming := player.queue.all:
             for idx in range(0, len(upcoming), show):
                 new_embed = deepcopy(embed)
                 new_embed.add_field(
@@ -602,13 +600,10 @@ class Music(commands.Cog):
     async def playing_slash(self, ctx: ApplicationContext):
         player = await self.get_player(ctx)
 
-        if player in self.player_controls and self.player_controls[player].is_stopped():
+        if player in self.player_controls:
             controls: PlayerControls = self.player_controls[player]
             try:
-                if isinstance(controls._message, Interaction):
-                    await controls._message.delete_original_message()
-                else:
-                    await controls._message.delete()
+                await controls._message.delete_original_message()
             except NotFound as e:
                 logging.warning(e)
         else:
@@ -616,21 +611,21 @@ class Music(commands.Cog):
         controls.message = await ctx.interaction.response.send_message(embed=controls.generate_player_embed(), view=controls)
         self.player_controls[player] = controls
 
-    @slash_command(name="skipto", aliases=["playindex", "pi"],
-                   description='Перейти сразу к треку под номером index')
+    @slash_command(name="skipto", description='Перейти сразу к треку под номером index')
     @guild_only()
-    async def skipto_slash(self, ctx: ApplicationContext, index: Option(int, description='Номер песни')):
+    async def skipto_slash(self, ctx: ApplicationContext, index: Option(int, description='Номер песни', min_value=1)):
         player = await self.get_player(ctx)
         if not ctx.author.guild_permissions.administrator and not (player.queue.get_track_owner() or ctx.author.id) == ctx.author.id:
             await ctx.response.send_message('Нельзя пропускать чужие треки, бака!')
             return
         if player.queue.is_empty:
             await ctx.response.send_message('Ничего не играет.')
-
-        if not 0 <= index <= player.queue.length:
+            return
+        if not (0 < index < player.queue.length):
             await ctx.response.send_message('Указан неверный номер')
+            return
 
-        player.queue.position = index - 2
+        player.queue.position = index - 1
         await player.stop()
         await ctx.response.send_message(f"Играем музяку под номером {index}.")
         if not player.is_playing():
