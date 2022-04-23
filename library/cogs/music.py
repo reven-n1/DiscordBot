@@ -5,7 +5,6 @@ from discord.ext.commands.context import Context
 from library.my_Exceptions.music_exceptions import NoVoiceChannel, QueueIsEmpty, NoTracksFound
 from library.data.dataLoader import dataHandler
 from discord.ext.commands import guild_only
-from discord.errors import NotFound
 from discord.ext import commands, pages
 from typing import Dict, List
 from random import shuffle
@@ -305,7 +304,7 @@ class PlayerControls(discord.ui.View):
                 self.stop()
             try:
                 await self.message.edit_original_message(embed=self.generate_player_embed())
-            except NotFound:
+            except discord.HTTPException:
                 self._stop = True
                 break
             except Exception as e:
@@ -633,7 +632,7 @@ class Music(commands.Cog):
             controls: PlayerControls = self.player_controls[player]
             try:
                 await controls._message.delete_original_message()
-            except NotFound as e:
+            except discord.HTTPException as e:
                 logging.warning(e)
         else:
             controls = PlayerControls(player, ctx)
