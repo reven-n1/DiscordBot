@@ -554,9 +554,13 @@ class Music(commands.Cog):
         )
         embed.set_footer(
             text=f"Запросил {ctx.author.display_name}", icon_url=ctx.author.avatar.url if ctx.author.avatar else None)
+        try:
+            current_track = player.queue.current_track
+        except QueueIsEmpty:
+            current_track = None
         embed.add_field(
             name="Сейчас играет",
-            value=f"({player.queue.position+1}/{player.queue.length}) {player.queue.current_track.title}" if player.queue.current_track else
+            value=f"({player.queue.position+1}/{player.queue.length}) {player.queue.current_track.title}" if current_track else
                   "Ничего сейчас не играет(\nЗапроси трек командой play",
             inline=False
         )
@@ -593,12 +597,16 @@ class Music(commands.Cog):
         asyncio.create_task(self.queue_updater(paginator, ctx, custom_buttons))
 
     async def queue_updater(self, paginator: pages.Paginator, ctx: ApplicationContext, custom_buttons: List[pages.PaginatorButton]):
-        while not paginator.is_finished():
+        player = await self.get_player(ctx)
+        while not paginator.is_finished() and player.is_playing():
             await sleep(10)
             current_page = paginator.current_page
-            await paginator.update(pages=await self.queue_pages(ctx), use_default_buttons=not bool(custom_buttons), custom_buttons=custom_buttons)
-            if current_page <= paginator.page_count:
-                await paginator.goto_page(current_page)
+            #await paginator.update(pages=await self.queue_pages(ctx), use_default_buttons=not bool(custom_buttons), custom_buttons=custom_buttons)
+            paginator.pages = await self.queue_pages(ctx)
+            if current_page > paginator.page_count:
+                current_page = 0
+            await paginator.goto_page(current_page)
+        await paginator.stop()
 
     @queue_slash.error
     async def queue_slash_error(self, ctx: ApplicationContext, exc):
@@ -616,7 +624,7 @@ class Music(commands.Cog):
         await ctx.interaction.response.send_message('Перемешала. Теперь как будто слушаешь новый плейлист.')
 
     @slash_command(name="np",
-                   description='Показать что сейчас играет')
+                   description='Показать что сейчас играет и управлять воспроизведением')
     @guild_only()
     async def playing_slash(self, ctx: ApplicationContext):
         player = await self.get_player(ctx)
