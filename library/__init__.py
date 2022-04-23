@@ -92,7 +92,7 @@ class Bot_init(Bot):
             return Embed(title=f"{ctx.author} ***- Доступно только на сервере ***")
 
         elif ctx.command.has_error_handler() or ctx.cog.has_error_handler():
-            logging.warning(exception)
+            logging.exception(exception)
 
         else:
             ctx.command.reset_cooldown(ctx)
@@ -130,6 +130,8 @@ class Bot_init(Bot):
 
     async def on_application_command_error(self, ctx: ApplicationContext, error):
         content = await self.get_exception_embed(ctx, error.original if hasattr(error, 'original') and error.original else error)
+        if not content:
+            return
         if not ctx.interaction.response.is_done():
             await ctx.interaction.response.send_message(embed=content, ephemeral=True)
         else:

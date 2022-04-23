@@ -336,7 +336,7 @@ class PlayerControls(discord.ui.View):
             text=f"Запросил {self.ctx.author.display_name}", icon_url=self.ctx.author.avatar.url if self.ctx.author.avatar else '')
         embed.add_field(name="Название трека",
                         value=self.player.queue.current_track.title if not self.player.queue.is_empty and self.player.queue.current_track
-                        else "Очередь пуста, добавь музыку командой !p", inline=False)
+                        else "Очередь пуста, добавь музыку командой /play", inline=False)
         if not self.player.queue.is_empty and self.player.queue.current_track:
 
             embed.add_field(
@@ -578,13 +578,34 @@ class Music(commands.Cog):
     @slash_command(name="queue", description='Показать очередь')
     @guild_only()
     async def queue_slash(self, ctx: ApplicationContext):
-        paginator = pages.Paginator(pages=await self.queue_pages(ctx), disable_on_timeout=True, timeout=60)
+        custom_buttons = [
+            pages.PaginatorButton("first", emoji="⏪", style=discord.ButtonStyle.gray),
+            pages.PaginatorButton("prev", emoji="⬅", style=discord.ButtonStyle.gray),
+            pages.PaginatorButton("page_indicator", style=discord.ButtonStyle.gray, disabled=True),
+            pages.PaginatorButton("next", emoji="➡", style=discord.ButtonStyle.gray),
+            pages.PaginatorButton("last", emoji="⏩", style=discord.ButtonStyle.gray),
+        ]
+        paginator = pages.Paginator(pages=await self.queue_pages(ctx),
+                                    disable_on_timeout=True,
+                                    timeout=60, use_default_buttons=False,
+                                    custom_buttons=custom_buttons)
         await paginator.respond(ctx.interaction)
+        asyncio.create_task(self.queue_updater(paginator, ctx, custom_buttons))
+
+    async def queue_updater(self, paginator: pages.Paginator, ctx: ApplicationContext, custom_buttons: List[pages.PaginatorButton]):
+        while not paginator.is_finished():
+            await sleep(10)
+            current_page = paginator.current_page
+            await paginator.update(pages=await self.queue_pages(ctx), use_default_buttons=not bool(custom_buttons), custom_buttons=custom_buttons)
+            if current_page <= paginator.page_count:
+                await paginator.goto_page(current_page)
 
     @queue_slash.error
     async def queue_slash_error(self, ctx: ApplicationContext, exc):
         if isinstance(exc.original, QueueIsEmpty):
             await ctx.response.send_message("Ничего нет", ephemeral=True)
+        else:
+            raise exc
 
     @slash_command(name="shuffle",
                    description='Перемешивает очередь чтобы тебе было не так противно слушать одни и те же плейлисты на повторе')
