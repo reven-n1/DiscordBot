@@ -596,7 +596,7 @@ class Music(commands.Cog):
             current_page = paginator.current_page
             try:
                 paginator.pages = await self.queue_pages(ctx)
-                paginator.page_count = len(paginator.pages)
+                paginator.page_count = len(paginator.pages) - 1
             except NoVoiceChannel:
                 break
             if current_page > len(paginator.pages) - 1:
