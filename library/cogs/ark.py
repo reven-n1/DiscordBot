@@ -158,13 +158,12 @@ class Ark(Cog):
                 collection_message.add_field(name="Ти бомж", value="иди покрути девочек!")
             collection_message.set_footer(text="Используй команду !майарк <имя> чтоб посмотреть на персонажа.")
             return (collection_message, None)
-        else:
-            try:
-                return self.ark_embed_and_view(self.show_character(char_name, user.id), user)
-            except NonOwnedCharacter:
-                return (discord.Embed(title="***Лох, у тебя нет такой дивочки***"), None)
-            except NonExistentCharacter:
-                return (discord.Embed(title="***Лошара, даже имя своей вайфу не запомнил((***"), None)
+        try:
+            return self.ark_embed_and_view(self.show_character(char_name, user.id), user)
+        except NonOwnedCharacter:
+            return (discord.Embed(title="***Лох, у тебя нет такой дивочки***"), None)
+        except NonExistentCharacter:
+            return (discord.Embed(title="***Лошара, даже имя своей вайфу не запомнил((***"), None)
 
     def get_skin_list(self, character_id) -> namedtuple:
         skinTyple = namedtuple('skin', ['id', 'name', 'desc'])
@@ -226,13 +225,13 @@ class Ark(Cog):
 
                 barter_list.append([rarity + 1, new_char_quantity])
 
-                self.__db.alter(f"""UPDATE users_ark_collection SET operator_count =
+                self.__db.alter("""UPDATE users_ark_collection SET operator_count =
                                 CASE
                                     WHEN operator_count % 5 != 0  THEN operator_count % 5
                                     WHEN operator_count  % 5 == 0 THEN 5
                                     ELSE operator_count
                                 END
-                                WHERE rarity < 6 AND operator_count > 5 AND user_id ='{author_id}'""")
+                                WHERE rarity < 6 AND operator_count > 5 AND user_id = ?""", author_id)
 
         return barter_list
 

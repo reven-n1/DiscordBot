@@ -115,7 +115,7 @@ class Queue:
     def get_track_owner(self, track: wavelink.Track = None):
         if track:
             return self._user_tracks[track]
-        elif self.current_track:
+        if self.current_track:
             return self._user_tracks[self.current_track]
         else:
             return False
@@ -468,7 +468,7 @@ class Music(commands.Cog):
     async def get_player(self, ctx: commands.Context, connect=False) -> Player:
         if not ctx.voice_client and ctx.author.voice and connect:
             return await ctx.author.voice.channel.connect(cls=Player)
-        elif ctx.voice_client:
+        if ctx.voice_client:
             return ctx.voice_client
         raise NoVoiceChannel()
 
@@ -484,12 +484,11 @@ class Music(commands.Cog):
         player = await self.get_player(ctx, connect=True)
         if not re.match(URL_REGEX, query):
             return await player.add_tracks(ctx, await wavelink.YouTubeTrack.search(query))
-        elif 'spotify.com' not in query:
+        if 'spotify.com' not in query:
             if 'list' not in query:
                 return await player.add_tracks(ctx, await wavelink.YouTubeTrack.search(query, return_first=True))
-            else:
-                return await player.add_tracks(ctx, await wavelink.YouTubePlaylist.search(query))
-        elif 'spotify.com' in query:
+            return await player.add_tracks(ctx, await wavelink.YouTubePlaylist.search(query))
+        if 'spotify.com' in query:
             tries = 10
             res = None
             while tries > 0:

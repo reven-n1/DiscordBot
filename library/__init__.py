@@ -66,10 +66,9 @@ class Bot_init(Bot):
             cooldown_time = timedelta(seconds=ceil(exception.retry_after))
             if any(pfr in ctx.command.name for pfr in ["ger", "пук"]):
                 return Embed(title=f"***Заряжаем жепу, осталось: {cooldown_time}***")
-            elif any(pfr in ctx.command.name for pfr in ["ark", "арк"]):
+            if any(pfr in ctx.command.name for pfr in ["ark", "арк"]):
                 return Embed(title=f"***Копим орундум, осталось: {cooldown_time}***")
-            else:
-                return Embed(title=f"***Ожидайте: {cooldown_time}***")
+            return Embed(title=f"***Ожидайте: {cooldown_time}***")
 
         elif isinstance(exception, CommandNotFound):
             return Embed(title=choice((
