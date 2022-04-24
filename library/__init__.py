@@ -132,10 +132,7 @@ class Bot_init(Bot):
         content = await self.get_exception_embed(ctx, error.original if hasattr(error, 'original') and error.original else error)
         if not content:
             return
-        if not ctx.interaction.response.is_done():
-            await ctx.interaction.response.send_message(embed=content, ephemeral=True)
-        else:
-            await ctx.interaction.followup.send(embed=content, ephemeral=True)
+        await ctx.respond(embed=content, ephemeral=True)
 
 
 db = Database()
