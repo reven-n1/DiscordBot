@@ -52,6 +52,9 @@ class Bot_init(Bot):
 
     async def on_ready(self):
         logging.info(" ***bot ready***")
+        logging.info('Servers connected to:')
+        for guild in self.guilds:
+            logging.info(f"{guild.name} ({guild.id}), owner: {guild.owner.name}#{guild.owner.discriminator}")
         status_setter.start()
 
     async def close(self):
