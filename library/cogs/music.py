@@ -145,9 +145,9 @@ class Player(wavelink.Player):
         async def _run(self):
             for _ in range(self.timeout):
                 await asyncio.sleep(1)
-                if self.parent.is_playing():
+                if self.parent.is_playing() and not self.parent.is_paused():
                     break
-            if not self.parent.is_playing():
+            if not self.parent.is_playing() or self.parent.is_paused():
                 await self.parent.teardown()
 
     async def teardown(self):
@@ -223,6 +223,15 @@ class Player(wavelink.Player):
     async def stop(self):
         self.selfDestructor.start()
         return await super().stop()
+
+    async def pause(self) -> None:
+        self.selfDestructor.start()
+        return await super().pause()
+
+    async def set_pause(self, pause: bool) -> None:
+        if pause:
+            self.selfDestructor.start()
+        return await super().set_pause(pause)
 
     async def disconnect(self, *, force: bool = False) -> None:
         self.queue.clear()
@@ -319,13 +328,15 @@ class PlayerControls(discord.ui.View):
                 await self._message.edit(embed=self.generate_player_embed())
             except discord.HTTPException as e:
                 self.stop()
-                logging.exception(e)
+                logging.warning(e)
                 await self._message.delete()
             except Exception as e:
                 logging.exception(e)
 
     def stop(self):
         self._stop = True
+        self._message = None
+        self._interaction = None
         return super().stop()
 
     def is_stopped(self):
@@ -440,13 +451,14 @@ class Music(commands.Cog):
             logging.warning(exception)
             player.advance()
             return
-        if player.queue.repeat_mode == RepeatMode.ONE:
-            await player.repeat_track()
 
     @commands.Cog.listener("on_wavelink_track_end")
     async def on_track_end(self, player: Player, track: wavelink.Track, reason: str):
         if reason == 'FINISHED':
-            await player.advance()
+            if player.queue.repeat_mode == RepeatMode.ONE:
+                await player.repeat_track()
+            else:
+                await player.advance()
 
     async def start_nodes(self):
         """Connect to our Lavalink nodes."""
