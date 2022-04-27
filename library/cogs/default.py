@@ -165,6 +165,11 @@ class Default(Cog):
         embed = self.info(ctx.author)
         await ctx.response.send_message(embed=embed, ephemeral=True)
 
+    @slash_command(name="invite",
+                   description='Показать ссылку-приглаешние этого бота')
+    async def invite_slash(self, ctx: ApplicationContext):
+        await ctx.respond('https://discord.com/oauth2/authorize?client_id=885800080169398292&scope=&scope=applications.commands%20bot&permissions=3401792', ephemeral=True)
+    
     # functions----------------------------------------------------------------------------------------------------------------------------
 
     def __exec_stmts(self, stmts: list):
