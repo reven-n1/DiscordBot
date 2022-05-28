@@ -1,9 +1,8 @@
 from discord import ApplicationContext, Interaction, Member, Option, TextChannel, slash_command, user_command
-from discord.ext.commands import command, has_permissions, cooldown, guild_only
+from discord.ext.commands import cooldown, guild_only
 from library import data, user_guild_cooldown
 from library.data.dataLoader import dataHandler
 from library.data.pressf_images import fimages
-from discord.errors import HTTPException
 from discord.ext.commands import Cog
 from collections import namedtuple
 from random import choice
@@ -36,7 +35,9 @@ class Default(Cog):
     @slash_command(name="say",
                    description="Я скажу все что ты хочешь, братик.")
     @guild_only()
-    @has_permissions(administrator=True)
+    @discord.default_permissions(
+        administrator=True
+    )
     async def say_slash(self, interaction: Interaction, msg: Option(str, description='Message', name='message'),
                         chnl: Option((TextChannel), name="channel", description="Choose a channel to say")):
         await self.bot.get_channel(chnl.id).send(msg)
