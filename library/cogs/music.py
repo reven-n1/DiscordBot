@@ -70,7 +70,7 @@ class Queue:
     def all(self):
         return self._queue
 
-    def add(self, user_id: int,  *args):
+    def add(self, user_id: int, *args):
         for track in args:
             self._user_tracks[track] = user_id
         self._queue.extend(args)
@@ -117,8 +117,7 @@ class Queue:
             return self._user_tracks[track]
         if self.current_track:
             return self._user_tracks[self.current_track]
-        else:
-            return False
+        return False
 
 
 class Player(wavelink.Player):
@@ -158,7 +157,7 @@ class Player(wavelink.Player):
         if not tracks:
             raise NoTracksFound
 
-        response = 'Ясно понятно'
+        response = 'Это не сработало'
         if isinstance(tracks, wavelink.YouTubePlaylist):
             self.queue.add(ctx.author.id, *tracks.tracks)
             response = f"Добавила {len(tracks.tracks)} треков в очередь, сладенький."
@@ -332,6 +331,7 @@ class PlayerControls(discord.ui.View):
                 await self._message.delete()
             except Exception as e:
                 logging.exception(e)
+                self.stop()
 
     def stop(self):
         self._stop = True
@@ -498,7 +498,7 @@ class Music(commands.Cog):
             return await player.add_tracks(ctx, await wavelink.YouTubeTrack.search(query))
         if 'spotify.com' not in query:
             if 'list' not in query:
-                return await player.add_tracks(ctx, await wavelink.YouTubeTrack.search(query, return_first=True))
+                return await player.add_tracks(ctx, await wavelink.YouTubeTrack.search(query.split('&')[0], return_first=True))
             return await player.add_tracks(ctx, await wavelink.YouTubePlaylist.search(query))
         if 'spotify.com' in query:
             tries = 10

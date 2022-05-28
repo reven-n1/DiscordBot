@@ -73,7 +73,7 @@ class Bot_init(Bot):
                 return Embed(title=f"***Копим орундум, осталось: {cooldown_time}***")
             return Embed(title=f"***Ожидайте: {cooldown_time}***")
 
-        elif isinstance(exception, CommandNotFound):
+        if isinstance(exception, CommandNotFound):
             return Embed(title=choice((
                 "Я же предупреждала! Пользуйся слешами.",
                 "Не, не, не, пользуйся слешами",
@@ -84,16 +84,16 @@ class Bot_init(Bot):
                 "Никак вы блять не научитесь. Слешы юзай.",
             )))
 
-        elif isinstance(exception, MissingPermissions):
+        if isinstance(exception, MissingPermissions):
             return Embed(title=f"{ctx.author} ***- Я же сказала низя!***")
 
-        elif isinstance(exception, NSFWChannelRequired):
+        if isinstance(exception, NSFWChannelRequired):
             return Embed(title=f"{ctx.author} ***- Доступно только в NSFW ***")
 
-        elif isinstance(exception, NoPrivateMessage):
+        if isinstance(exception, NoPrivateMessage):
             return Embed(title=f"{ctx.author} ***- Доступно только на сервере ***")
 
-        elif ctx.command.has_error_handler() or ctx.cog.has_error_handler():
+        if ctx.command.has_error_handler() or ctx.cog.has_error_handler():
             logging.exception(exception)
 
         else:
