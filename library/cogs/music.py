@@ -326,23 +326,29 @@ class PlayerControls(discord.ui.View):
                 msg = await self._interaction.original_message()
                 self._message = await self._interaction.channel.fetch_message(msg.id)
             if not self._player.is_connected():
-                await self._message.delete()
                 self.stop()
             try:
                 await self._message.edit(embed=self.generate_player_embed())
             except discord.HTTPException as e:
                 self.stop()
                 logging.warning(e)
-                await self._message.delete()
             except Exception as e:
                 logging.exception(e)
                 self.stop()
 
     def stop(self):
+        asyncio.create_task(self.delete_message())
+        return super().stop()
+
+    async def delete_message(self):
+        if self._message:
+            try:
+                await self._message.delete()
+            except discord.HTTPException as e:
+                logging.warning(e)
         self._stop = True
         self._message = None
         self._interaction = None
-        return super().stop()
 
     def is_stopped(self):
         return self._stop
