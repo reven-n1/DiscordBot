@@ -26,9 +26,9 @@ options = DataHandler()
 
 class Queue:
     class RepeatMode(Enum):
-        NONE = 0
-        ONE = 1
-        ALL = 2
+        NONE = 'none'
+        ONE = '1'
+        ALL = 'all'
 
     _queue: List[wavelink.Track] = []
     position: int = 0
@@ -460,7 +460,7 @@ class Music(commands.Cog):
     @commands.Cog.listener("on_wavelink_track_end")
     async def on_track_end(self, player: Player, track: wavelink.Track, reason: str):
         if reason == 'FINISHED':
-            if player.queue.repeat_mode == RepeatMode.ONE:
+            if player.queue.repeat_mode == Queue.RepeatMode.ONE:
                 await player.repeat_track()
             else:
                 await player.advance()
