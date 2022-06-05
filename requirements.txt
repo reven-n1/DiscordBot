@@ -7,5 +7,6 @@ Brotli
 cchardet
 orjson
 requests
+sqlalchemy
 https://github.com/Pycord-Development/pycord/archive/refs/heads/master.zip #py-cord[voice]
 https://github.com/PythonistaGuild/Wavelink/archive/refs/heads/main.zip #wavelink

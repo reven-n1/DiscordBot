@@ -1,11 +1,16 @@
 from discord.ext.commands.core import is_nsfw, guild_only
 from discord.ext.commands import command, cooldown
-from library import data, user_guild_cooldown
+from library import user_guild_cooldown
+from library.data.data_loader import DataHandler
+from library.data.db.database import Database, Statistic, StatisticParameter
 from discord.ext.commands import Cog
 from random import randint, choice
-from library import db, bot
+from library import bot
 from discord import Interaction, slash_command
 import discord
+
+
+data = DataHandler()
 
 
 class Ger(Cog):
@@ -17,7 +22,7 @@ class Ger(Cog):
         self.__ger_self_chance = data.get_self_ger_chanse
         self.__ger_self_phrases = data.get_ger_self_phrases
         self.__ger_phrases = data.get_ger_phrases
-        self.__db = db
+        self.__db = Database()
 
     # cog commands ----------------------------------------------------------------------------------------------
 
@@ -46,17 +51,17 @@ class Ger(Cog):
         Returns:
             str: string with fart phrase
         """
-        self.__db.user_statistic_increment(random_member.id, 'ger_hit')
-        self.__db.user_statistic_increment(message_author.id, 'ger_use')
-        self.__db.statistic_increment('ger')
+        self.__db.increment_user_statistic(random_member.id, StatisticParameter.Parameter.GER_HIT)
+        self.__db.increment_user_statistic(message_author.id, StatisticParameter.Parameter.GER_USE)
+        self.__db.increment_statistic(Statistic.Parameter.GER)
         if random_member.bot:
-            self.__db.statistic_increment('ger_bot')
+            self.__db.increment_statistic(Statistic.Parameter.GER_BOT)
         if random_member.id == bot.user.id:
-            self.__db.statistic_increment('ger_me')
+            self.__db.increment_statistic(Statistic.Parameter.GER_ME)
         if randint(0, 101) >= self.__ger_self_chance:  # Chance to обосраться
             return (f"{message_author.mention} "
                     f"{choice(self.__ger_phrases)} {random_member.mention}")
-        self.__db.statistic_increment('self_ger')
+        self.__db.increment_statistic(Statistic.Parameter.SELF_GER)
         return f"{message_author.mention} {choice(self.__ger_self_phrases)}"  # Самообсер
 
 

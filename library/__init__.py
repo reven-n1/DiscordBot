@@ -3,11 +3,10 @@ from discord import ApplicationContext
 from discord.errors import Forbidden
 from discord.ext.commands.context import Context
 from discord.ext.commands.errors import CommandError, CommandOnCooldown, MissingPermissions, \
-    NSFWChannelRequired, NoPrivateMessage
-from discord import Activity, ActivityType, Game, Streaming, Intents
+     NSFWChannelRequired, NoPrivateMessage
+from discord import Activity, ActivityType, Intents
 from discord.ext.commands import Bot, CommandNotFound
-from library.data.dataLoader import dataHandler
-from library.data.db.database import Database
+from library.data.data_loader import DataHandler
 from library.bot_token import token
 from discord.embeds import Embed
 from datetime import timedelta
@@ -34,7 +33,7 @@ class Bot_init(Bot):
                          )
 
     def setup(self):
-        for _ in data.get_cog_list:
+        for _ in DataHandler().get_cog_list:
             self.load_extension(f"library.cogs.{_}")
         logging.info("setup complete")
 
@@ -46,16 +45,16 @@ class Bot_init(Bot):
         super().run(self.TOKEN, reconnect=True)
 
     async def on_connect(self):
-        logging.info(" bot connected")
-        logging.info(f" latensy:{round(self.latency*1000, 1)} ms")
+        logging.info("bot connected")
+        logging.info(f"latensy:{round(self.latency*1000, 1)} ms")
         await super().on_connect()
 
     async def on_ready(self):
-        logging.info(" ***bot ready***")
+        logging.info("***bot ready***")
         logging.info('Servers connected to:')
         for guild in self.guilds:
             logging.info(f"{guild.name} ({guild.id}), owner: {guild.owner.name}#{guild.owner.discriminator}")
-        status_setter.start()
+        self.status_setter.start()
 
     async def close(self):
         logging.info("Closing on keyboard interrupt...")
@@ -126,9 +125,9 @@ class Bot_init(Bot):
             logging.warning(e)
         content = await self.get_exception_embed(context, exception)
         if isinstance(content, str):
-            await context.send(content, delete_after=data.get_del_after)
+            await context.send(content, delete_after=DataHandler().get_del_after)
         elif isinstance(content, Embed):
-            await context.send(embed=content, delete_after=data.get_del_after)
+            await context.send(embed=content, delete_after=DataHandler().get_del_after)
 
     async def on_application_command_error(self, ctx: ApplicationContext, error):
         content = await self.get_exception_embed(ctx, error.original if hasattr(error, 'original') and error.original else error)
@@ -136,10 +135,24 @@ class Bot_init(Bot):
             return
         await ctx.respond(embed=content, ephemeral=True)
 
+    @tasks.loop(minutes=5.0)
+    async def status_setter(self):
+        try:
+            resp = requests.get('https://myanimelist.net/rss.php?type=rwe&u=wladbelsky', timeout=60.0)
+        except requests.ReadTimeout:
+            logging.warn("Timeout when reading MAL RSS")
+            return
 
-db = Database()
+        content = BytesIO(resp.content)
+
+        try:
+            feed = feedparser.parse(content)
+            await self.change_presence(activity=Activity(type=ActivityType.watching, name=feed['entries'][0]['title']))
+        except IndexError:
+            logging.warn('MAL RSS response invalid')
+
+
 bot = Bot_init()
-data = dataHandler()
 
 
 def user_guild_cooldown(msg):
@@ -152,20 +165,3 @@ def user_channel_cooldown(msg):
     channel_id = msg.channel.id
     user_id = msg.author.id
     return hash(str(channel_id)+str(user_id))
-
-
-@tasks.loop(minutes=5.0)
-async def status_setter():
-    try:
-        resp = requests.get('https://myanimelist.net/rss.php?type=rwe&u=wladbelsky', timeout=60.0)
-    except requests.ReadTimeout:
-        logging.warn("Timeout when reading MAL RSS")
-        return
-
-    content = BytesIO(resp.content)
-
-    try:
-        feed = feedparser.parse(content)
-        await bot.change_presence(activity=Activity(type=ActivityType.watching, name=feed['entries'][0]['title']))
-    except IndexError:
-        logging.warn('MAL RSS response invalid')

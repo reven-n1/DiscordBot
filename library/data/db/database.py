@@ -1,103 +1,147 @@
-import sqlite3
+from typing import Union
+from enum import Enum
+import sqlalchemy
+from library.data.data_loader import DataHandler
+from sqlalchemy import Column, ForeignKey, Integer, Text
+from sqlalchemy.orm import relationship
+from sqlalchemy.ext.declarative import declarative_base
+
+
+Base = declarative_base()
+metadata = Base.metadata
+
+
+class Statistic(Base):
+    __tablename__ = 'statistic'
+
+    parameter_name = Column(Text, primary_key=True)
+    value = Column(Integer, default=0)
+
+    class Parameter(Enum):
+        ARK = 'ark'
+        GER_BOT = 'ger_bot'
+        GER_ME = 'ger_me'
+        GER = 'ger'
+        SELF_GER = 'self_ger'
+
+
+class StatisticParameter(Base):
+    __tablename__ = 'statistic_parameters'
+
+    id = Column(Integer, primary_key=True)
+    name = Column(Text, unique=True)
+
+    class Parameter(Enum):
+        SIX_MISS = 'six_miss'
+        GER_HIT = 'ger_hit'
+        GER_USE = 'ger_use'
+
+
+class UsersArkCollection(Base):
+    __tablename__ = 'users_ark_collection'
+
+    user_id = Column(Text, primary_key=True)
+    operator_name = Column(Text, primary_key=True)
+    rarity = Column(Integer)
+    operator_count = Column(Integer, default=0)
+
+    def __repr__(self) -> str:
+        return f'{self.user_id} {self.operator_name} {self.rarity} {self.operator_count}'
+
+
+class UsersStatisticCounter(Base):
+    __tablename__ = 'users_statistic_counter'
+
+    user_id = Column(Text, primary_key=True)
+    parameter_id = Column(ForeignKey('statistic_parameters.id'), primary_key=True, index=True)
+    count = Column(Integer, default=0)
+
+    parameter = relationship('StatisticParameter')
+
+    def __repr__(self) -> str:
+        return f'{self.user_id} {self.parameter_id} {self.count}'
 
 
 class Database(object):
-    __DB_LOCATION = "library/data/db/Bot_DB.db"
+    _instance: 'Database' = None
 
     def __init__(self) -> None:
-        self.__db_connection = sqlite3.connect(self.__DB_LOCATION)
-        self.__cursor = self.__db_connection.cursor()
-        self.__create_tables()
+        self._config = DataHandler().get_database_config
+        self.engine = sqlalchemy.create_engine(self.prepare_connection_string(self._config), echo=False)
+        self.connection = self.engine.connect()
+        self.metadata = metadata
+        self.metadata.create_all(self.engine)
 
-    def __create_tables(self) -> None:
-        self.__cursor.execute("""
-        CREATE TABLE IF NOT EXISTS
-        users_ark_collection(user_id TEXT,
-                            operator_name TEXT,
-                            rarity INT,
-                            operator_count INT,
-                            PRIMARY KEY (user_id, operator_name))
-                            """)
+    def __new__(cls, *args, **kwargs):
+        if not cls._instance:
+            cls._instance = super(Database, cls).__new__(cls, *args, **kwargs)
+        return cls._instance
 
-        self.__cursor.execute("""
-        CREATE TABLE IF NOT EXISTS
-        statistic_parameters(id INTEGER PRIMARY KEY AUTOINCREMENT,
-                            name TEXT UNIQUE)
-                            """)
+    @classmethod
+    def get_instance(cls) -> 'Database':
+        if not getattr(cls, '_instance', None):
+            cls._instance = cls()
+        return cls._instance
 
-        self.__cursor.execute("""
-        CREATE TABLE IF NOT EXISTS
-        users_statistic_counter(user_id TEXT,
-                            parameter_id INTEGER,
-                            count INTEGER,
-                            PRIMARY KEY (user_id, parameter_id),
-                            FOREIGN KEY(parameter_id) REFERENCES statistic_parameters(id)
-                            )
-                            """)
+    def get_session(self) -> sqlalchemy.orm.session.Session:
+        return sqlalchemy.orm.sessionmaker(bind=self.engine)()
 
-        self.__cursor.execute("""
-        CREATE INDEX IF NOT EXISTS idx_user_statistic_parameter
-        ON users_statistic_counter (parameter_id);
-        """)
+    def insert_if_not_exsits(self, table, **data):
+        with self.get_session() as session:
+            result = session.query(table).filter_by(**data).first()
+            if not result:
+                session.merge(table(**data))
+                session.commit()
+            return session.query(table).filter_by(**data).first() if not result else result
 
-        self.__cursor.execute("""
-        CREATE TABLE IF NOT EXISTS
-        statistic(parameter_name TEXT PRIMARY KEY,
-                           value REAL)
-                            """)
-        self.__db_connection.commit()
+    def get_statistic(self, parameter_name: Union[str, Statistic.Parameter]) -> Statistic:
+        if isinstance(parameter_name, Statistic.Parameter):
+            parameter_name = parameter_name.value
+        return self.insert_if_not_exsits(Statistic, parameter_name=parameter_name)
 
-    def alter(self, request: str, *args, **kwargs) -> int:
-        inserted_id = self.__cursor.execute(request, args if args else kwargs).lastrowid
-        self.__commit()
-        return inserted_id
-
-    def extract(self, request: str, *args, **kwargs) -> list:
-        self.__cursor.execute(request, args if args else kwargs)
-        return self.__cursor.fetchall()
-
-    def statistic_increment(self, parameter_name: str):
-        self.alter("""insert or replace into statistic(parameter_name, value)
-        values (?, ifnull((select value from statistic where parameter_name=?),0)+1)
-        """, parameter_name, parameter_name)
-
-    def get_parameter_id(self, parameter_name: str) -> int:
-        id = self.extract("select id from statistic_parameters where name=?", parameter_name)
-        if not id:
-            id = self.alter("INSERT OR IGNORE INTO statistic_parameters(name) VALUES(?)", parameter_name)
+    def get_user_statistic(self, user_id, parameter_name: Union[str, StatisticParameter.Parameter], force_session=None):
+        if not force_session:
+            session = self.get_session()
         else:
-            id = id[0][0]
-        return id
+            session = force_session
+        if isinstance(parameter_name, StatisticParameter.Parameter):
+            parameter_name = parameter_name.value
+        result = session.query(UsersStatisticCounter).join(StatisticParameter).filter(UsersStatisticCounter.user_id == user_id, StatisticParameter.name == parameter_name).first()
+        if not result:
+            parameter = self.insert_if_not_exsits(StatisticParameter, name=parameter_name)
+            result = self.insert_if_not_exsits(UsersStatisticCounter, user_id=user_id, parameter_id=parameter.id)
+            session.commit()
+        if not force_session:
+            session.close()
+        return result
 
-    def user_statistic_increment(self, user_id: int, parameter_name: str):
-        id = self.get_parameter_id(parameter_name)
-        self.alter("""insert or replace into users_statistic_counter(user_id, parameter_id, count)
-        values (:uid,:pid, ifnull((select count from users_statistic_counter where parameter_id=:pid and user_id=:uid),0)+1)
-        """, uid=user_id, pid=id)
+    def increment_user_statistic(self, user_id, parameter_name: Union[str, Statistic.Parameter]):
+        with self.get_session() as session:
+            statistic = self.get_user_statistic(user_id, parameter_name, session)
+            statistic.count += 1
+            session.add(statistic)
+            session.commit()
 
-    def get_user_statistics(self, parameter_name: str, limit=5):
-        return self.extract("""select user_id, count from users_statistic_counter stats
-                    join statistic_parameters params on params.id=stats.parameter_id
-                    where params.name=? order by count desc limit ?""", parameter_name, limit)
+    def reset_user_statistic(self, user_id, parameter_name: Union[str, Statistic.Parameter]):
+        with self.get_session() as session:
+            statistic = self.get_user_statistic(user_id, parameter_name, session)
+            statistic.count = 0
+            session.add(statistic)
+            session.commit()
 
-    def get_user_statistic(self, user_id: int, parameter_name: str):
-        return self.extract("""select count from users_statistic_counter stats
-                    join statistic_parameters params on params.id=stats.parameter_id
-                    where user_id=? and params.name=?""", user_id, parameter_name)
+    def increment_statistic(self, parameter_name: Union[str, Statistic.Parameter]):
+        with self.get_session() as session:
+            statistic = self.get_statistic(parameter_name)
+            statistic.value += 1
+            session.add(statistic)
+            session.commit()
 
-    def reset_statistic_for_user(self, user_id: int, parameter_name: str):
-        id = self.get_parameter_id(parameter_name)
-        self.alter("update users_statistic_counter set count=0 where user_id=? and parameter_id=?", user_id, id)
-
-    @property
-    def user_statistic_types(self) -> list[str]:
-        return [str(x[0]) for x in self.extract("select name from statistic_parameters")]
-
-    def __commit(self) -> None:
-        self.__db_connection.commit()
-
-    def __repr__(self) -> str:
-        return f"{self.__class__.__name__} class - responsible for connection and alteration db"
-
-    def __del__(self):
-        self.__db_connection.close()
+    @staticmethod
+    def prepare_connection_string(config: dict):
+        user = config.get('user') or ''
+        password = config.get('password') or ''
+        host = config.get('host')
+        port = config.get('port') or ''
+        database = config.get('database') or ''
+        engine = config.get('engine')
+        return f'{engine}:///{user}{":" if user and password else ""}{password}{"@" if user and password else ""}{host}{":" if port else ""}{port}{"/" if database else ""}{database}'

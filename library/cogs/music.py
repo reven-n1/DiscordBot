@@ -1,10 +1,10 @@
 from email.message import Message
-from discord import ApplicationContext, Interaction, InteractionMessage, Option, slash_command
+from discord import ApplicationContext, Interaction, Option, SlashCommandGroup
 from library.bot_token import spotipy_client_id, spotipy_client_secret
 from wavelink.ext.spotify import SpotifyClient, SpotifyTrack, SpotifyRequestError
 from discord.ext.commands.context import Context
 from library.my_Exceptions.music_exceptions import NoVoiceChannel, QueueIsEmpty, NoTracksFound
-from library.data.dataLoader import dataHandler
+from library.data.data_loader import DataHandler
 from discord.ext.commands import guild_only
 from discord.ext import commands, pages
 from typing import Dict, List
@@ -21,16 +21,15 @@ import re
 
 
 URL_REGEX = r"(?i)\b((?:https?://|www\d{0,3}[.]|[a-z0-9.\-]+[.][a-z]{2,4}/)(?:[^\s()<>]+|\(([^\s()<>]+|(\([^\s()<>]+\)))*\))+(?:\(([^\s()<>]+|(\([^\s()<>]+\)))*\)|[^\s`!()\[\]{};:'\".,<>?«»“”‘’]))"
-options = dataHandler()
-
-
-class RepeatMode(Enum):
-    NONE = 0
-    ONE = 1
-    ALL = 2
+options = DataHandler()
 
 
 class Queue:
+    class RepeatMode(Enum):
+        NONE = 0
+        ONE = 1
+        ALL = 2
+
     _queue: List[wavelink.Track] = []
     position: int = 0
     repeat_mode: RepeatMode = RepeatMode.NONE
@@ -85,7 +84,7 @@ class Queue:
             self.position = 0
             return None
         if self.position > len(self._queue) - 1:
-            if self.repeat_mode == RepeatMode.ALL:
+            if self.repeat_mode == self.RepeatMode.ALL:
                 self.position = 0
             else:
                 if self.position > len(self._queue):
@@ -95,12 +94,10 @@ class Queue:
         return self._queue[self.position]
 
     def set_repeat_mode(self, mode):
-        if mode == "none":
-            self.repeat_mode = RepeatMode.NONE
-        elif mode == "1":
-            self.repeat_mode = RepeatMode.ONE
-        elif mode == "all":
-            self.repeat_mode = RepeatMode.ALL
+        try:
+            self.repeat_mode = self.RepeatMode(mode)
+        except ValueError:
+            raise ValueError("Invalid repeat mode")
 
     def clear(self):
         self._queue.clear()
@@ -119,12 +116,20 @@ class Queue:
             return self._user_tracks[self.current_track]
         return False
 
+    def pop(self, index: int) -> wavelink.Track:
+        if index > len(self._queue) - 1:
+            raise IndexError
+
+        track = self._queue[index]
+        del self._queue[index]
+        return track
+
 
 class Player(wavelink.Player):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
         self.queue = Queue()
-        timeout = int(dataHandler().get_chat_misc_cooldown_sec)
+        timeout = int(DataHandler().get_chat_misc_cooldown_sec)
         self.selfDestructor = Player.SelfDestruct(timeout, self)
 
     class SelfDestruct:
@@ -160,20 +165,20 @@ class Player(wavelink.Player):
         response = 'Это не сработало'
         if isinstance(tracks, wavelink.YouTubePlaylist):
             self.queue.add(ctx.author.id, *tracks.tracks)
-            response = f"Добавила {len(tracks.tracks)} треков в очередь, сладенький."
+            response = f"Добавила {len(tracks.tracks)} треков в очередь, сладенький"
         elif isinstance(tracks, (list, set, tuple)) and playlist:
             self.queue.add(ctx.author.id, *tracks)
-            response = f"Добавила {len(tracks)} треков в очередь, сладенький."
+            response = f"Добавила {len(tracks)} треков в очередь, сладенький"
         elif isinstance(tracks, wavelink.Track):
             self.queue.add(ctx.author.id, tracks)
-            response = f"Добавила {tracks.title} в очередь, сладенький."
+            response = f"Добавила {tracks.title} в очередь, сладенький"
         elif isinstance(tracks, (list, set, tuple)) and len(tracks) == 1:
             self.queue.add(ctx.author.id, tracks[0])
-            response = f"Добавила {tracks[0].title} в очередь, сладенький."
+            response = f"Добавила {tracks[0].title} в очередь, сладенький"
         else:
             if (track := await self.choose_track(ctx, tracks)) is not None:
                 self.queue.add(ctx.author.id, track)
-                response = f"Добавила {track.title} в очередь, сладенький."
+                response = f"Добавила {track.title} в очередь, сладенький"
 
         if not self.is_playing() and not self.queue.is_empty:
             await self.start_playback()
@@ -442,7 +447,7 @@ class Music(commands.Cog):
 
     @commands.Cog.listener()
     async def on_node_ready(self, node):
-        logging.info(f" wavelink node `{node.identifier}` ready.")
+        logging.info(f" wavelink node `{node.identifier}` ready")
 
     @commands.Cog.listener("on_wavelink_track_stuck")
     @commands.Cog.listener("on_wavelink_track_exception")
@@ -461,7 +466,7 @@ class Music(commands.Cog):
                 await player.advance()
 
     async def start_nodes(self):
-        """Connect to our Lavalink nodes."""
+        """Connect to our Lavalink nodes"""
         await self.bot.wait_until_ready()
 
         nodes = {
@@ -484,10 +489,15 @@ class Music(commands.Cog):
             return ctx.voice_client
         raise NoVoiceChannel()
 
-    @slash_command(name="disconnect",
+    music = SlashCommandGroup("music", "Музыка")
+
+    @music.command(name="disconnect",
                    description='Отключиться от голосового канала')
     @guild_only()
     async def disconnect_slash(self, interaction: discord.ApplicationContext):
+        if not interaction.user.guild_permissions.administrator and not (self.get_player(interaction).queue.get_track_owner() or interaction.user.id) == interaction.user.id:
+            await interaction.response.send_message('Нельзя пропускать чужие треки!', ephemeral=True)
+            return
         player = await self.get_player(interaction)
         await player.teardown()
         await interaction.response.send_message("Ну все, до новых встреч, пока!")
@@ -517,10 +527,11 @@ class Music(commands.Cog):
                     return res
         return 'Чот я не поняла'
 
-    @slash_command(name="play",
+    @music.command(name="play",
                    description='Поиск твоей любимой музыки в интернете. Будем вместе слушать ^.^')
     @guild_only()
-    async def play_slash(self, ctx: discord.ApplicationContext, query: discord.Option(str, "Поисковый запрос")):
+    async def play_slash(self, ctx: discord.ApplicationContext,
+                         query: discord.Option(str, "Поисковый запрос")):
         await ctx.interaction.response.defer()
         try:
             await ctx.interaction.followup.send(await self.play(ctx, query))
@@ -539,13 +550,13 @@ class Music(commands.Cog):
         else:
             logging.exception(exc)
 
-    @slash_command(name="repeat",
+    @music.command(name="repeat",
                    description='Установить режим повтора.')
     @guild_only()
     async def repeat_slash(self, ctx: ApplicationContext, mode: Option(str, choices=['none', '1', 'all'])):
         player = await self.get_player(ctx, connect=False)
         player.queue.set_repeat_mode(mode)
-        await ctx.interaction.response.send_message(f"Установила {mode} как режим повтора.")
+        await ctx.interaction.response.send_message(f"Установила {mode} как режим повтора")
 
     async def queue_pages(self, ctx):
         player = await self.get_player(ctx, connect=False)
@@ -583,7 +594,7 @@ class Music(commands.Cog):
             pages_embeds.append(embed)
         return pages_embeds
 
-    @slash_command(name="queue", description='Показать очередь')
+    @music.command(name="queue", description='Показать очередь')
     @guild_only()
     async def queue_slash(self, ctx: ApplicationContext):
         await ctx.response.defer()
@@ -629,17 +640,17 @@ class Music(commands.Cog):
         else:
             await self.no_voice_error(ctx, exc)
 
-    @slash_command(name="shuffle",
+    @music.command(name="shuffle",
                    description='Перемешивает очередь чтобы тебе было не так противно слушать одни и те же плейлисты на повторе')
     @guild_only()
     async def shuffle_slash(self, ctx: ApplicationContext):
         player = await self.get_player(ctx, connect=False)
         if not player:
-            await ctx.interaction.response.send_message('Нет подключения к войсу')    
+            await ctx.interaction.response.send_message('Нет подключения к войсу')
         player.queue.shuffle()
-        await ctx.interaction.response.send_message('Перемешала. Теперь как будто слушаешь новый плейлист.')
+        await ctx.interaction.response.send_message('Перемешала. Теперь как будто слушаешь новый плейлист')
 
-    @slash_command(name="np",
+    @music.command(name="controls",
                    description='Показать что сейчас играет и управлять воспроизведением')
     @guild_only()
     async def playing_slash(self, ctx: ApplicationContext):
@@ -656,7 +667,7 @@ class Music(commands.Cog):
         controls.interaction = await ctx.interaction.response.send_message(embed=controls.generate_player_embed(), view=controls)
         self.player_controls[player] = controls
 
-    @slash_command(name="skipto", description='Перейти сразу к треку под номером index')
+    @music.command(name="skipto", description='Перейти сразу к треку под номером i')
     @guild_only()
     async def skipto_slash(self, ctx: ApplicationContext, index: Option(int, description='Номер песни', min_value=1)):
         player = await self.get_player(ctx)
@@ -664,7 +675,7 @@ class Music(commands.Cog):
             await ctx.response.send_message('Нельзя пропускать чужие треки, бака!')
             return
         if player.queue.is_empty:
-            await ctx.response.send_message('Ничего не играет.')
+            await ctx.response.send_message('Ничего не играет')
             return
         if not (0 < index < player.queue.length):
             await ctx.response.send_message('Указан неверный номер')
@@ -672,9 +683,39 @@ class Music(commands.Cog):
 
         player.queue.position = index - 1
         await player.stop()
-        await ctx.response.send_message(f"Играем музяку под номером {index}.")
+        await ctx.response.send_message(f"Играем музяку под номером {index}")
         if not player.is_playing():
             await player.start_playback()
+
+    @music.command(name="skip", description='Пропустить текущий трек')
+    @guild_only()
+    async def skip_slash(self, ctx: ApplicationContext):
+        player = await self.get_player(ctx)
+        if not ctx.author.guild_permissions.administrator and not (player.queue.get_track_owner() or ctx.author.id) == ctx.author.id:
+            await ctx.response.send_message('Нельзя пропускать чужие треки, бака!')
+            return
+        if player.queue.is_empty:
+            await ctx.response.send_message('Ничего не играет.')
+            return
+        await player.advance()
+        await ctx.response.send_message('Играем дальше')
+
+    @music.command(name="pop", description='Удалить трек из очереди')
+    @guild_only()
+    async def pop_slash(self, ctx: ApplicationContext, index: Option(int, description='Номер песни', min_value=1)):
+        player = await self.get_player(ctx)
+        if not ctx.author.guild_permissions.administrator and not (player.queue.get_track_owner() or ctx.author.id) == ctx.author.id:
+            await ctx.response.send_message('Нельзя удалять чужие треки, бака!')
+            return
+        if player.queue.is_empty:
+            await ctx.response.send_message('Ничего не играет')
+            return
+        if not (0 < index < player.queue.length):
+            await ctx.response.send_message('Указан неверный номер')
+            return
+
+        player.queue.pop(index - 1)
+        await ctx.response.send_message(f"Удалила песню под номером {index}")
 
     @disconnect_slash.error
     @repeat_slash.error
@@ -682,10 +723,10 @@ class Music(commands.Cog):
     @playing_slash.error
     @skipto_slash.error
     async def no_voice_error(self, ctx: ApplicationContext, exc):
-        if isinstance(exc.original, NoVoiceChannel):
+        if hasattr(exc, 'original') and isinstance(exc.original, NoVoiceChannel) or isinstance(exc, NoVoiceChannel):
             await ctx.respond("Нет подключения к войсу!", ephemeral=True)
-        else:
-            raise exc
+            return
+        raise exc
 
 
 def setup(bot):

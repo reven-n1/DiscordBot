@@ -1,26 +1,37 @@
 from json import load
 import os.path as path
-from random import choice
 
 
-class dataHandler():
+class DataHandler():
+    _instance = None
+
+    def __new__(cls, *args, **kwargs):
+        if not cls._instance:
+            cls._instance = super(DataHandler, cls).__new__(cls, *args, **kwargs)
+        return cls._instance
+
+    @classmethod
+    def get_instance(cls, *args, **kwargs):
+        if not getattr(cls, '_instance', None):
+            cls._instance = cls(*args, **kwargs)
+        return cls._instance
+
     def __init__(self) -> None:
         __path_to_json = "library/config/config.json"
 
         if not path.isfile(__path_to_json):
-                    exit("'config.json' not found!")
+            exit("'config.json' not found!")
 
         if not path.isfile("library/config/character_table.json"):
-                    exit("'character_table.json' not found!")
-        
+            exit("'character_table.json' not found!")
+
         if not path.isfile("library/config/skin_table.json"):
-                    exit("'skin_table.json' not found!")
+            exit("'skin_table.json' not found!")
 
-
-        with open(__path_to_json,"rb") as json_config_file:  
+        with open(__path_to_json, "rb") as json_config_file:
             try:
                 self.__data = load(json_config_file)["default_settings"]
-
+                self.__database_config = self.__data['database']
                 # ger chance and phrases, cooldown
                 self.__ger_self_chance = int(self.__data["ger"]["self_ger_chance"])
                 self.__ger_phrases = self.__data["ger"]["phrase_variants"]
@@ -62,7 +73,11 @@ class dataHandler():
                 self.__prefix = self.__data["prefix"]
 
             except KeyError:
-                exit("'config.json' is damaged!")  
+                exit("'config.json' is damaged!")
+
+    @property
+    def get_database_config(self) -> dict:
+        return self.__database_config
 
     @property
     def get_self_ger_chanse(self):
@@ -71,7 +86,7 @@ class dataHandler():
     @property
     def get_ger_phrases(self):
         return self.__ger_phrases
-    
+
     @property
     def get_ger_self_phrases(self):
         return self.__ger_self_phrases
@@ -91,22 +106,22 @@ class dataHandler():
     @property
     def get_cog_list(self):
         return self.__cog_list
-    
+
     def get_ark_profession(self, prof):
         return self.__ark_professions[prof]
-    
+
     @property
     def get_ark_chances(self):
         return self.__six_star_chance, self.__five_star_chance, self.__four_star_chance, self.__three_star_chance
-    
+
     @property
     def get_del_delay(self):
         return self.__delete_delay
-    
+
     @property
     def get_del_after(self):
         return self.__delete_after
-    
+
     @property
     def get_prefix(self):
         return self.__prefix

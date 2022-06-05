@@ -18,6 +18,9 @@ lavalink:
     youtubeSearchEnabled: true
     soundcloudSearchEnabled: true
     gc-warnings: true
+    youtubeConfig: # Required for avoiding age restrictions by YouTube. Guide https://github.com/Walkyst/lavaplayer-fork/issues/18
+      PAPISID:      ""
+      PSID:         ""
     #ratelimit:
       #ipBlocks: ["1.0.0.0/8", "..."] # list of ip blocks
       #excludedIps: ["...", "..."] # ips which should be explicit excluded from usage by lavalink

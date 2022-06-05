@@ -1,14 +1,18 @@
 from discord import ApplicationContext, Interaction, Member, Option, TextChannel, slash_command, user_command
 from discord.ext.commands import cooldown, guild_only
-from library import data, user_guild_cooldown
-from library.data.dataLoader import dataHandler
+from library import user_guild_cooldown
+from library.data.data_loader import DataHandler
+from library.data.data_loader import DataHandler
+from library.data.db.database import Database, Statistic, StatisticParameter, UsersArkCollection, UsersStatisticCounter
 from library.data.pressf_images import fimages
 from discord.ext.commands import Cog
 from collections import namedtuple
 from random import choice
-from library import db
 import discord
 import logging
+
+
+data = DataHandler()
 
 
 class Default(Cog):
@@ -18,9 +22,8 @@ class Default(Cog):
     def __init__(self, bot):
         self.bot = bot
         self.name = "Texass"
-        self.__delete_quantity = 100
-        self.__db = db
-        self.options = dataHandler()
+        self.__db = Database()
+        self.options = DataHandler()
 
     # cog commands
 
@@ -123,25 +126,32 @@ class Default(Cog):
         embed.add_field(name="Описание",
                         value="Тупая деффка еще и бот", inline=False)
         embed.add_field(name="Версия", value=self.bot.VERSION, inline=False)
-        ark_stat = self.get_ark_stats()
-        ger_stat = self.get_ger_stats()
-        ger_use = self.get_stat_users('ger_use')
-        ger_hit = self.get_stat_users('ger_hit')
+        with self.__db.get_session() as session:
+            ark_total = session.query(Statistic.value).filter(Statistic.parameter_name == Statistic.Parameter.ARK.value).limit(1).scalar() or 0
+            ark_total_chars = session.query(UsersArkCollection).count()
+            ark_highest_six_user = session.query(UsersArkCollection.user_id).order_by(UsersArkCollection.operator_count.desc()).limit(1).scalar() or ''
+            ark_highest_six_count = session.query(UsersArkCollection.operator_count).order_by(UsersArkCollection.operator_count.desc()).limit(1).scalar() or 0
+            ger_stat_total = session.query(Statistic.value).filter(Statistic.parameter_name == Statistic.Parameter.GER.value).limit(1).scalar() or 0
+            ger_stat_self = session.query(Statistic.value).filter(Statistic.parameter_name == Statistic.Parameter.SELF_GER.value).limit(1).scalar() or 0
+            ger_stat_bot = session.query(Statistic.value).filter(Statistic.parameter_name == Statistic.Parameter.GER_BOT.value).limit(1).scalar() or 0
+            ger_stat_me = session.query(Statistic.value).filter(Statistic.parameter_name == Statistic.Parameter.GER_ME.value).limit(1).scalar() or 0
+            ger_uses = session.query(UsersStatisticCounter).join(StatisticParameter).filter(StatisticParameter.name == StatisticParameter.Parameter.GER_USE.value).order_by(UsersStatisticCounter.count.desc()).limit(5).all()
+            ger_hit = session.query(UsersStatisticCounter).join(StatisticParameter).filter(StatisticParameter.name == StatisticParameter.Parameter.GER_HIT.value).order_by(UsersStatisticCounter.count.desc()).limit(5).all()
         embed.add_field(name="Статистика арков",
-                        value=f"Арков выкручено за все время: {ark_stat.total}\nВсего собрано персонажей: {ark_stat.total_chars}", inline=False)
+                        value=f"Арков выкручено за все время: {int(ark_total)}\nВсего собрано персонажей: {int(ark_total_chars)}", inline=False)
         embed.add_field(name="Больше всего 6* собрано",
-                        value=f"<@{ark_stat.best_dolboeb}> с количеством аж {ark_stat.dolboeb_count} шестизведочных персонажей."
+                        value=f"<@{int(ark_highest_six_user)}> с количеством аж {int(ark_highest_six_count)} шестизведочных персонажей."
                         "Поздравляем Вас и вручаем вам самый ценный подарок: **наше увожение**",
                         inline=False)
         embed.add_field(name="Статистика пуков",
-                        value=f"""Пуков за все время: {ger_stat.total}
-        Из них самообсеров: {ger_stat.total_self}
-        Попаданий по ботам: {ger_stat.total_bot}
-        Попаданий по мне:disappointed_relieved: : {ger_stat.total_me}
+                        value=f"""Пуков за все время: {int(ger_stat_total)}
+        Из них самообсеров: {int(ger_stat_self)}
+        Попаданий по ботам: {int(ger_stat_bot)}
+        Попаданий по мне:disappointed_relieved: : {int(ger_stat_me)}
         """, inline=False)
         embed.add_field(name="Топ засранцев",
                         value="\n".join([
-                            f"<@{rec.user_id}>: {rec.count}" for rec in ger_use
+                            f"<@{rec.user_id}>: {rec.count}" for rec in ger_uses
                         ]) or 'Статистика не найдена', inline=False)
         embed.add_field(name="Обосрали больше всего",
                         value="\n".join([
@@ -170,51 +180,6 @@ class Default(Cog):
                    description='Показать ссылку-приглаешние этого бота')
     async def invite_slash(self, ctx: ApplicationContext):
         await ctx.respond('https://discord.com/oauth2/authorize?client_id=885800080169398292&scope=&scope=applications.commands%20bot&permissions=3401792', ephemeral=True)
-    
-    # functions----------------------------------------------------------------------------------------------------------------------------
-
-    def __exec_stmts(self, stmts: list):
-        results = []
-        for stmt in stmts:
-            result = self.__db.extract(stmt)
-            result = int(result[0][0]) if result else 0
-            results.append(result)
-        return results
-
-    def get_ark_stats(self):
-        ark_stat = namedtuple(
-            'ark_stat', ['total', 'total_chars', 'best_dolboeb', 'dolboeb_count'])
-        return ark_stat._make(self.__exec_stmts([
-            "select value from statistic where parameter_name='ark'",
-            "select count(*) from users_ark_collection",
-            "select user_id from users_ark_collection where rarity=6 group by user_id order by sum(operator_count) desc limit 1",
-            "select sum(operator_count) from users_ark_collection where rarity=6 group by user_id order by sum(operator_count) desc limit 1"
-        ]))
-
-    def get_ger_stats(self):
-        ger_stat = namedtuple(
-            'ger_stat', ['total', 'total_self', 'total_bot', 'total_me'])
-        return ger_stat._make(self.__exec_stmts([
-            "select value from statistic where parameter_name='ger'",
-            "select value from statistic where parameter_name='self_ger'",
-            "select value from statistic where parameter_name='ger_bot'",
-            "select value from statistic where parameter_name='ger_me'",
-        ]))
-
-    def get_stat_users(self, parameter, top=5):
-        ger_top = namedtuple('stat_top', ['user_id', 'count'])
-        return [ger_top._make(rec) for rec in
-                self.__db.get_user_statistics(parameter, top)]
-
-    @property
-    async def server_delete_quantity(self):
-        """
-        Default message delete quantity getter
-
-        Returns:
-            int: quantity
-        """
-        return self.__delete_quantity
 
 
 def setup(bot):

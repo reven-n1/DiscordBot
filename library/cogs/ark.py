@@ -1,7 +1,7 @@
-from typing import Tuple
+from typing import List, Tuple
 from library.my_Exceptions.validator import NonOwnedCharacter, NonExistentCharacter
 from discord.ext.commands.core import guild_only, is_nsfw
-from discord.ext.commands import command, cooldown
+from discord.ext.commands import cooldown
 from library import user_guild_cooldown
 from discord.commands import slash_command, Option
 from discord import User
@@ -9,16 +9,18 @@ from discord.interactions import Interaction
 from discord.ext.commands.bot import Bot
 from discord.embeds import Embed
 from discord.ext.commands import Cog
-from discord.channel import DMChannel
+from library.data.db.database import Database, Statistic, StatisticParameter, UsersArkCollection
 from discord.errors import NotFound
 from random import choice, randrange
 from collections import namedtuple
-from library import data
-from library import db
+from library.data.data_loader import DataHandler
 from json import loads
 from re import sub
 import discord
 import logging
+
+
+data = DataHandler()
 
 
 class Ark(Cog):
@@ -55,7 +57,7 @@ class Ark(Cog):
 
     def __init__(self, bot: Bot):
         self.bot = bot
-        self.__db = db
+        self.__db = Database()
 
         self.__six_star_chance, self.__five_star_chance, \
             self.__four_star_chance, self.__three_star_chance = data.get_ark_chances
@@ -152,7 +154,7 @@ class Ark(Cog):
             collection_message = discord.Embed(title=f"{user.display_name}'s collection {user_chara_count}/{all_character_count} \
                                               ({round((user_chara_count/all_character_count)*100,2)}%)", color=data.get_embed_color)
             for rarity, characters in ark_collection.items():
-                characters_list = "\n".join([f"{character[1]} x {character[2]}" for character in characters])
+                characters_list = "\n".join([f"{character.operator_name} x {character.operator_count}" for character in characters])
                 collection_message.add_field(name=":star:"*rarity if rarity < 6 else ":star2:"*rarity, value=characters_list, inline=False)
             if len(ark_collection) == 0:
                 collection_message.add_field(name="Ти бомж", value="иди покрути девочек!")
@@ -176,7 +178,7 @@ class Ark(Cog):
                                                   skin['displaySkin']['skinGroupName'])))
         return skin_list
 
-    def get_ark_collection(self, collection_owner_id: int) -> dict:
+    def get_ark_collection(self, collection_owner_id: int) -> List[UsersArkCollection]:
         """
         This function returns all ark collection
 
@@ -186,17 +188,16 @@ class Ark(Cog):
         Returns:
             dict: requestor characters collection
         """
-        requestor_collection = sorted(self.__db.extract(
-            """SELECT rarity, operator_name, operator_count FROM users_ark_collection
-               WHERE user_id == ?""", collection_owner_id))
+        with self.__db.get_session() as session:
+            requestor_collection = session.query(UsersArkCollection).filter(UsersArkCollection.user_id == collection_owner_id).all()
 
         out_list = {}
         if requestor_collection is None:
             return {}
         for character in requestor_collection:
-            if character[0] not in out_list.keys():  # filling  the out_list with rarity lists
-                out_list[character[0]] = list()
-            out_list[character[0]].append(character)
+            if character.rarity not in out_list.keys():  # filling  the out_list with rarity lists
+                out_list[character.rarity] = list()
+            out_list[character.rarity].append(character)
 
         return out_list
 
@@ -210,28 +211,25 @@ class Ark(Cog):
         Returns:
             list: list that contains quantity and character stars
         """
-        res = sorted(self.__db.extract("""SELECT rarity, operator_count, operator_name FROM users_ark_collection
-                                         WHERE user_id == ? AND operator_count >= 6 """, author_id))
+        with self.__db.get_session() as session:
+            res = session.query(UsersArkCollection).filter(UsersArkCollection.user_id == author_id, UsersArkCollection.operator_count >= 6, UsersArkCollection.rarity < 6).all()
 
-        barter_list = []
-        for rarity, count, _ in res:
-            if rarity < 6 and count > 5:
-                if count % 5 != 0:
-                    new_char_quantity = count % 5
-                elif count % 5 == 0:
-                    new_char_quantity = (count // 5) - 1
-                else:
-                    pass
+            barter_list = []
+            for item in res:
+                if item.rarity < 6 and item.operator_count > 5:
+                    if item.operator_count % 5 != 0:
+                        new_char_quantity = item.operator_count % 5
+                    elif item.operator_count % 5 == 0:
+                        new_char_quantity = (item.operator_count // 5) - 1
+                    else:
+                        pass
 
-                barter_list.append([rarity + 1, new_char_quantity])
+                    barter_list.append([item.rarity + 1, new_char_quantity])
 
-                self.__db.alter("""UPDATE users_ark_collection SET operator_count =
-                                CASE
-                                    WHEN operator_count % 5 != 0  THEN operator_count % 5
-                                    WHEN operator_count  % 5 == 0 THEN 5
-                                    ELSE operator_count
-                                END
-                                WHERE rarity < 6 AND operator_count > 5 AND user_id = ?""", author_id)
+                    item.operator_count = new_char_quantity
+                    session.add(item)
+
+            session.commit()
 
         return barter_list
 
@@ -286,22 +284,18 @@ class Ark(Cog):
         Returns random character rarity
         """
 
-        if chance_increase := self.__db.get_user_statistic(author_id, "six_miss"):
-            chance_increase = chance_increase[0][0]
-        else:
-            chance_increase = 0
+        chance_increase = self.__db.get_user_statistic(author_id, StatisticParameter.Parameter.SIX_MISS).count
         rarity = randrange(0, 100000)
         if rarity <= (self.__six_star_chance + (chance_increase*2 - 50 if chance_increase >= 50 else 0)) * 1000:
-            self.__db.reset_statistic_for_user(author_id, "six_miss")
+            self.__db.reset_user_statistic(author_id, StatisticParameter.Parameter.SIX_MISS)
             return 6
+        else:
+            self.__db.increment_user_statistic(author_id, StatisticParameter.Parameter.SIX_MISS)
         if rarity <= self.__five_star_chance * 1000:
-            self.__db.user_statistic_increment(author_id, "six_miss")
             return 5
         if rarity <= self.__four_star_chance * 1000:
-            self.__db.user_statistic_increment(author_id, "six_miss")
             return 4
         if rarity <= self.__three_star_chance * 1000:
-            self.__db.user_statistic_increment(author_id, "six_miss")
             return 3
 
     def __return_new_character(self, rarity: int) -> tuple:
@@ -366,12 +360,12 @@ class Ark(Cog):
             character_rarity (int): received chaaracter rarity
         """
 
-        self.__db.alter("""insert or replace into users_ark_collection(user_id, operator_name, rarity, operator_count)
-                           VALUES (:uid, :opname, :rarity,
-                           ifnull((select operator_count from users_ark_collection where user_id=:uid and operator_name=:opname),0)+1)
-                        """,
-                        uid=author_id, opname=character_name, rarity=character_rarity)
-        self.__db.statistic_increment('ark')
+        with self.__db.get_session() as session:
+            char = self.__db.insert_if_not_exsits(UsersArkCollection, user_id=author_id, operator_name=character_name, rarity=character_rarity)
+            char.operator_count += 1
+            session.add(char)
+            self.__db.increment_statistic(Statistic.Parameter.ARK)
+            session.commit()
 
     def show_character(self, character_name: str, requestor_id: int) -> namedtuple:
         """
@@ -412,8 +406,10 @@ class Ark(Cog):
                 break
         else:
             raise NonExistentCharacter
-        res = self.__db.extract("SELECT operator_name FROM users_ark_collection WHERE user_id == ?"
-                                "and lower(operator_name)=?", requestor_id, character_name)
+        with self.__db.get_session() as session:
+            res = session.query(UsersArkCollection).filter(UsersArkCollection.user_id == requestor_id,
+                                                           UsersArkCollection.operator_name == character_name
+                                                           ).first()
 
         if not res:
             raise NonOwnedCharacter

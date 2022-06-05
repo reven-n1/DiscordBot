@@ -6,9 +6,12 @@ from discord.ext.commands import Cog
 from requests.exceptions import HTTPError, ConnectionError, Timeout
 from discord import ApplicationContext, AutocompleteContext, Embed, Member, Option, slash_command
 from random import choice
-from library import data
+from library.data.data_loader import DataHandler
 import requests
 import logging
+
+
+data = DataHandler()
 
 
 def user_channel_type_cooldown(msg: ApplicationContext):
@@ -125,7 +128,7 @@ class Reactions(Cog):
                          type: Option(str, description='Выбери что хочешь посмотреть', choices=['waifu', 'neko', 'trap', 'blowjob'], required=False)):
         await ctx.interaction.response.defer()
         if type is None:
-            type = choice(['waifu', 'neko', 'trap', 'blowjob'])
+            type = choice(['waifu', 'neko', 'blowjob', 'trap'])
         footers = {
             'waifu': f"{ctx.author.display_name} смотрит хентай!",
             'neko': f"{ctx.author.display_name} любитель фурри, ясно понятно",

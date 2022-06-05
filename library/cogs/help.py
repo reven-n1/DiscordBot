@@ -4,7 +4,7 @@ from discord.errors import Forbidden
 from discord.ext.commands import Cog, Command
 from library import data, user_channel_cooldown
 import discord
-from library.data.dataLoader import dataHandler
+from library.data.data_loader import DataHandler
 
 
 async def send_embed(ctx, embed):
@@ -33,7 +33,7 @@ class Help(Cog):
 
     def __init__(self, bot):
         self.bot = bot
-        self.options = dataHandler()
+        self.options = DataHandler()
 
     @cooldown(10, data.get_chat_misc_cooldown_sec, user_channel_cooldown)
     @command(brief='Показать помощь, ня', description='Показать помощь, ня')

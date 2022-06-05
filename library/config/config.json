@@ -1,5 +1,15 @@
 {
     "default_settings": {
+
+        "database":
+        {
+            "engine": "sqlite",
+            "host": "library/data/db/Bot_DB.db",
+            "port": null,
+            "user": null,
+            "password": null,
+            "database": null
+        },
         
         "cog_list": ["default", "ark", "ger", "music", "reactions"],
         
