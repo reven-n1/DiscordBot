@@ -501,7 +501,8 @@ class Music(commands.Cog):
                    description='Отключиться от голосового канала')
     @guild_only()
     async def disconnect_slash(self, interaction: discord.ApplicationContext):
-        if not interaction.user.guild_permissions.administrator and not (self.get_player(interaction).queue.get_track_owner() or interaction.user.id) == interaction.user.id:
+        player = await self.get_player(interaction)
+        if not interaction.user.guild_permissions.administrator and not (player.queue.get_track_owner() or interaction.user.id) == interaction.user.id:
             await interaction.response.send_message('Нельзя пропускать чужие треки!', ephemeral=True)
             return
         player = await self.get_player(interaction)
