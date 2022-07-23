@@ -1,5 +1,6 @@
 import asyncio
-from itertools import groupby
+from itertools import groupby, islice, zip_longest
+from math import ceil
 from typing import List, Tuple
 
 from sqlalchemy import select
@@ -161,10 +162,12 @@ class Ark(Cog):
                                               ({round((user_chara_count / all_character_count) * 100, 2)}%)",
                 color=data.get_embed_color)
             for rarity, characters in ark_collection.items():
-                characters_list = "\n".join(
-                    [f"{character.operator_name} x {character.operator_count}" for character in characters])
-                collection_message.add_field(name=":star:" * rarity if rarity < 6 else ":star2:" * rarity,
-                                             value=characters_list, inline=False)
+                characters_list = [f"{character.operator_name} x {character.operator_count}" for character in characters]
+                chunk_size = ceil(len(characters_list) / ceil(len('\n'.join(characters_list)) / 1024))
+                for idx, chunk in enumerate(zip_longest(*[iter(characters_list)]*chunk_size, fillvalue='')):
+                    collection_message.add_field(name=(":star:" * rarity if rarity < 6 else ":star2:" * rarity) if idx == 0 else f"Продолжение {rarity}*",
+                                                 value='\n'.join(chunk), inline=False
+                                                 )
             if len(ark_collection) == 0:
                 collection_message.add_field(name="Ти бомж", value="иди покрути девочек!")
             collection_message.set_footer(text="Используй команду /myark <имя> чтоб посмотреть на персонажа.")
