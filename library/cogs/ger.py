@@ -22,7 +22,6 @@ class Ger(Cog):
         self.__ger_self_chance = data.get_self_ger_chanse
         self.__ger_self_phrases = data.get_ger_self_phrases
         self.__ger_phrases = data.get_ger_phrases
-        self.__db = Database()
 
     # cog commands ----------------------------------------------------------------------------------------------
 
@@ -35,12 +34,12 @@ class Ger(Cog):
         random_user = choice(ctx.guild.members)
         while random_user == ctx.user:
             random_user = choice(ctx.guild.members)
-        ger_message = self.ger_function(ctx.user, random_user)
+        ger_message = await self.ger_function(ctx.user, random_user)
         await ctx.response.send_message(ger_message)
 
     # functions ----------------------------------------------------------------------------------------------
 
-    def ger_function(self, message_author: discord.member.Member, random_member: discord.member.Member) -> str:
+    async def ger_function(self, message_author: discord.member.Member, random_member: discord.member.Member) -> str:
         """
         Farts on random server member or whoever called it
 
@@ -51,17 +50,18 @@ class Ger(Cog):
         Returns:
             str: string with fart phrase
         """
-        self.__db.increment_user_statistic(random_member.id, StatisticParameter.Parameter.GER_HIT)
-        self.__db.increment_user_statistic(message_author.id, StatisticParameter.Parameter.GER_USE)
-        self.__db.increment_statistic(Statistic.Parameter.GER)
+        db: Database = await Database()
+        await db.increment_user_statistic(random_member.id, StatisticParameter.Parameter.GER_HIT)
+        await db.increment_user_statistic(message_author.id, StatisticParameter.Parameter.GER_USE)
+        await db.increment_statistic(Statistic.Parameter.GER)
         if random_member.bot:
-            self.__db.increment_statistic(Statistic.Parameter.GER_BOT)
+            await db.increment_statistic(Statistic.Parameter.GER_BOT)
         if random_member.id == bot.user.id:
-            self.__db.increment_statistic(Statistic.Parameter.GER_ME)
+            await db.increment_statistic(Statistic.Parameter.GER_ME)
         if randint(0, 101) >= self.__ger_self_chance:  # Chance to обосраться
             return (f"{message_author.mention} "
                     f"{choice(self.__ger_phrases)} {random_member.mention}")
-        self.__db.increment_statistic(Statistic.Parameter.SELF_GER)
+        await db.increment_statistic(Statistic.Parameter.SELF_GER)
         return f"{message_author.mention} {choice(self.__ger_self_phrases)}"  # Самообсер
 
 

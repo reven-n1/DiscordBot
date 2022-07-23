@@ -1,4 +1,5 @@
 from io import BytesIO
+import aiohttp
 from discord import ApplicationContext
 from discord.errors import Forbidden
 from discord.ext.commands.context import Context
@@ -16,6 +17,8 @@ from math import ceil
 import feedparser
 import requests
 import logging
+
+from library.data.db.database import Database
 
 
 logging.basicConfig(format='%(asctime)s|%(levelname)s|file:%(module)s.py func:%(funcName)s:%(lineno)d: %(message)s', level=logging.INFO)
@@ -54,6 +57,7 @@ class Bot_init(Bot):
         logging.info('Servers connected to:')
         for guild in self.guilds:
             logging.info(f"{guild.name} ({guild.id}), owner: {guild.owner.name}#{guild.owner.discriminator}")
+        await Database()  # init database
         self.status_setter.start()
 
     async def close(self):
@@ -137,13 +141,12 @@ class Bot_init(Bot):
 
     @tasks.loop(minutes=5.0)
     async def status_setter(self):
-        try:
-            resp = requests.get('https://myanimelist.net/rss.php?type=rwe&u=wladbelsky', timeout=60.0)
-        except requests.ReadTimeout:
-            logging.warn("Timeout when reading MAL RSS")
-            return
-
-        content = BytesIO(resp.content)
+        async with aiohttp.ClientSession() as session:
+            async with session.get('https://myanimelist.net/rss.php?type=rwe&u=wladbelsky', timeout=60.0) as response:
+                if response.ok and response.status == 200:
+                    content = await response.content.read()
+                else:
+                    logging.warn("Can't get status from myanimelist.net")
 
         try:
             feed = feedparser.parse(content)

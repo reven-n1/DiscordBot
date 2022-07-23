@@ -3,8 +3,8 @@
 
         "database":
         {
-            "engine": "sqlite",
-            "host": "library/data/db/Bot_DB.db",
+            "engine": "sqlite+aiosqlite",
+            "host": "/library/data/db/Bot_DB.db",
             "port": null,
             "user": null,
             "password": null,

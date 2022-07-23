@@ -1,11 +1,13 @@
-from typing import Union
+from typing import Optional, Union
 from enum import Enum
 import sqlalchemy
 from library.data.data_loader import DataHandler
-from sqlalchemy import Column, ForeignKey, Integer, Text
+from sqlalchemy import Column, ForeignKey, Integer, Text, select
 from sqlalchemy.orm import relationship
 from sqlalchemy.ext.declarative import declarative_base
-
+from sqlalchemy.ext.asyncio.engine import create_async_engine, AsyncEngine
+from sqlalchemy.ext.asyncio.session import AsyncSession
+from sqlalchemy.pool import NullPool
 
 Base = declarative_base()
 metadata = Base.metadata
@@ -62,79 +64,98 @@ class UsersStatisticCounter(Base):
         return f'{self.user_id} {self.parameter_id} {self.count}'
 
 
-class Database(object):
+class aobject(object):
+    """Inheriting this class allows you to define an async __init__.
+
+    So you can create objects by doing something like `await MyClass(params)`
+    """
+
+    async def __new__(cls, *a, **kw):
+        instance = super().__new__(cls)
+        await instance.__init__(*a, **kw)
+        return instance
+
+    async def __init__(self):
+        pass
+
+
+class Database(aobject):
     _instance: 'Database' = None
 
-    def __init__(self) -> None:
+    async def __init__(self) -> None:
         self._config = DataHandler().get_database_config
-        self.engine = sqlalchemy.create_engine(self.prepare_connection_string(self._config), echo=False)
-        self.connection = self.engine.connect()
+        self.engine: AsyncEngine = create_async_engine(self.prepare_connection_string(self._config), poolclass=NullPool,
+                                                       echo=False)
+        self.connection = await self.engine.connect()
         self.metadata = metadata
-        self.metadata.create_all(self.engine)
+        async with self.engine.begin() as conn:
+            await conn.run_sync(self.metadata.create_all)
 
-    def __new__(cls, *args, **kwargs):
+    async def __new__(cls, *args, **kwargs):
         if not cls._instance:
-            cls._instance = super(Database, cls).__new__(cls, *args, **kwargs)
+            cls._instance = await super(Database, cls).__new__(cls, *args, **kwargs)
         return cls._instance
 
     @classmethod
-    def get_instance(cls) -> 'Database':
-        if not getattr(cls, '_instance', None):
-            cls._instance = cls()
-        return cls._instance
+    async def get_class_session(cls) -> AsyncSession:
+        return (await cls()).get_session()
 
-    def get_session(self) -> sqlalchemy.orm.session.Session:
-        return sqlalchemy.orm.sessionmaker(bind=self.engine)()
+    def get_session(self) -> AsyncSession:
+        return sqlalchemy.orm.sessionmaker(bind=self.engine, class_=AsyncSession)()
 
-    def insert_if_not_exsits(self, table, **data):
-        with self.get_session() as session:
-            result = session.query(table).filter_by(**data).first()
+    async def insert_if_not_exsits(self, table, *data):
+        async with self.get_session() as session:
+            result = (await session.execute(select(table).where(*data))).scalars().first()
             if not result:
-                session.merge(table(**data))
-                session.commit()
-            return session.query(table).filter_by(**data).first() if not result else result
+                await session.merge(table(**{exp.left.name: exp.right.value for exp in data}))
+                await session.commit()
+            return (await session.execute(select(table).where(*data))).scalars().first() if not result else result
 
-    def get_statistic(self, parameter_name: Union[str, Statistic.Parameter]) -> Statistic:
+    async def get_statistic(self, parameter_name: Union[str, Statistic.Parameter]) -> Statistic:
         if isinstance(parameter_name, Statistic.Parameter):
             parameter_name = parameter_name.value
-        return self.insert_if_not_exsits(Statistic, parameter_name=parameter_name)
+        return await self.insert_if_not_exsits(Statistic, Statistic.parameter_name == parameter_name)
 
-    def get_user_statistic(self, user_id, parameter_name: Union[str, StatisticParameter.Parameter], force_session=None):
+    async def get_user_statistic(self, user_id, parameter_name: Union[str, StatisticParameter.Parameter],
+                                 force_session: Optional[AsyncSession] = None):
         if not force_session:
             session = self.get_session()
         else:
             session = force_session
         if isinstance(parameter_name, StatisticParameter.Parameter):
             parameter_name = parameter_name.value
-        result = session.query(UsersStatisticCounter).join(StatisticParameter).filter(UsersStatisticCounter.user_id == user_id, StatisticParameter.name == parameter_name).first()
+        result = (await session.execute(
+            select(UsersStatisticCounter).join(StatisticParameter).where(UsersStatisticCounter.user_id == user_id,
+                                                                         StatisticParameter.name == parameter_name))).scalars().first()
         if not result:
-            parameter = self.insert_if_not_exsits(StatisticParameter, name=parameter_name)
-            result = self.insert_if_not_exsits(UsersStatisticCounter, user_id=user_id, parameter_id=parameter.id)
-            session.commit()
+            parameter = await self.insert_if_not_exsits(StatisticParameter, StatisticParameter.name == parameter_name)
+            result = await self.insert_if_not_exsits(UsersStatisticCounter, UsersStatisticCounter.user_id == user_id,
+                                                     UsersStatisticCounter.parameter_id == parameter.id)
+            await session.commit()
         if not force_session:
-            session.close()
+            await session.close()
         return result
 
-    def increment_user_statistic(self, user_id, parameter_name: Union[str, Statistic.Parameter]):
-        with self.get_session() as session:
-            statistic = self.get_user_statistic(user_id, parameter_name, session)
+    async def increment_user_statistic(self, user_id, parameter_name: Union[str, Statistic.Parameter]):
+        async with self.get_session() as session:
+            statistic = await self.get_user_statistic(user_id, parameter_name, session)
             statistic.count += 1
             session.add(statistic)
-            session.commit()
+            await session.commit()
 
-    def reset_user_statistic(self, user_id, parameter_name: Union[str, Statistic.Parameter]):
-        with self.get_session() as session:
-            statistic = self.get_user_statistic(user_id, parameter_name, session)
+    async def reset_user_statistic(self, user_id, parameter_name: Union[str, Statistic.Parameter]):
+        async with self.get_session() as session:
+            statistic = await self.get_user_statistic(user_id, parameter_name, session)
             statistic.count = 0
-            session.add(statistic)
-            session.commit()
+            await session.add(statistic)
+            await session.commit()
 
-    def increment_statistic(self, parameter_name: Union[str, Statistic.Parameter]):
-        with self.get_session() as session:
-            statistic = self.get_statistic(parameter_name)
+    async def increment_statistic(self, parameter_name: Union[str, Statistic.Parameter]):
+        async with self.get_session() as session:
+            statistic = await self.get_statistic(parameter_name)
             statistic.value += 1
             session.add(statistic)
-            session.commit()
+            await session.commit()
 
     @staticmethod
     def prepare_connection_string(config: dict):
@@ -144,4 +165,4 @@ class Database(object):
         port = config.get('port') or ''
         database = config.get('database') or ''
         engine = config.get('engine')
-        return f'{engine}:///{user}{":" if user and password else ""}{password}{"@" if user and password else ""}{host}{":" if port else ""}{port}{"/" if database else ""}{database}'
+        return f'{engine}://{user}{":" if user and password else ""}{password}{"@" if user and password else ""}{host}{":" if port else ""}{port}{"/" if database else ""}{database}'

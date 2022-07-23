@@ -1,5 +1,8 @@
+import asyncio
 from itertools import groupby
 from typing import List, Tuple
+
+from sqlalchemy import select
 from library.my_Exceptions.validator import NonOwnedCharacter, NonExistentCharacter
 from discord.ext.commands.core import guild_only, is_nsfw
 from discord.ext.commands import cooldown
@@ -20,13 +23,14 @@ from re import sub
 import discord
 import logging
 
-
 data = DataHandler()
 
 
 class Ark(Cog):
     qualified_name = 'Ark'
     description = 'Рулетка с дефками'
+    __stars_0_5 = "<:star:801095671720968203>"
+    __stars_6 = "<:star2:801105195958140928>"
 
     class SkinSelector(discord.ui.View):
         message: discord.Message
@@ -37,7 +41,8 @@ class Ark(Cog):
             self.user_id = user_id
             self.skin_select.options = []
             for skin in skins:
-                self.skin_select.options.append(discord.SelectOption(label=skin.name, description=skin.desc, value=skin.id))
+                self.skin_select.options.append(
+                    discord.SelectOption(label=skin.name, description=skin.desc, value=skin.id))
 
         async def on_timeout(self) -> None:
             try:
@@ -58,13 +63,9 @@ class Ark(Cog):
 
     def __init__(self, bot: Bot):
         self.bot = bot
-        self.__db = Database()
 
         self.__six_star_chance, self.__five_star_chance, \
-            self.__four_star_chance, self.__three_star_chance = data.get_ark_chances
-
-        self.__stars_0_5 = "<:star:801095671720968203>"
-        self.__stars_6 = "<:star2:801105195958140928>"
+        self.__four_star_chance, self.__three_star_chance = data.get_ark_chances
 
         with open("library/config/character_table.json", "rb") as character_json:
             self.characters_data = loads(character_json.read())
@@ -74,9 +75,10 @@ class Ark(Cog):
 
     # cog commands ----------------------------------------------------------------------------------------------
 
-    def myark_autocomplete(self, ctx: discord.AutocompleteContext):
-        collection = self.get_ark_collection(ctx.interaction.user.id)
-        return list(sorted([char[1] for rar in collection.values() for char in rar if str(char[1]).lower().startswith(ctx.value.lower())]))
+    async def myark_autocomplete(self, ctx: discord.AutocompleteContext):
+        collection = await self.get_ark_collection(ctx.interaction.user.id)
+        return list(sorted([char.operator_name for rar in collection.values() for char in rar if
+                            str(char.operator_name).lower().startswith(ctx.value.lower())]))
 
     @slash_command(name="myark",
                    description='Вывести твою коллекцию сочных аниме девочек(и кунчиков ^-^). ')
@@ -84,7 +86,7 @@ class Ark(Cog):
     async def myark_slash(self, ctx: Interaction,
                           char_name: Option(str, 'Имя персонажа', autocomplete=myark_autocomplete, default=None),
                           public: Option(bool, 'Похвастаться?', default=False)):
-        embed, selector = self.myark(char_name, ctx.user)
+        embed, selector = await self.myark(char_name, ctx.user)
         message = await ctx.response.send_message(embed=embed, view=selector, ephemeral=not public)
         if selector:
             selector.message = await message.original_message()
@@ -98,11 +100,11 @@ class Ark(Cog):
         Serves to exchange 5 characters for 1 rank higher\n
         if possible else returns 'Нет операторов на обмен'
         """
-        barter_list = self.get_barter_list(ctx.user.id)
+        barter_list = await self.get_barter_list(ctx.user.id)
         if barter_list:
             await ctx.response.defer()
             barter = self.ark_barter(barter_list, ctx.user.id)
-            for new_char in barter:
+            async for new_char in barter:
                 embed, selector = self.ark_embed_and_view(new_char, ctx.user)
                 selector.message = await ctx.channel.send(embed=embed, view=selector)
             await ctx.followup.send(content="Готово! Наслаждайся!")
@@ -118,7 +120,7 @@ class Ark(Cog):
         """
         Return a random arknigts character (from character_table.json)
         """
-        character_data = self.roll_random_character(ctx.user.id)
+        character_data = await self.roll_random_character(ctx.user.id)
         embed, selector = self.ark_embed_and_view(character_data, ctx.user)
         message = await ctx.response.send_message(embed=embed, view=selector)
         selector.message = await message.original_message()
@@ -134,7 +136,8 @@ class Ark(Cog):
         embed = discord.Embed(color=data.get_embed_color, title=character_data.name,
                               description=str(character_data.stars) * character_data.rarity,
                               url=f"https://aceship.github.io/AN-EN-Tags/akhrchars.html?opname={character_data.name}")
-        embed.add_field(name="Description", value=f"{character_data.description_first_part}\n{character_data.description_sec_part}",
+        embed.add_field(name="Description",
+                        value=f"{character_data.description_first_part}\n{character_data.description_sec_part}",
                         inline=False)
         embed.add_field(name="Position", value=character_data.position)
         embed.add_field(name="Tags", value=str(character_data.tags), inline=True)
@@ -143,26 +146,31 @@ class Ark(Cog):
         embed.set_thumbnail(url=character_data.profession)
         embed.set_image(url=f"https://aceship.github.io/AN-EN-Tags/img/characters/{character_data.character_id}_1.png")
         embed.set_footer(text=f"Requested by {author.display_name}")
-        return embed, Ark.SkinSelector(self.get_skin_list(character_data.character_id), author.id, data.get_chat_misc_cooldown_sec)
+        return embed, Ark.SkinSelector(self.get_skin_list(character_data.character_id), author.id,
+                                       data.get_chat_misc_cooldown_sec)
 
     # functions --------------------------------------------------------------------------------------------------------------------
 
-    def myark(self, char_name: str, user: User) -> Tuple[Embed, SkinSelector]:
-        ark_collection = self.get_ark_collection(user.id)
+    async def myark(self, char_name: str, user: User) -> Tuple[Embed, SkinSelector]:
+        ark_collection = await self.get_ark_collection(user.id)
         if not char_name:
             all_character_count = self.get_ark_count()
             user_chara_count = sum([len(characters) for characters in ark_collection.values()])
-            collection_message = discord.Embed(title=f"{user.display_name}'s collection {user_chara_count}/{all_character_count} \
-                                              ({round((user_chara_count/all_character_count)*100,2)}%)", color=data.get_embed_color)
+            collection_message = discord.Embed(
+                title=f"{user.display_name}'s collection {user_chara_count}/{all_character_count} \
+                                              ({round((user_chara_count / all_character_count) * 100, 2)}%)",
+                color=data.get_embed_color)
             for rarity, characters in ark_collection.items():
-                characters_list = "\n".join([f"{character.operator_name} x {character.operator_count}" for character in characters])
-                collection_message.add_field(name=":star:"*rarity if rarity < 6 else ":star2:"*rarity, value=characters_list, inline=False)
+                characters_list = "\n".join(
+                    [f"{character.operator_name} x {character.operator_count}" for character in characters])
+                collection_message.add_field(name=":star:" * rarity if rarity < 6 else ":star2:" * rarity,
+                                             value=characters_list, inline=False)
             if len(ark_collection) == 0:
                 collection_message.add_field(name="Ти бомж", value="иди покрути девочек!")
-            collection_message.set_footer(text="Используй команду !майарк <имя> чтоб посмотреть на персонажа.")
+            collection_message.set_footer(text="Используй команду /myark <имя> чтоб посмотреть на персонажа.")
             return (collection_message, None)
         try:
-            return self.ark_embed_and_view(self.show_character(char_name, user.id), user)
+            return self.ark_embed_and_view(await self.show_character(char_name, user.id), user)
         except NonOwnedCharacter:
             return (discord.Embed(title="***Лох, у тебя нет такой дивочки***"), None)
         except NonExistentCharacter:
@@ -171,15 +179,14 @@ class Ark(Cog):
     def get_skin_list(self, character_id) -> namedtuple:
         skinTyple = namedtuple('skin', ['id', 'name', 'desc'])
         skin_list = []
-        for skin in self.skin_data.values():
-            if skin['charId'] == character_id:
-                skin_list.append(skinTyple._make((skin['portraitId'],
-                                                  f"{skin['displaySkin']['skinName']}" if skin['displaySkin'][
-                                                      'skinName'] else f"{skin['displaySkin']['modelName']}#{skin['portraitId'].split('_')[-1]}",
-                                                  skin['displaySkin']['skinGroupName'])))
+        for skin in filter(lambda x: x['charId'] == character_id, self.skin_data.values()):
+            skin_list.append(skinTyple._make((skin['portraitId'],
+                                              f"{skin['displaySkin']['skinName']}" if skin['displaySkin'][
+                                                  'skinName'] else f"{skin['displaySkin']['modelName']}#{skin['portraitId'].split('_')[-1]}",
+                                              skin['displaySkin']['skinGroupName'])))
         return skin_list
 
-    def get_ark_collection(self, collection_owner_id: int) -> List[UsersArkCollection]:
+    async def get_ark_collection(self, collection_owner_id: int) -> List[UsersArkCollection]:
         """
         This function returns all ark collection
 
@@ -189,12 +196,14 @@ class Ark(Cog):
         Returns:
             dict: requestor characters collection
         """
-        with self.__db.get_session() as session:
-            requestor_collection = session.query(UsersArkCollection).filter(UsersArkCollection.user_id == collection_owner_id).order_by(UsersArkCollection.rarity).all()
+        async with await Database.get_class_session() as session:
+            requestor_collection = (await session.execute(
+                select(UsersArkCollection).where(UsersArkCollection.user_id == collection_owner_id).order_by(
+                    UsersArkCollection.rarity))).scalars().all()
         out_dict = {k: list(v) for k, v in groupby(requestor_collection, lambda x: int(x.rarity))}
         return out_dict
 
-    def get_barter_list(self, author_id: int) -> list:
+    async def get_barter_list(self, author_id: int) -> list:
         """
         Creates list of characters for barter
 
@@ -204,8 +213,11 @@ class Ark(Cog):
         Returns:
             list: list that contains quantity and character stars
         """
-        with self.__db.get_session() as session:
-            res = session.query(UsersArkCollection).filter(UsersArkCollection.user_id == author_id, UsersArkCollection.operator_count >= 6, UsersArkCollection.rarity < 6).all()
+        async with await Database.get_class_session() as session:
+            res = (await session.execute(select(UsersArkCollection).where(UsersArkCollection.user_id == author_id,
+                                                                          UsersArkCollection.operator_count >= 6,
+                                                                          UsersArkCollection.rarity < 6).order_by(
+                UsersArkCollection.rarity))).scalars().all()
 
             barter_list = []
             for item in res:
@@ -220,11 +232,11 @@ class Ark(Cog):
                     item.operator_count = new_char_quantity
                     session.add(item)
 
-            session.commit()
+            await session.commit()
 
         return barter_list
 
-    def ark_barter(self, barter_list: list, author_id: int) -> tuple:
+    async def ark_barter(self, barter_list: list, author_id: int) -> tuple:
         """
         Exchanges characters and calls function to add them to db
 
@@ -238,7 +250,7 @@ class Ark(Cog):
         for operators in barter_list:
             for _ in range(0, operators[1]):
                 character = self.__return_new_character(operators[0])
-                self.__add_ark_to_db(author_id, character.name, character.rarity)
+                await self.__add_ark_to_db(author_id, character.name, character.rarity)
                 yield character
 
     def get_ark_count(self) -> int:
@@ -250,7 +262,7 @@ class Ark(Cog):
         """
         return len([val for val in self.characters_data.values() if val["rarity"] >= 2 and val["itemDesc"] is not None])
 
-    def roll_random_character(self, author_id: int) -> tuple:
+    async def roll_random_character(self, author_id: int) -> tuple:
         """
         Calls function that adds character to db
 
@@ -260,23 +272,23 @@ class Ark(Cog):
         Returns:
             list: random character data
         """
-        new_character = self.__return_new_character(self.__get_ark_rarity(author_id))
+        new_character = self.__return_new_character(await self.__get_ark_rarity(author_id))
 
-        self.__add_ark_to_db(author_id, new_character.name, new_character.rarity)
+        await self.__add_ark_to_db(author_id, new_character.name, new_character.rarity)
         return new_character
 
-    def __get_ark_rarity(self, author_id: int) -> int:
+    async def __get_ark_rarity(self, author_id: int) -> int:
         """
         Returns random character rarity
         """
-
-        chance_increase = self.__db.get_user_statistic(author_id, StatisticParameter.Parameter.SIX_MISS).count
+        db: Database = await Database()
+        chance_increase = (await db.get_user_statistic(author_id, StatisticParameter.Parameter.SIX_MISS)).count
         rarity = randrange(0, 100000)
-        if rarity <= (self.__six_star_chance + (chance_increase*2 - 50 if chance_increase >= 50 else 0)) * 1000:
-            self.__db.reset_user_statistic(author_id, StatisticParameter.Parameter.SIX_MISS)
+        if rarity <= (self.__six_star_chance + (chance_increase * 2 - 50 if chance_increase >= 50 else 0)) * 1000:
+            await db.reset_user_statistic(author_id, StatisticParameter.Parameter.SIX_MISS)
             return 6
         else:
-            self.__db.increment_user_statistic(author_id, StatisticParameter.Parameter.SIX_MISS)
+            await db.increment_user_statistic(author_id, StatisticParameter.Parameter.SIX_MISS)
         if rarity <= self.__five_star_chance * 1000:
             return 5
         if rarity <= self.__four_star_chance * 1000:
@@ -298,7 +310,8 @@ class Ark(Cog):
 
         for character_id, char in self.characters_data.items():
             character_rarity = int(char["rarity"]) + 1
-            if rarity == character_rarity and char["itemDesc"] is not None:  # to ignore summoners items and other rarities
+            if rarity == character_rarity and char[
+                "itemDesc"] is not None:  # to ignore summoners items and other rarities
                 choice_list.append(character_id)
 
         random_character = choice(choice_list)
@@ -331,12 +344,13 @@ class Ark(Cog):
 
         character_data_tuple = namedtuple('character', 'character_id name description_first_part description_sec_part position tags \
                 traits profession stars rarity')
-        character = character_data_tuple(character_id, name, description_first_part, description_sec_part, position, tags,
+        character = character_data_tuple(character_id, name, description_first_part, description_sec_part, position,
+                                         tags,
                                          traits, profession, stars, rarity)
 
         return character
 
-    def __add_ark_to_db(self, author_id: int, character_name: str, character_rarity: int) -> None:
+    async def __add_ark_to_db(self, author_id: int, character_name: str, character_rarity: int) -> None:
         """
         Adds record to db
 
@@ -345,15 +359,18 @@ class Ark(Cog):
             character_name (str): received character name
             character_rarity (int): received chaaracter rarity
         """
-
-        with self.__db.get_session() as session:
-            char = self.__db.insert_if_not_exsits(UsersArkCollection, user_id=author_id, operator_name=character_name, rarity=character_rarity)
+        db: Database = await Database()
+        async with db.get_session() as session:
+            char = await db.insert_if_not_exsits(UsersArkCollection, UsersArkCollection.user_id == author_id,
+                                                 UsersArkCollection.operator_name == character_name,
+                                                 UsersArkCollection.rarity == character_rarity
+                                                 )
             char.operator_count += 1
             session.add(char)
-            self.__db.increment_statistic(Statistic.Parameter.ARK)
-            session.commit()
+            await db.increment_statistic(Statistic.Parameter.ARK)
+            await session.commit()
 
-    def show_character(self, character_name: str, requestor_id: int) -> namedtuple:
+    async def show_character(self, character_name: str, requestor_id: int) -> namedtuple:
         """
         Interlayer between validator function and show func
 
@@ -364,9 +381,9 @@ class Ark(Cog):
         Returns:
             namedtuple: list with character description
         """
-        return self.__show_character_validator(character_name, requestor_id)
+        return await self.__show_character_validator(character_name, requestor_id)
 
-    def __show_character_validator(self, character_name: str, requestor_id: int) -> namedtuple:
+    async def __show_character_validator(self, character_name: str, requestor_id: int) -> namedtuple:
         """
         Validates input data and either raise exceptions or returns character data
 
@@ -382,20 +399,20 @@ class Ark(Cog):
             namedtuple: list with character description
         """
 
-        character_name = character_name.replace(' ', '_').replace('\'', '').lower()
+        character_name = character_name.replace(' ', '_').replace('\'', '')
         for char_id, char in self.characters_data.items():
 
-            name = char["name"].replace(' ', '_').replace('\'', '').lower()
+            name = char["name"].replace(' ', '_').replace('\'', '')
             character_id = char_id
 
             if character_name == name:
                 break
         else:
             raise NonExistentCharacter
-        with self.__db.get_session() as session:
-            res = session.query(UsersArkCollection).filter(UsersArkCollection.user_id == requestor_id,
-                                                           UsersArkCollection.operator_name == character_name
-                                                           ).first()
+        async with await Database.get_class_session() as session:
+            res = (await session.execute(select(UsersArkCollection).where(UsersArkCollection.user_id == requestor_id,
+                                                                          UsersArkCollection.operator_name == character_name
+                                                                          ))).scalars().first()
 
         if not res:
             raise NonOwnedCharacter
