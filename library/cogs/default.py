@@ -1,6 +1,6 @@
 import asyncio
 from typing import List
-from discord import ApplicationContext, Interaction, Member, Option, TextChannel, slash_command, user_command
+from discord import ApplicationContext, Interaction, Member, Option, TextChannel, message_command, slash_command, user_command
 from discord.ext.commands import cooldown, guild_only
 from sqlalchemy import func, select
 from library import user_guild_cooldown
@@ -70,7 +70,6 @@ class Default(Cog):
         await ctx.response.send_message(embed=self.pressf(ctx.user, member))
 
     @user_command(name='f')
-    @guild_only()
     @cooldown(1, data.get_chat_misc_cooldown_sec, user_guild_cooldown)
     async def pressf_user(self, ctx: Interaction, member: Member):
         """
@@ -78,6 +77,15 @@ class Default(Cog):
         sends simple picture of saluting girl. can mention people
         """
         await ctx.response.send_message(embed=self.pressf(ctx.user, member))
+
+    @message_command(name='f')
+    @cooldown(1, data.get_chat_misc_cooldown_sec, user_guild_cooldown)
+    async def pressf_message(self, ctx: Interaction, message: discord.Message):
+        """
+        press f for fallen heroes.
+        sends simple picture of sal
+        """
+        await ctx.response.send_message(embed=self.pressf(message.author))
 
     def o7(self, user: Member, target: Member = None):
         if target:
@@ -109,6 +117,11 @@ class Default(Cog):
         """
         await ctx.response.send_message(embed=self.o7(ctx.user, member))
 
+    @message_command(name='o7')
+    @cooldown(1, data.get_chat_misc_cooldown_sec, user_guild_cooldown)
+    async def o7_message(self, ctx: Interaction, message: discord.Message):
+        await ctx.response.send_message(embed=self.o7(ctx.user, message.author))
+
     @user_command(
         name='Avatar'
     )
@@ -116,6 +129,14 @@ class Default(Cog):
         emb = discord.Embed(title='Avatarr')
         emb.set_image(url=usr.avatar.url)
         await interaction.response.send_message(
+            embed=emb, ephemeral=True
+        )
+
+    @message_command(name='Avatar')
+    async def avatar_message(self, ctx: ApplicationContext, message: discord.Message):
+        emb = discord.Embed(title='Avatarr')
+        emb.set_image(url=message.author.avatar.url)
+        await ctx.response.send_message(
             embed=emb, ephemeral=True
         )
 
