@@ -1,9 +1,7 @@
-from discord.ext.commands import command, cooldown, group
+from discord.ext.commands import cooldown
 from discord.ext.commands.core import is_nsfw
-from library import user_channel_cooldown
 from json.decoder import JSONDecodeError
 from discord.ext.commands import Cog
-from requests.exceptions import HTTPError, ConnectionError, Timeout
 from discord import ApplicationContext, AutocompleteContext, Embed, Member, Option, slash_command
 from random import choice
 from library.data.data_loader import DataHandler
@@ -25,6 +23,34 @@ class Reactions(Cog):
     qualified_name = 'Reactions'
     description = 'Аниме реакшоны'
 
+    pharases_list = {
+            'bully': ['{sender} доебался до {target}', '{sender} так и не понял до кого хотел доебаться и доебался до самого себя'],
+            'cuddle': ['{sender} прижимает к себе {target}', '{sender} хотел обнять кого-то, а обнял аниме девку'],
+            'cry': ['{target} довел до слез {sender}', 'Вы довели до слез {sender}, зачем вы так?'],
+            'hug': ['{sender} обнимает {target}', '{sender} обнимает сам себя'],
+            'kiss': ['{sender} целует {target}', '{sender} засосал аниме девочку'],
+            'lick': ['{sender} облизал {target}', '{sender} облизал аниме девочку'],
+            'pat': ['{sender} погладил по головке {target}', '{sender} погладил по головке аниме девочку'],
+            'smug': ['{sender} показывает свое превосходство над {target}', '{sender} показывает свое превосходство'],
+            'bonk': ['{sender} бьет {target}', '{sender} бьет кого-то и промахивается'],
+            'yeet': ['{sender} уебал {target}', '{sender} разъебал всех'],
+            'blush': ['{sender} покраснел от {target}', '{sender} смущается'],
+            'smile': ['{sender} улыбается {target}', '{sender} улыбается'],
+            'wave': ['{sender} помахал {target}', '{sender} машет'],
+            'highfive': ['{sender} дает пятюню {target}', '{sender}, ты знаешь что это парная эмоция, да?'],
+            'handhold': ['{sender} взял за руку {target}', '{sender} взял за руку своего воображаемого трапика'],
+            'nom': ['{sender} кушает вместе с {target}', '{sender} жрет'],
+            'bite': ['{sender} кусает {target}', '{sender} делает кусь'],
+            'slap': ['{sender} отвесил смачного леща {target}', '{sender} дал аплеуху сам себе, лол'],
+            'kill': ['{sender} совершает уголовно-наказуемое деяние в отношении {target}', '{sender} совершает Роскомнадзор'],
+            'kick': ['{sender} уебал с ноги {target}', '{sender} жостка крутанул вертушку'],
+            'happy': ['{sender} счаслив вместе с {target}', '{sender} радуется'],
+            'wink': ['{sender} подмигнул {target}', '{sender} моргнул одним глазом'],
+            'poke': ['{sender} ткул {target}', '{sender} пытаеться куда ткнуть но не может попасть'],
+            'dance': ['{sender} флексит с {target}', '{sender} отжигает на танцполе'],
+            'cringe': ['{sender} кринжует от {target}', '{sender} на кринже ваще'],
+        }
+
     def __init__(self, bot):
         self.bot = bot
         self.embed_color = data.get_embed_color
@@ -39,7 +65,7 @@ class Reactions(Cog):
                         logging.warn("Can't get image from waifu.pics")
                 img_url = content.get('url', None)
         except (JSONDecodeError, aiohttp.ContentTypeError, KeyError) as e:
-            logging.error(e)
+            logging.exception(e)
             img_url = None
         if not img_url:
             embed = Embed(title='Неудалось подключиться к бд картинками(', color=self.embed_color,
@@ -54,39 +80,14 @@ class Reactions(Cog):
     @cooldown(1, data.get_chat_misc_cooldown_sec, user_channel_type_cooldown)
     async def sfw_slash(self, ctx: ApplicationContext,
                         type: Option(str, description='Выбери что хочешь посмотреть',
-                        choices=['waifu', 'neko', 'awoo', 'shinobu', 'megumin'])):
+                                     choices=['waifu', 'neko', 'awoo', 'shinobu', 'megumin']
+                                     )
+                        ):
         await ctx.interaction.response.defer()
         await ctx.followup.send(embed=await self.get_reaction_embed(type, '', nsfw=False))
 
     def reaction_autocomplete(self, ctx: AutocompleteContext):
-        types = [
-                    'bully',
-                    'cuddle',
-                    'cry',
-                    'hug',
-                    'kiss',
-                    'lick',
-                    'pat',
-                    'smug',
-                    'bonk',
-                    'yeet',
-                    'blush',
-                    'smile',
-                    'wave',
-                    'highfive',
-                    'handhold',
-                    'nom',
-                    'bite',
-                    'slap',
-                    'kill',
-                    'kick',
-                    'happy',
-                    'wink',
-                    'poke',
-                    'dance',
-                    'cringe'
-        ]
-        return [type for type in types if type.lower().startswith(ctx.value.lower())]
+        return filter(lambda x: x.lower().startswith(ctx.value.lower()), self.pharases_list.keys())
 
     @slash_command(name='reaction', description='Аниме реакшоны')
     @cooldown(1, data.get_chat_misc_cooldown_sec, user_channel_type_cooldown)
@@ -94,35 +95,12 @@ class Reactions(Cog):
                              type: Option(str, description='Выбери эмоцию', autocomplete=reaction_autocomplete),
                              member: Option(Member, description='Выбери кого упомянуть (для парных эмоций)', required=False)):
         await ctx.interaction.response.defer()
-        pharases_list = {
-            'bully': f'{ctx.author.display_name} доебался до {member.display_name}' if member else f'{ctx.author.display_name} так и не понял до кого хотел доебаться и доебался до самого себя',
-            'cuddle': f'{ctx.author.display_name} прижимает к себе {member.display_name}' if member else f'{ctx.author.display_name} хотел обнять кого-то, а обнял аниме девку',
-            'cry': f'{member.display_name} довел до слез {ctx.author.display_name}' if member else f'Вы довели до слез {ctx.author.display_name}, зачем вы так?',
-            'hug': f'{ctx.author.display_name} обнимает {member.display_name}' if member else f'{ctx.author.display_name} обнимает сам себя',
-            'kiss': f'{ctx.author.display_name} целует {member.display_name}' if member else f'{ctx.author.display_name} засосал аниме девочку',
-            'lick': f'{ctx.author.display_name} облизал {member.display_name}' if member else f'{ctx.author.display_name} облизал аниме девочку',
-            'pat': f'{ctx.author.display_name} погладил по головке {member.display_name}' if member else f'{ctx.author.display_name} погладил по головке аниме девочку',
-            'smug': f'{ctx.author.display_name} показывает свое превосходство над {member.display_name}' if member else f'{ctx.author.display_name} показывает свое превосходство',
-            'bonk': f'{ctx.author.display_name} бьет {member.display_name}' if member else f'{ctx.author.display_name} бьет кого-то и промахивается',
-            'yeet': f'{ctx.author.display_name} уебал {member.display_name}' if member else f'{ctx.author.display_name} разъебал всех',
-            'blush': f'{ctx.author.display_name} покраснел от {member.display_name}' if member else f'{ctx.author.display_name} смущается',
-            'smile': f'{ctx.author.display_name} улыбается {member.display_name}' if member else f'{ctx.author.display_name} улыбается',
-            'wave': f'{ctx.author.display_name} помахал {member.display_name}' if member else f'{ctx.author.display_name} машет',
-            'highfive': f'{ctx.author.display_name} дает пятюню {member.display_name}' if member else f'{ctx.author.display_name}, ты знаешь что это парная эмоция, да?',
-            'handhold': f'{ctx.author.display_name} взял за руку {member.display_name}' if member else f'{ctx.author.display_name} взял за руку своего воображаемого трапика',
-            'nom': f'{ctx.author.display_name} кушает вместе с {member.display_name}' if member else f'{ctx.author.display_name} жрет',
-            'bite': f'{ctx.author.display_name} кусает {member.display_name}' if member else f'{ctx.author.display_name} делает кусь',
-            'slap': f'{ctx.author.display_name} отвесил смачного леща {member.display_name}' if member else f'{ctx.author.display_name} дал аплеуху сам себе, лол',
-            'kill': f'{ctx.author.display_name} совершает уголовно-наказуемое деяние в отношении {member.display_name}' if member else f'{ctx.author.display_name} совершает Роскомнадзор',
-            'kick': f'{ctx.author.display_name} уебал с ноги {member.display_name}' if member else f'{ctx.author.display_name} жостка крутанул вертушку',
-            'happy': f'{ctx.author.display_name} счаслив вместе с {member.display_name}' if member else f'{ctx.author.display_name} радуется',
-            'wink': f'{ctx.author.display_name} подмигнул {member.display_name}' if member else f'{ctx.author.display_name} моргнул одним глазом',
-            'poke': f'{ctx.author.display_name} ткул {member.display_name}' if member else f'{ctx.author.display_name} пытаеться куда ткнуть но не может попасть',
-            'dance': f'{ctx.author.display_name} флексит с {member.display_name}' if member else f'{ctx.author.display_name} отжигает на танцполе',
-            'cringe': f'{ctx.author.display_name} кринжует от {member.display_name}' if member else f'{ctx.author.display_name} на кринже ваще'
-        }
-        if type in pharases_list:
-            await ctx.followup.send(embed=await self.get_reaction_embed(type, pharases_list[type], nsfw=False))
+        if type in self.pharases_list:
+            if member:
+                pharase = self.pharases_list[type][0].format(sender=ctx.author.display_name, target=member.display_name)
+            else:
+                pharase = self.pharases_list[type][1].format(sender=ctx.author.display_name)
+            await ctx.followup.send(embed=await self.get_reaction_embed(type, pharase, nsfw=False))
         else:
             await ctx.followup.send('Я таких картинок не знаю!')
 
