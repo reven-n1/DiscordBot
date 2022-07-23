@@ -7,8 +7,8 @@ from requests.exceptions import HTTPError, ConnectionError, Timeout
 from discord import ApplicationContext, AutocompleteContext, Embed, Member, Option, slash_command
 from random import choice
 from library.data.data_loader import DataHandler
-import requests
 import logging
+import aiohttp
 
 
 data = DataHandler()
@@ -29,11 +29,16 @@ class Reactions(Cog):
         self.bot = bot
         self.embed_color = data.get_embed_color
 
-    def get_reaction_embed(self, category: str, phrase: str, nsfw=False):
+    async def get_reaction_embed(self, category: str, phrase: str, nsfw=False):
         try:
-            response = requests.get(f'https://api.waifu.pics/{"sfw" if not nsfw else "nsfw"}/{category}', timeout=10)
-            img_url = response.json().get('url', None)
-        except (JSONDecodeError, HTTPError, ConnectionError, Timeout) as e:
+            async with aiohttp.ClientSession() as session:
+                async with session.get(f'https://api.waifu.pics/{"sfw" if not nsfw else "nsfw"}/{category}', timeout=10) as response:
+                    if response.ok and response.status == 200:
+                        content = await response.json()
+                    else:
+                        logging.warn("Can't get image from waifu.pics")
+                img_url = content.get('url', None)
+        except (JSONDecodeError, aiohttp.ContentTypeError, KeyError) as e:
             logging.error(e)
             img_url = None
         if not img_url:
@@ -51,7 +56,7 @@ class Reactions(Cog):
                         type: Option(str, description='Выбери что хочешь посмотреть',
                         choices=['waifu', 'neko', 'awoo', 'shinobu', 'megumin'])):
         await ctx.interaction.response.defer()
-        await ctx.followup.send(embed=self.get_reaction_embed(type, '', nsfw=False))
+        await ctx.followup.send(embed=await self.get_reaction_embed(type, '', nsfw=False))
 
     def reaction_autocomplete(self, ctx: AutocompleteContext):
         types = [
@@ -117,7 +122,7 @@ class Reactions(Cog):
             'cringe': f'{ctx.author.display_name} кринжует от {member.display_name}' if member else f'{ctx.author.display_name} на кринже ваще'
         }
         if type in pharases_list:
-            await ctx.followup.send(embed=self.get_reaction_embed(type, pharases_list[type], nsfw=False))
+            await ctx.followup.send(embed=await self.get_reaction_embed(type, pharases_list[type], nsfw=False))
         else:
             await ctx.followup.send('Я таких картинок не знаю!')
 
@@ -135,7 +140,7 @@ class Reactions(Cog):
             'trap': f"Фу бля, {ctx.author.display_name} любитель трапов походу",
             'blowjob': f"{ctx.author.display_name} любит сосать, курильщик походу"
         }
-        embed = self.get_reaction_embed(type, '', nsfw=True)
+        embed = await self.get_reaction_embed(type, '', nsfw=True)
         embed.set_footer(
             text=footers[type], icon_url=ctx.author.avatar.url if ctx.author.avatar else '')
         await ctx.followup.send(embed=embed)

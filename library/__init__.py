@@ -15,7 +15,6 @@ from discord.ext import tasks
 from random import choice
 from math import ceil
 import feedparser
-import requests
 import logging
 
 from library.data.db.database import Database
@@ -110,7 +109,9 @@ class Bot_init(Bot):
                 'https://c.tenor.com/lxkbKnHr7SoAAAAd/rocco-botte.gif',
                 'https://c.tenor.com/esCBwJ7Tq4UAAAAd/pc-hack.gif',
                 'https://c.tenor.com/9ItR8nSuxE0AAAAC/thumbs-up-computer.gif',
-                'https://c.tenor.com/fRnYF76D4jUAAAAd/hack-hacker.gif'
+                'https://c.tenor.com/fRnYF76D4jUAAAAd/hack-hacker.gif',
+                'https://tenor.com/view/hack-pc-guy-fawkes-hacker-gif-17047231',
+                'https://tenor.com/view/anton-hacker-hack-ha-bogus-gif-24545968'
             ]))
 
             super_progers = [319151213679476737, 355344401964204033]
