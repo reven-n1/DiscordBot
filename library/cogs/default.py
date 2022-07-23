@@ -85,7 +85,7 @@ class Default(Cog):
         press f for fallen heroes.
         sends simple picture of sal
         """
-        await ctx.response.send_message(embed=self.pressf(message.author, message.author))
+        await ctx.response.send_message(embed=self.pressf(ctx.user, message.author))
 
     def o7(self, user: Member, target: Member = None):
         if target:
