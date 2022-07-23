@@ -1,3 +1,4 @@
+from itertools import groupby
 from typing import List, Tuple
 from library.my_Exceptions.validator import NonOwnedCharacter, NonExistentCharacter
 from discord.ext.commands.core import guild_only, is_nsfw
@@ -81,7 +82,7 @@ class Ark(Cog):
                    description='Вывести твою коллекцию сочных аниме девочек(и кунчиков ^-^). ')
     @is_nsfw()
     async def myark_slash(self, ctx: Interaction,
-                          char_name: Option(str, 'Имя персонажа', autocomplete=myark_autocomplete, default=None), 
+                          char_name: Option(str, 'Имя персонажа', autocomplete=myark_autocomplete, default=None),
                           public: Option(bool, 'Похвастаться?', default=False)):
         embed, selector = self.myark(char_name, ctx.user)
         message = await ctx.response.send_message(embed=embed, view=selector, ephemeral=not public)
@@ -189,17 +190,9 @@ class Ark(Cog):
             dict: requestor characters collection
         """
         with self.__db.get_session() as session:
-            requestor_collection = session.query(UsersArkCollection).filter(UsersArkCollection.user_id == collection_owner_id).all()
-
-        out_list = {}
-        if requestor_collection is None:
-            return {}
-        for character in requestor_collection:
-            if character.rarity not in out_list.keys():  # filling  the out_list with rarity lists
-                out_list[character.rarity] = list()
-            out_list[character.rarity].append(character)
-
-        return out_list
+            requestor_collection = session.query(UsersArkCollection).filter(UsersArkCollection.user_id == collection_owner_id).order_by(UsersArkCollection.rarity).all()
+        out_dict = {k: list(v) for k, v in groupby(requestor_collection, lambda x: int(x.rarity))}
+        return out_dict
 
     def get_barter_list(self, author_id: int) -> list:
         """
@@ -219,10 +212,8 @@ class Ark(Cog):
                 if item.rarity < 6 and item.operator_count > 5:
                     if item.operator_count % 5 != 0:
                         new_char_quantity = item.operator_count % 5
-                    elif item.operator_count % 5 == 0:
-                        new_char_quantity = (item.operator_count // 5) - 1
                     else:
-                        pass
+                        new_char_quantity = (item.operator_count // 5) - 1
 
                     barter_list.append([item.rarity + 1, new_char_quantity])
 
@@ -257,12 +248,7 @@ class Ark(Cog):
         Returns:
             int: count of all possible characters
         """
-        count = 0
-        json_data = self.characters_data
-        for line in json_data.values():
-            if line["rarity"] >= 2 and line["itemDesc"] is not None:
-                count += 1
-        return count
+        return len([val for val in self.characters_data.values() if val["rarity"] >= 2 and val["itemDesc"] is not None])
 
     def roll_random_character(self, author_id: int) -> tuple:
         """
