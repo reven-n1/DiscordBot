@@ -147,7 +147,7 @@ class Database(aobject):
         async with self.get_session() as session:
             statistic = await self.get_user_statistic(user_id, parameter_name, session)
             statistic.count = 0
-            await session.add(statistic)
+            session.add(statistic)
             await session.commit()
 
     async def increment_statistic(self, parameter_name: Union[str, Statistic.Parameter]):
