@@ -151,6 +151,11 @@ class Database(aobject):
             await session.commit()
 
     async def increment_statistic(self, parameter_name: Union[str, Statistic.Parameter]):
+        """
+        Increments the statistic with the given name.
+        :param parameter_name: The name of the statistic to increment.
+        :return: The new value of the statistic.
+        """
         async with self.get_session() as session:
             statistic = await self.get_statistic(parameter_name)
             statistic.value += 1
@@ -159,6 +164,11 @@ class Database(aobject):
 
     @staticmethod
     def prepare_connection_string(config: dict):
+        """
+        Prepares the connection string for the database.
+        :param config: The config dictionary.
+        :return: The connection string.
+        """
         user = config.get('user') or ''
         password = config.get('password') or ''
         host = config.get('host')

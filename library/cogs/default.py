@@ -161,7 +161,7 @@ class Default(Cog):
         }
         results = await self.gather_dict(queries)
         embed.add_field(name="Статистика арков",
-                        value=f"Арков выкручено за все время: {int(results.get('ark_total', 0))}\nВсего собрано персонажей: {int(results.get('ark_total_chars', 0))}",
+                        value=f"Арков выкручено за все время: {int(results.get('ark_total', 0))}\nВсего персонажей в коллекции: {int(results.get('ark_total_chars', 0))}",
                         inline=False)
         embed.add_field(name="Больше всего 6* собрано",
                         value=f"<@{int(results.get('ark_highest_six_user', 0))}> с количеством аж {int(results.get('ark_highest_six_count', 0))} шестизведочных персонажей."
@@ -200,21 +200,21 @@ class Default(Cog):
     async def get_ark_total_chars(self, db: Database) -> int:
         async with db.get_session() as session:
             ark_total_chars = (
-                await session.execute(select(func.count()).select_from(select(UsersArkCollection).subquery()))).scalar()
+                await session.execute(select(func.sum(UsersArkCollection.operator_count)))).scalar()
             return int(ark_total_chars)
 
     async def get_ark_highest_six_user(self, db: Database) -> int:
         async with db.get_session() as session:
             ark_highest_six_user = (await session.execute(
-                select(UsersArkCollection.user_id).order_by(UsersArkCollection.operator_count.desc()).limit(
+                select(UsersArkCollection.user_id).where(UsersArkCollection.rarity == 6).group_by(UsersArkCollection.user_id).order_by(func.sum(UsersArkCollection.operator_count).desc()).limit(
                     1))).scalar() or ''
             return int(ark_highest_six_user)
 
     async def get_ark_highest_six_count(self, db: Database) -> int:
         async with db.get_session() as session:
             ark_highest_six_count = (await session.execute(
-                select(UsersArkCollection.operator_count).order_by(UsersArkCollection.operator_count.desc()).limit(
-                    1))).scalar() or 0
+                select(func.sum(UsersArkCollection.operator_count)).where(UsersArkCollection.rarity == 6).group_by(UsersArkCollection.user_id).order_by(func.sum(UsersArkCollection.operator_count).desc()).limit(
+                    1))).scalar() or ''
             return int(ark_highest_six_count)
 
     async def get_ger_stat_total(self, db: Database) -> int:

@@ -148,7 +148,7 @@ class Bot_init(Bot):
                     content = await response.content.read()
                 else:
                     logging.warn("Can't get status from myanimelist.net")
-
+                    return
         try:
             feed = feedparser.parse(content)
             await self.change_presence(activity=Activity(type=ActivityType.watching, name=feed['entries'][0]['title']))
