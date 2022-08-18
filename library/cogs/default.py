@@ -8,7 +8,7 @@ from library import user_guild_cooldown
 from library.data.data_loader import DataHandler
 from library.data.db.database import Database, Statistic, StatisticParameter, UsersArkCollection, UsersStatisticCounter
 from library.data.pressf_images import fimages
-from discord.ext.commands import Cog
+from discord import Cog
 from random import choice
 import discord
 import logging

@@ -1,7 +1,7 @@
 from discord.ext.commands import command, cooldown
-from discord.ext.commands import Cog
+from discord import Cog
 from discord.ext.commands.cooldowns import BucketType
-import nextcord
+import discord
 
 
 class Commands(Cog):

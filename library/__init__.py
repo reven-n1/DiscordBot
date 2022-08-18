@@ -1,4 +1,3 @@
-from io import BytesIO
 import aiohttp
 from discord import ApplicationContext
 from discord.errors import Forbidden
@@ -6,7 +5,8 @@ from discord.ext.commands.context import Context
 from discord.ext.commands.errors import CommandError, CommandOnCooldown, MissingPermissions, \
      NSFWChannelRequired, NoPrivateMessage
 from discord import Activity, ActivityType, Intents
-from discord.ext.commands import Bot, CommandNotFound
+from discord.ext.commands import CommandNotFound
+from discord import Bot
 from library.data.data_loader import DataHandler
 from library.bot_token import token
 from discord.embeds import Embed

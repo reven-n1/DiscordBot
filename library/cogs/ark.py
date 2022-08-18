@@ -10,9 +10,9 @@ from library import user_guild_cooldown
 from discord.commands import slash_command, Option
 from discord import User
 from discord.interactions import Interaction
-from discord.ext.commands.bot import Bot
+from discord import Bot
 from discord.embeds import Embed
-from discord.ext.commands import Cog
+from discord import Cog
 from library.data.db.database import Database, Statistic, StatisticParameter, UsersArkCollection
 from discord.errors import NotFound
 from random import choice, randrange

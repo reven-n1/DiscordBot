@@ -6,6 +6,7 @@ from discord.ext.commands.context import Context
 from library.my_Exceptions.music_exceptions import NoVoiceChannel, QueueIsEmpty, NoTracksFound
 from library.data.data_loader import DataHandler
 from discord.ext import commands, pages
+from discord import Cog
 from typing import Dict, List
 from random import shuffle
 from asyncio import sleep
@@ -440,7 +441,7 @@ class PlayerControls(discord.ui.View):
         await interaction.response.edit_message(view=self, embed=self.generate_player_embed())
 
 
-class Music(commands.Cog):
+class Music(Cog):
     qualified_name = 'Music'
     description = 'Играет музыку'
     player_controls: Dict[Player, PlayerControls] = {}
@@ -450,19 +451,19 @@ class Music(commands.Cog):
         self.bot.loop.create_task(self.start_nodes())
         self.spotify_client = SpotifyClient(client_id=spotipy_client_id, client_secret=spotipy_client_secret)
 
-    @commands.Cog.listener()
+    @Cog.listener()
     async def on_node_ready(self, node):
         logging.info(f" wavelink node `{node.identifier}` ready")
 
-    @commands.Cog.listener("on_wavelink_track_stuck")
-    @commands.Cog.listener("on_wavelink_track_exception")
+    @Cog.listener("on_wavelink_track_stuck")
+    @Cog.listener("on_wavelink_track_exception")
     async def on_player_stop(self, player: Player, track: wavelink.Track, exception: Exception = None, *args, **kwargs):
         if exception:
             logging.warning(exception)
             player.advance()
             return
 
-    @commands.Cog.listener("on_wavelink_track_end")
+    @Cog.listener("on_wavelink_track_end")
     async def on_track_end(self, player: Player, track: wavelink.Track, reason: str):
         if reason == 'FINISHED':
             if player.queue.repeat_mode == Queue.RepeatMode.ONE:
@@ -493,7 +494,7 @@ class Music(commands.Cog):
                 return await ctx.author.voice.channel.connect(cls=Player)
             if ctx.voice_client:
                 return ctx.voice_client
-        finally:
+        except (AttributeError, discord.ClientException):
             raise NoVoiceChannel()
 
     music = SlashCommandGroup("music", "Музыка", guild_only=True)

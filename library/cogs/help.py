@@ -1,7 +1,7 @@
 import logging
 from discord.ext.commands import command, cooldown
 from discord.errors import Forbidden
-from discord.ext.commands import Cog, Command
+from discord import Cog, Command
 from library import data, user_channel_cooldown
 import discord
 from library.data.data_loader import DataHandler

@@ -4,7 +4,7 @@ from discord.ext.commands import cooldown
 from library import user_guild_cooldown
 from library.data.data_loader import DataHandler
 from library.data.db.database import Database, Statistic, StatisticParameter
-from discord.ext.commands import Cog
+from discord import Cog
 from random import randint, choice
 from library import bot
 from discord import Interaction, slash_command

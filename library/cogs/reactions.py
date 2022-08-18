@@ -1,7 +1,7 @@
 from discord.ext.commands import cooldown
 from discord.ext.commands.core import is_nsfw
 from json.decoder import JSONDecodeError
-from discord.ext.commands import Cog
+from discord import Cog
 from discord import ApplicationContext, AutocompleteContext, Embed, Member, Option, slash_command
 from random import choice
 from library.data.data_loader import DataHandler
