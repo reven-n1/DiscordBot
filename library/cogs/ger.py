@@ -1,5 +1,6 @@
-from discord.ext.commands.core import is_nsfw, guild_only
-from discord.ext.commands import command, cooldown
+from discord.ext.commands.core import is_nsfw
+from discord import guild_only
+from discord.ext.commands import cooldown
 from library import user_guild_cooldown
 from library.data.data_loader import DataHandler
 from library.data.db.database import Database, Statistic, StatisticParameter

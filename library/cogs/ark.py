@@ -1,11 +1,10 @@
-import asyncio
-from itertools import groupby, islice, zip_longest
+from itertools import groupby, zip_longest
 from math import ceil
 from typing import List, Tuple
-
 from sqlalchemy import select
 from library.my_Exceptions.validator import NonOwnedCharacter, NonExistentCharacter
-from discord.ext.commands.core import guild_only, is_nsfw
+from discord.ext.commands.core import is_nsfw
+from discord import guild_only
 from discord.ext.commands import cooldown
 from library import user_guild_cooldown
 from discord.commands import slash_command, Option

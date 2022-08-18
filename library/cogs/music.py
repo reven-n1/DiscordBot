@@ -5,7 +5,6 @@ from wavelink.ext.spotify import SpotifyClient, SpotifyTrack, SpotifyRequestErro
 from discord.ext.commands.context import Context
 from library.my_Exceptions.music_exceptions import NoVoiceChannel, QueueIsEmpty, NoTracksFound
 from library.data.data_loader import DataHandler
-from discord.ext.commands import guild_only
 from discord.ext import commands, pages
 from typing import Dict, List
 from random import shuffle
@@ -489,17 +488,18 @@ class Music(commands.Cog):
             await wavelink.NodePool.create_node(bot=self.bot, **node, spotify_client=self.spotify_client)
 
     async def get_player(self, ctx: commands.Context, connect=False) -> Player:
-        if not ctx.voice_client and ctx.author.voice and connect:
-            return await ctx.author.voice.channel.connect(cls=Player)
-        if ctx.voice_client:
-            return ctx.voice_client
-        raise NoVoiceChannel()
+        try:
+            if not ctx.voice_client and ctx.author.voice and connect:
+                return await ctx.author.voice.channel.connect(cls=Player)
+            if ctx.voice_client:
+                return ctx.voice_client
+        finally:
+            raise NoVoiceChannel()
 
-    music = SlashCommandGroup("music", "Музыка")
+    music = SlashCommandGroup("music", "Музыка", guild_only=True)
 
     @music.command(name="disconnect",
                    description='Отключиться от голосового канала')
-    @guild_only()
     async def disconnect_slash(self, interaction: discord.ApplicationContext):
         player = await self.get_player(interaction)
         if not interaction.user.guild_permissions.administrator and not (player.queue.get_track_owner() or interaction.user.id) == interaction.user.id:
@@ -536,7 +536,6 @@ class Music(commands.Cog):
 
     @music.command(name="play",
                    description='Поиск твоей любимой музыки в интернете. Будем вместе слушать ^.^')
-    @guild_only()
     async def play_slash(self, ctx: discord.ApplicationContext,
                          query: discord.Option(str, "Поисковый запрос")):
         await ctx.interaction.response.defer()
@@ -559,7 +558,6 @@ class Music(commands.Cog):
 
     @music.command(name="repeat",
                    description='Установить режим повтора.')
-    @guild_only()
     async def repeat_slash(self, ctx: ApplicationContext, mode: Option(str, choices=['none', '1', 'all'])):
         player = await self.get_player(ctx, connect=False)
         player.queue.set_repeat_mode(mode)
@@ -602,7 +600,6 @@ class Music(commands.Cog):
         return pages_embeds
 
     @music.command(name="queue", description='Показать очередь')
-    @guild_only()
     async def queue_slash(self, ctx: ApplicationContext):
         await ctx.response.defer()
         custom_buttons = [
@@ -649,7 +646,6 @@ class Music(commands.Cog):
 
     @music.command(name="shuffle",
                    description='Перемешивает очередь чтобы тебе было не так противно слушать одни и те же плейлисты на повторе')
-    @guild_only()
     async def shuffle_slash(self, ctx: ApplicationContext):
         player = await self.get_player(ctx, connect=False)
         if not player:
@@ -659,7 +655,6 @@ class Music(commands.Cog):
 
     @music.command(name="controls",
                    description='Показать что сейчас играет и управлять воспроизведением')
-    @guild_only()
     async def playing_slash(self, ctx: ApplicationContext):
         player = await self.get_player(ctx)
 
@@ -675,7 +670,6 @@ class Music(commands.Cog):
         self.player_controls[player] = controls
 
     @music.command(name="skipto", description='Перейти сразу к треку под номером i')
-    @guild_only()
     async def skipto_slash(self, ctx: ApplicationContext, index: Option(int, description='Номер песни', min_value=1)):
         player = await self.get_player(ctx)
         if not ctx.author.guild_permissions.administrator and not (player.queue.get_track_owner() or ctx.author.id) == ctx.author.id:
@@ -695,7 +689,6 @@ class Music(commands.Cog):
             await player.start_playback()
 
     @music.command(name="skip", description='Пропустить текущий трек')
-    @guild_only()
     async def skip_slash(self, ctx: ApplicationContext):
         player = await self.get_player(ctx)
         if not ctx.author.guild_permissions.administrator and not (player.queue.get_track_owner() or ctx.author.id) == ctx.author.id:
@@ -708,7 +701,6 @@ class Music(commands.Cog):
         await ctx.response.send_message('Играем дальше')
 
     @music.command(name="pop", description='Удалить трек из очереди')
-    @guild_only()
     async def pop_slash(self, ctx: ApplicationContext, index: Option(int, description='Номер песни', min_value=1)):
         player = await self.get_player(ctx)
         if not ctx.author.guild_permissions.administrator and not (player.queue.get_track_owner() or ctx.author.id) == ctx.author.id:

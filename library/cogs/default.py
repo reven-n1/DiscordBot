@@ -1,7 +1,8 @@
 import asyncio
 from typing import List
 from discord import ApplicationContext, Interaction, Member, Option, TextChannel, message_command, slash_command, user_command
-from discord.ext.commands import cooldown, guild_only
+from discord.ext.commands import cooldown
+from discord import guild_only
 from sqlalchemy import func, select
 from library import user_guild_cooldown
 from library.data.data_loader import DataHandler
