@@ -83,8 +83,8 @@ class Reactions(Cog):
                                      choices=['waifu', 'neko', 'awoo', 'shinobu', 'megumin']
                                      )
                         ):
-        await ctx.interaction.response.defer()
-        await ctx.followup.send(embed=await self.get_reaction_embed(type, '', nsfw=False))
+        await ctx.defer()
+        await ctx.respond(embed=await self.get_reaction_embed(type, '', nsfw=False))
 
     def reaction_autocomplete(self, ctx: AutocompleteContext):
         return filter(lambda x: x.lower().startswith(ctx.value.lower()), self.pharases_list.keys())
@@ -94,22 +94,22 @@ class Reactions(Cog):
     async def reaction_slash(self, ctx: ApplicationContext,
                              type: Option(str, description='Выбери эмоцию', autocomplete=reaction_autocomplete),
                              member: Option(Member, description='Выбери кого упомянуть (для парных эмоций)', required=False)):
-        await ctx.interaction.response.defer()
+        await ctx.defer()
         if type in self.pharases_list:
             if member:
                 pharase = self.pharases_list[type][0].format(sender=ctx.author.display_name, target=member.display_name)
             else:
                 pharase = self.pharases_list[type][1].format(sender=ctx.author.display_name)
-            await ctx.followup.send(embed=await self.get_reaction_embed(type, pharase, nsfw=False))
+            await ctx.respond(embed=await self.get_reaction_embed(type, pharase, nsfw=False))
         else:
-            await ctx.followup.send('Я таких картинок не знаю!')
+            await ctx.respond('Я таких картинок не знаю!')
 
     @slash_command(name='nsfw', description='Пошлые аниме пикчи))')
     @cooldown(1, data.get_chat_misc_cooldown_sec, user_channel_type_cooldown)
     @is_nsfw()
     async def nsfw_slash(self, ctx: ApplicationContext,
                          type: Option(str, description='Выбери что хочешь посмотреть', choices=['waifu', 'neko', 'trap', 'blowjob'], required=False)):
-        await ctx.interaction.response.defer()
+        await ctx.defer()
         if type is None:
             type = choice(['waifu', 'neko', 'blowjob', 'trap'])
         footers = {

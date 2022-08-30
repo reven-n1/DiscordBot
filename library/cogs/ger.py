@@ -7,7 +7,7 @@ from library.data.db.database import Database, Statistic, StatisticParameter
 from discord import Cog
 from random import randint, choice
 from library import bot
-from discord import Interaction, slash_command
+from discord import ApplicationContext, slash_command
 import discord
 
 
@@ -31,12 +31,12 @@ class Ger(Cog):
     @is_nsfw()
     @guild_only()
     @cooldown(1, data.get_ger_cooldown, user_guild_cooldown)
-    async def ger_slash(self, ctx: Interaction):
+    async def ger_slash(self, ctx: ApplicationContext):
         random_user = choice(ctx.guild.members)
         while random_user == ctx.user:
             random_user = choice(ctx.guild.members)
         ger_message = await self.ger_function(ctx.user, random_user)
-        await ctx.response.send_message(ger_message)
+        await ctx.respond(ger_message)
 
     # functions ----------------------------------------------------------------------------------------------
 

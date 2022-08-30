@@ -1,6 +1,6 @@
 import asyncio
 from typing import List
-from discord import ApplicationContext, Interaction, Member, Option, TextChannel, message_command, slash_command, user_command
+from discord import ApplicationContext, Member, Option, TextChannel, message_command, slash_command, user_command
 from discord.ext.commands import cooldown
 from discord import guild_only
 from sqlalchemy import func, select
@@ -29,11 +29,11 @@ class Default(Cog):
 
     @slash_command(name="ping",
                    description='Замеряет задержку в развитии, твоем)')
-    async def ping_slash(self, ctx: Interaction):
+    async def ping_slash(self, ctx: ApplicationContext):
         """
         Checks ping
         """
-        await ctx.response.send_message(f"Pong! {round(self.bot.latency * 1000, 1)} ms")
+        await ctx.respond(f"Pong! {round(self.bot.latency * 1000, 1)} ms")
 
     @slash_command(name="say",
                    description="Я скажу все что ты хочешь, братик.")
@@ -41,10 +41,10 @@ class Default(Cog):
     @discord.default_permissions(
         administrator=True
     )
-    async def say_slash(self, interaction: Interaction, msg: Option(str, description='Message', name='message'),
+    async def say_slash(self, interaction: ApplicationContext, msg: Option(str, description='Message', name='message'),
                         chnl: Option((TextChannel), name="channel", description="Choose a channel to say")):
-        await self.bot.get_channel(chnl.id).send(msg)
-        await interaction.response.send_message(
+        await chnl.send(msg)
+        await interaction.respond(
             "Alldone, boss", ephemeral=True
         )
         logging.info(f'User {interaction.user.name} sent message as bot')
@@ -63,30 +63,30 @@ class Default(Cog):
                    description='Отдать честь за почивших героев. Можно упоминанием указать кого чтим.')
     @guild_only()
     @cooldown(1, data.get_chat_misc_cooldown_sec, user_guild_cooldown)
-    async def pressf_slash(self, ctx: Interaction, member: Option(Member, default=None)):
+    async def pressf_slash(self, ctx: ApplicationContext, member: Option(Member, default=None)):
         """
         press f for fallen heroes.
         sends simple picture of saluting girl. can mention people
         """
-        await ctx.response.send_message(embed=self.pressf(ctx.user, member))
+        await ctx.respond(embed=self.pressf(ctx.user, member))
 
     @user_command(name='f')
     @cooldown(1, data.get_chat_misc_cooldown_sec, user_guild_cooldown)
-    async def pressf_user(self, ctx: Interaction, member: Member):
+    async def pressf_user(self, ctx: ApplicationContext, member: Member):
         """
         press f for fallen heroes.
         sends simple picture of saluting girl. can mention people
         """
-        await ctx.response.send_message(embed=self.pressf(ctx.user, member))
+        await ctx.respond(embed=self.pressf(ctx.user, member))
 
     @message_command(name='f')
     @cooldown(1, data.get_chat_misc_cooldown_sec, user_guild_cooldown)
-    async def pressf_message(self, ctx: Interaction, message: discord.Message):
+    async def pressf_message(self, ctx: ApplicationContext, message: discord.Message):
         """
         press f for fallen heroes.
         sends simple picture of sal
         """
-        await ctx.response.send_message(embed=self.pressf(ctx.user, message.author))
+        await ctx.respond(embed=self.pressf(ctx.user, message.author))
 
     def o7(self, user: Member, target: Member = None):
         if target:
@@ -101,35 +101,35 @@ class Default(Cog):
                    description='Поприветсвовать командиров, а можно и кого-то конкретного')
     @guild_only()
     @cooldown(1, data.get_chat_misc_cooldown_sec, user_guild_cooldown)
-    async def o7_slash(self, ctx: Interaction, member: Option(Member, default=None)):
+    async def o7_slash(self, ctx: ApplicationContext, member: Option(Member, default=None)):
         """
         greet fellow commanders
         can mention whom to greet
         """
-        await ctx.response.send_message(embed=self.o7(ctx.user, member))
+        await ctx.respond(embed=self.o7(ctx.user, member))
 
     @user_command(name="o7")
     @cooldown(1, data.get_chat_misc_cooldown_sec, user_guild_cooldown)
     @guild_only()
-    async def o7_user(self, ctx: Interaction, member: Member):
+    async def o7_user(self, ctx: ApplicationContext, member: Member):
         """
         greet fellow commanders
         can mention whom to greet
         """
-        await ctx.response.send_message(embed=self.o7(ctx.user, member))
+        await ctx.respond(embed=self.o7(ctx.user, member))
 
     @message_command(name='o7')
     @cooldown(1, data.get_chat_misc_cooldown_sec, user_guild_cooldown)
-    async def o7_message(self, ctx: Interaction, message: discord.Message):
-        await ctx.response.send_message(embed=self.o7(ctx.user, message.author))
+    async def o7_message(self, ctx: ApplicationContext, message: discord.Message):
+        await ctx.respond(embed=self.o7(ctx.user, message.author))
 
     @user_command(
         name='Avatar'
     )
-    async def avatar_user(self, interaction: Interaction, usr: Member):
+    async def avatar_user(self, ctx: ApplicationContext, usr: Member):
         emb = discord.Embed(title='Avatarr')
         emb.set_image(url=usr.avatar.url)
-        await interaction.response.send_message(
+        await ctx.respond(
             embed=emb, ephemeral=True
         )
 
@@ -137,7 +137,7 @@ class Default(Cog):
     async def avatar_message(self, ctx: ApplicationContext, message: discord.Message):
         emb = discord.Embed(title='Avatarr')
         emb.set_image(url=message.author.avatar.url)
-        await ctx.response.send_message(
+        await ctx.respond(
             embed=emb, ephemeral=True
         )
 
@@ -278,7 +278,7 @@ class Default(Cog):
         This command shows bot info
         """
         embed = await self.info(ctx.author)
-        await ctx.response.send_message(embed=embed, ephemeral=True)
+        await ctx.respond(embed=embed, ephemeral=True)
 
     @slash_command(name="invite",
                    description='Показать ссылку-приглаешние этого бота')

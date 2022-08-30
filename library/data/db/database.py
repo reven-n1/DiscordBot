@@ -85,7 +85,7 @@ class Database(aobject):
     async def __init__(self) -> None:
         self._config = DataHandler().get_database_config
         self.engine: AsyncEngine = create_async_engine(self.prepare_connection_string(self._config), poolclass=NullPool,
-                                                       echo=False)
+                                                       echo=False, convert_unicode=True, encoding='utf-8')
         self.connection = await self.engine.connect()
         self.metadata = metadata
         async with self.engine.begin() as conn:
@@ -169,10 +169,13 @@ class Database(aobject):
         :param config: The config dictionary.
         :return: The connection string.
         """
-        user = config.get('user') or ''
-        password = config.get('password') or ''
-        host = config.get('host')
-        port = config.get('port') or ''
-        database = config.get('database') or ''
-        engine = config.get('engine')
-        return f'{engine}://{user}{":" if user and password else ""}{password}{"@" if user and password else ""}{host}{":" if port else ""}{port}{"/" if database else ""}{database}'
+        user = config.pop('user') or ''
+        password = config.pop('password') or ''
+        host = config.pop('host')
+        port = config.pop('port') or ''
+        database = config.pop('database') or ''
+        engine = config.pop('engine')
+        return (f'{engine}://{user}{":" if user and password else ""}'
+                f'{password}{"@" if user and password else ""}{host}{":" if port else ""}{port}'
+                f'{"/" if database else ""}{database}{"?" if config else ""}'
+                f'{"&".join(f"{key}={value}" for key, value in config.items())}')

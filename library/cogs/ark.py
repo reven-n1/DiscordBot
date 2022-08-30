@@ -1,15 +1,14 @@
 from itertools import groupby, zip_longest
 from math import ceil
-from typing import List, Tuple
+from typing import List, Tuple, Union
 from sqlalchemy import select
-from library.my_Exceptions.validator import NonOwnedCharacter, NonExistentCharacter
+from library.exceptions.validator import NonOwnedCharacter, NonExistentCharacter
 from discord.ext.commands.core import is_nsfw
 from discord import guild_only
 from discord.ext.commands import cooldown
 from library import user_guild_cooldown
 from discord.commands import slash_command, Option
-from discord import User
-from discord.interactions import Interaction
+from discord import User, ApplicationContext
 from discord import Bot
 from discord.embeds import Embed
 from discord import Cog
@@ -33,16 +32,20 @@ class Ark(Cog):
     __stars_6 = "<:star2:801105195958140928>"
 
     class SkinSelector(discord.ui.View):
-        message: discord.Message
         user_id: int
 
-        def __init__(self, skins: list, user_id: int, timeout=180):
+        def __init__(self, embed: discord.Embed, skins: list, user_id: int, timeout=180):
             super().__init__(timeout=timeout)
             self.user_id = user_id
             self.skin_select.options = []
+            self.embed = embed
             for skin in skins:
                 self.skin_select.options.append(
                     discord.SelectOption(label=skin.name, description=skin.desc, value=skin.id))
+
+        async def respond(self, context: ApplicationContext, **kwargs) -> None:
+            message = await context.respond(embed=self.embed, view=self, **kwargs)
+            self.message = await message.original_message()
 
         async def on_timeout(self) -> None:
             try:
@@ -52,14 +55,14 @@ class Ark(Cog):
             return await super().on_timeout()
 
         @discord.ui.select(placeholder='Choose skin', min_values=1, max_values=1, options=[])
-        async def skin_select(self, _: discord.ui.Select, interaction: discord.Interaction):
-            if interaction.user.id != self.user_id:
-                await interaction.response.send_message('Не трожь. Не твоя девочка, вот ты и бесишся!', ephemeral=True)
+        async def skin_select(self, _: discord.ui.Select, ctx: ApplicationContext):
+            if ctx.user.id != self.user_id:
+                await ctx.respond('Не трожь. Не твоя девочка, вот ты и бесишся!', ephemeral=True)
                 return
-            new_image_url = interaction.data.get('values', [''])[0].replace('#', '%23')
-            new_embed = interaction.message.embeds[0].set_image(
+            new_image_url = ctx.data.get('values', [''])[0].replace('#', '%23')
+            new_embed = ctx.message.embeds[0].set_image(
                 url=f"https://aceship.github.io/AN-EN-Tags/img/characters/{new_image_url}.png")
-            await interaction.response.edit_message(embed=new_embed)
+            await ctx.response.edit_message(embed=new_embed)
 
     def __init__(self, bot: Bot):
         self.bot = bot
@@ -83,47 +86,47 @@ class Ark(Cog):
     @slash_command(name="myark",
                    description='Вывести твою коллекцию сочных аниме девочек(и кунчиков ^-^). ')
     @is_nsfw()
-    async def myark_slash(self, ctx: Interaction,
+    async def myark_slash(self, ctx: ApplicationContext,
                           char_name: Option(str, 'Имя персонажа', autocomplete=myark_autocomplete, default=None),
                           public: Option(bool, 'Похвастаться?', default=False)):
-        embed, selector = await self.myark(char_name, ctx.user)
-        message = await ctx.response.send_message(embed=embed, view=selector, ephemeral=not public)
-        if selector:
-            selector.message = await message.original_message()
+        result = await self.myark(char_name, ctx.user)
+        if isinstance(result, Embed):
+            await ctx.respond(embed=result, ephemeral=not public)
+        elif isinstance(result, self.SkinSelector):
+            await result.respond(ctx, ephemeral=not public)
 
     @slash_command(name="barter",
                    brief='Обменять много хуевых персов на мало пиздатых')
     @is_nsfw()
     @guild_only()
-    async def barter_slash(self, ctx: Interaction):
+    async def barter_slash(self, ctx: ApplicationContext):
         """
         Serves to exchange 5 characters for 1 rank higher\n
         if possible else returns 'Нет операторов на обмен'
         """
         barter_list = await self.get_barter_list(ctx.user.id)
         if barter_list:
-            await ctx.response.defer()
+            await ctx.defer()
             barter = self.ark_barter(barter_list, ctx.user.id)
             async for new_char in barter:
-                embed, selector = self.ark_embed_and_view(new_char, ctx.user)
-                selector.message = await ctx.channel.send(embed=embed, view=selector)
+                selector = self.ark_embed_and_view(new_char, ctx.user)
+                await selector.respond(ctx)
             await ctx.followup.send(content="Готово! Наслаждайся!")
         else:
-            await ctx.response.send_message("***Нет операторов на обмен***", ephemeral=15)
+            await ctx.respond("***Нет операторов на обмен***", ephemeral=15)
 
     @slash_command(name="ark",
                    description='Кидает рандомную девочку (но это не точно, там и трапики есть, ня) и сохраняет её')
     @is_nsfw()
     @guild_only()
     @cooldown(1, data.get_ark_cooldown, user_guild_cooldown)
-    async def ark_slash(self, ctx: Interaction):
+    async def ark_slash(self, ctx: ApplicationContext):
         """
         Return a random arknigts character (from character_table.json)
         """
         character_data = await self.roll_random_character(ctx.user.id)
-        embed, selector = self.ark_embed_and_view(character_data, ctx.user)
-        message = await ctx.response.send_message(embed=embed, view=selector)
-        selector.message = await message.original_message()
+        selector = self.ark_embed_and_view(character_data, ctx.user)
+        await selector.respond(ctx)
 
     def ark_embed_and_view(self, character_data: list, author: discord.Member):
         """
@@ -146,12 +149,12 @@ class Ark(Cog):
         embed.set_thumbnail(url=character_data.profession)
         embed.set_image(url=f"https://aceship.github.io/AN-EN-Tags/img/characters/{character_data.character_id}_1.png")
         embed.set_footer(text=f"Requested by {author.display_name}")
-        return embed, Ark.SkinSelector(self.get_skin_list(character_data.character_id), author.id,
-                                       data.get_chat_misc_cooldown_sec)
+        return Ark.SkinSelector(embed, self.get_skin_list(character_data.character_id), author.id,
+                                data.get_chat_misc_cooldown_sec)
 
     # functions --------------------------------------------------------------------------------------------------------------------
 
-    async def myark(self, char_name: str, user: User) -> Tuple[Embed, SkinSelector]:
+    async def myark(self, char_name: str, user: User) -> Union[SkinSelector, Embed]:
         ark_collection = await self.get_ark_collection(user.id)
         if not char_name:
             all_character_count = self.get_ark_count()
@@ -174,9 +177,9 @@ class Ark(Cog):
         try:
             return self.ark_embed_and_view(await self.show_character(char_name, user.id), user)
         except NonOwnedCharacter:
-            return (discord.Embed(title="***Лох, у тебя нет такой дивочки***"), None)
+            return discord.Embed(title="***Лох, у тебя нет такой дивочки***")
         except NonExistentCharacter:
-            return (discord.Embed(title="***Лошара, даже имя своей вайфу не запомнил((***"), None)
+            return discord.Embed(title="***Лошара, даже имя своей вайфу не запомнил((***")
 
     def get_skin_list(self, character_id) -> namedtuple:
         skinTyple = namedtuple('skin', ['id', 'name', 'desc'])
