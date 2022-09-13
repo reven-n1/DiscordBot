@@ -28,9 +28,11 @@ class Bot_init(Bot):
         self.Prefix = "!"
         self.TOKEN = token
         self.VERSION = None
+        intents = Intents().all()
+        intents.message_content = False
         super().__init__(command_prefix=self.Prefix,
                          case_insensitive=True,
-                         intents=Intents().all(),
+                         intents=intents,
                          help_command=None
                          )
 

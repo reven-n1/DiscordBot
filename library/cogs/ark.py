@@ -61,7 +61,7 @@ class Ark(Cog):
                 return
             new_image_url = ctx.data.get('values', [''])[0].replace('#', '%23')
             new_embed = ctx.message.embeds[0].set_image(
-                url=f"https://aceship.github.io/AN-EN-Tags/img/characters/{new_image_url}.png")
+                url=f"https://raw.githubusercontent.com/Aceship/Arknight-Images/main/characters/{new_image_url}.png")
             await ctx.response.edit_message(embed=new_embed)
 
     def __init__(self, bot: Bot):
@@ -147,7 +147,7 @@ class Ark(Cog):
         line = sub("[<@.>/]", "", character_data.traits)  # Delete all tags in line
         embed.add_field(name="Traits", value=line.replace("bakw", ""), inline=False)
         embed.set_thumbnail(url=character_data.profession)
-        embed.set_image(url=f"https://aceship.github.io/AN-EN-Tags/img/characters/{character_data.character_id}_1.png")
+        embed.set_image(url=f"https://raw.githubusercontent.com/Aceship/Arknight-Images/main/characters/{character_data.character_id}_1.png")
         embed.set_footer(text=f"Requested by {author.display_name}")
         return Ark.SkinSelector(embed, self.get_skin_list(character_data.character_id), author.id,
                                 data.get_chat_misc_cooldown_sec)

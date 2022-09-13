@@ -7,7 +7,6 @@ from sqlalchemy.orm import relationship
 from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.ext.asyncio.engine import create_async_engine, AsyncEngine
 from sqlalchemy.ext.asyncio.session import AsyncSession
-from sqlalchemy.pool import NullPool
 
 Base = declarative_base()
 metadata = Base.metadata
@@ -84,7 +83,7 @@ class Database(aobject):
 
     async def __init__(self) -> None:
         self._config = DataHandler().get_database_config
-        self.engine: AsyncEngine = create_async_engine(self.prepare_connection_string(self._config), poolclass=NullPool,
+        self.engine: AsyncEngine = create_async_engine(self.prepare_connection_string(self._config), #poolclass=NullPool,
                                                        echo=False, convert_unicode=True, encoding='utf-8')
         self.connection = await self.engine.connect()
         self.metadata = metadata
