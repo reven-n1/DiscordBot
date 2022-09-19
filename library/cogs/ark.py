@@ -45,7 +45,11 @@ class Ark(Cog):
 
         async def respond(self, context: ApplicationContext, **kwargs) -> None:
             message = await context.respond(embed=self.embed, view=self, **kwargs)
-            self.message = await message.original_message()
+            self.message = message
+
+        async def send(self, context: ApplicationContext, **kwargs) -> None:
+            message = await context.send(embed=self.embed, view=self, **kwargs)
+            self.message = message
 
         async def on_timeout(self) -> None:
             try:
@@ -110,8 +114,8 @@ class Ark(Cog):
             barter = self.ark_barter(barter_list, ctx.user.id)
             async for new_char in barter:
                 selector = self.ark_embed_and_view(new_char, ctx.user)
-                await selector.respond(ctx)
-            await ctx.followup.send(content="Готово! Наслаждайся!")
+                await selector.send(ctx)
+            await ctx.respond(content="Готово! Наслаждайся!")
         else:
             await ctx.respond("***Нет операторов на обмен***", ephemeral=15)
 
