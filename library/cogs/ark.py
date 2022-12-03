@@ -35,7 +35,7 @@ class Ark(Cog):
         user_id: int
 
         def __init__(self, embed: discord.Embed, skins: list, user_id: int, timeout=180):
-            super().__init__(timeout=timeout)
+            super().__init__(timeout=1)
             self.user_id = user_id
             self.skin_select.options = []
             self.embed = embed
@@ -44,12 +44,10 @@ class Ark(Cog):
                     discord.SelectOption(label=skin.name, description=skin.desc, value=skin.id))
 
         async def respond(self, context: ApplicationContext, **kwargs) -> None:
-            message = await context.respond(embed=self.embed, view=self, **kwargs)
-            self.message = message
+            await context.respond(embed=self.embed, view=self, **kwargs)
 
         async def send(self, context: ApplicationContext, **kwargs) -> None:
-            message = await context.send(embed=self.embed, view=self, **kwargs)
-            self.message = message
+            await context.send(embed=self.embed, view=self, **kwargs)
 
         async def on_timeout(self) -> None:
             try:
@@ -319,8 +317,7 @@ class Ark(Cog):
 
         for character_id, char in self.characters_data.items():
             character_rarity = int(char["rarity"]) + 1
-            if rarity == character_rarity and char[
-                "itemDesc"] is not None:  # to ignore summoners items and other rarities
+            if rarity == character_rarity and char["itemDesc"] is not None:  # to ignore summoners items and other rarities
                 choice_list.append(character_id)
 
         random_character = choice(choice_list)
